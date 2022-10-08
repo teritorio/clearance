@@ -1,0 +1,71 @@
+--- !ruby/object:Types::Config
+ontologies:
+  tourism: https://vecto.teritorio.xyz/data/teritorio-tourism-ontology-latest.json
+  city: https://vecto.teritorio.xyz/data/teritorio-city-ontology-latest.json
+
+sources:
+  _default_:
+    osm_tags_extra:
+      - phone
+  florist:
+    label:
+      en: CDB Shop
+      osm_filters_tags:
+        - shop: florist
+      osm_tags_extra:
+        - fax
+
+validators:
+  geom_new:
+    instance: Validators::GeomNewObject
+    action: accept
+
+  user_white_list:
+    instance: Validators::UserList
+    description: Change by local white listed user
+    list:
+      - frodrigo
+    action: accept
+
+  user_black_list:
+    instance: Validators::UserList
+    description: Change by local black listed user
+    list:
+      - 666
+    action: reject
+
+  geom_changes_insignificant:
+    instance: Validators::GeomChanges
+    dist: -0.0001
+    action: accept
+
+  geom_changes_significant:
+    instance: Validators::GeomChanges
+    dist: 0.01
+    action: reject
+
+  tags_changes_insignificant:
+    instance: Validators::TagsChanges
+    action_force: accept
+    tags: # TODO import tags from sources
+      - crossing:island
+
+  tags_changes_significant:
+    instance: Validators::TagsChanges
+    action: reject
+    tags:
+      - backrest
+
+  deleted:
+    action: reject
+
+customers:
+  cdt99:
+    label:
+      en: CDT99
+    polygon:
+      url: https://
+      jq: .p
+    sources:
+      - products:craft:beekeeper
+      - florist

@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gem 'json'
+gem 'pg'
+gem 'rubocop', group: :development
+gem 'sorbet', group: :development
+gem 'sorbet-runtime'
+gem 'tapioca', require: false, group: :development
+gem 'test-unit', group: :development
+
+# Only for sorbet typechecker
+gem 'irb', group: :development
+gem 'psych', group: :development
+gem 'racc', group: :development
+gem 'rbi', group: :development
+gem 'yard', group: :development

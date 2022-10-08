@@ -1,0 +1,29 @@
+services:
+  ope:
+    build:
+      context: ope
+    volumes:
+      - ./pbf:/pbf
+
+  postgres:
+    image: postgis/postgis
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./pbf:/pbf
+      - pgdata:/var/lib/postgresql/data
+    # restart:
+
+  time_machine:
+    build:
+      context: time_machine
+    environment:
+      - CONFIG=/srv/app/conf.yaml
+    volumes:
+      - ./time_machine:/srv/app
+      - ./conf.yaml:/srv/app/conf.yaml
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
