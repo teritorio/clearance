@@ -10,6 +10,7 @@ GEM
     json (2.6.2)
     method_source (1.0.0)
     netrc (0.11.0)
+    optparse (0.1.1)
     parallel (1.22.1)
     parser (3.1.2.1)
       ast (~> 2.4.1)
@@ -85,6 +86,7 @@ PLATFORMS
 DEPENDENCIES
   irb
   json
+  optparse
   pg
   psych
   racc

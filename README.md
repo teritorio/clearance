@@ -9,6 +9,15 @@ Keep a copy a OpenStreetMap dat while validating update using rules and manual r
 docker-compose build
 ```
 
+## Configure
+
+Adjust config.yaml
+
+Then
+```
+docker-compose run --rm time_machine sh -c "ruby main.rb -sql" > sql/osm_filter_tags.sql
+```
+
 ## Start
 ```
 docker-compose up -d postgres
@@ -48,7 +57,7 @@ rm -f pbf/diff.osc.xml.bz2 pbf/osm_changes.pgcopy
 
 Apply untracked changes
 ```
-docker-compose exec -u postgres postgres bash -c "psql < /sql/update.sql"
+docker-compose exec -u postgres postgres bash -c 'psql -v ON_ERROR_STOP=1 -v osm_filter_tags="`cat /sql/osm_filter_tags.sql`" < /sql/update.sql'
 ```
 
 Validation report
