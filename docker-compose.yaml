@@ -10,6 +10,8 @@ services:
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./sql:/sql
       - ./pbf:/pbf
       - pgdata:/var/lib/postgresql/data
     # restart:

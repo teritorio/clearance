@@ -12,7 +12,6 @@ docker-compose build
 ## Start
 ```
 docker-compose up -d postgres
-docker-compose exec -u postgres postgres bash -c "psql 'DROP SCHEMA tiger CASCADE;'
 ```
 
 Enter postgres with
@@ -28,7 +27,7 @@ wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde.s
 
 ```
 docker-compose run --rm ope ope /pbf/gironde-latest.osm.pbf /pbf/osm_base=o
-docker-compose exec -u postgres postgres bash -c "psql < /pbf/osm_base.sql"
+docker-compose exec -u postgres postgres bash -c "psql -c \"\\copy osm_base from '/pbf/osm_base.pgcopy'\""
 ```
 
 ```
@@ -43,7 +42,18 @@ maxInterval=86400" > replication/configuration.txt
 ```
 osmosis --read-replication-interval workingDirectory=replication  --write-xml-change diff.osc.xml.bz2
 docker-compose run --rm ope ope -H /pbf/diff.osc.xml.bz2 /pbf/osm_changes=o
-docker-compose exec -u postgres postgres bash -c "psql < /pbf/osm_changes.sql"
+docker-compose exec -u postgres postgres bash -c "psql -c \"\\copy osm_changes from '/pbf/osm_changes.pgcopy'\""
+rm -f pbf/diff.osc.xml.bz2 pbf/osm_changes.pgcopy
+```
+
+Apply untracked changes
+```
+docker-compose exec -u postgres postgres bash -c "psql < /sql/update.sql"
+```
+
+Validation report
+```
+docker-compose run --rm time_machine sh -c "ruby main.rb"
 ```
 
 ## Dev

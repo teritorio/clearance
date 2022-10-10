@@ -1,0 +1,2 @@
+DROP SCHEMA IF EXISTS tiger CASCADE;
+DROP EXTENSION IF EXISTS postgis_tiger_geocoder;
