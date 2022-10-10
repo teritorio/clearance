@@ -52,6 +52,7 @@ validators:
     action_force: accept
     tags: # TODO import tags from sources
       - crossing:island
+      - survey:date
 
   tags_changes_significant:
     instance: Validators::TagsChanges

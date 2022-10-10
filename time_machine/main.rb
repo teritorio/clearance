@@ -12,8 +12,11 @@ OptionParser.new { |opts|
   opts.on('-h', '--help', 'Help') do
     @options[:help] = true
   end
-  opts.on('-sql', '--sql-filter', 'Output SQL tags filter') do
+  opts.on('-sql', '--sql-filter', 'Output SQL tags filter.') do
     @options[:sql_filter] = true
+  end
+  opts.on('-auto', '--auto-validate', 'Ouput list of acceptable changes.') do
+    @options[:auto_validate] = true
   end
 }.parse!
 
@@ -27,10 +30,10 @@ else
     osm_filters_tags = Watches.all_osm_filters_tags(config.watches)
     sql = Watches.osm_filters_tags_to_sql(osm_filters_tags)
     puts sql
-  else
+  elsif @options[:auto_validate]
     config_validators = config.validators
     validators = config_validators ? Validators.validators_factory(config_validators) : nil
 
-    TimeMachine.time_machine(validators || [])
+    TimeMachine.auto_validate(validators || [])
   end
 end

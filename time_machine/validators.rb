@@ -22,6 +22,10 @@ module Validators
     const :validator_id, String
     const :description, T.nilable(String)
     const :action, ActionType
+
+    def inspect
+      "<#{@validator_id}:#{@action}>"
+    end
   end
 
   HashActions = T.type_alias { T::Hash[String, T::Array[Action]] }
@@ -54,8 +58,8 @@ module Validators
 
     sig {
       params(
-        _before: T.nilable(Types::OSMObject),
-        _after: Types::OSMObject,
+        _before: T.nilable(Types::OSMChangeProperties),
+        _after: Types::OSMChangeProperties,
         _diff_attrib: HashActions,
         _diff_tags: HashActions,
       ).void

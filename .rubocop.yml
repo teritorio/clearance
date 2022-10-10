@@ -1,5 +1,6 @@
 AllCops:
   NewCops: enable
+  TargetRubyVersion: 3.1
 
 Layout/EmptyLines:
   Enabled: false
@@ -57,3 +58,9 @@ Metrics/AbcSize:
 
 Metrics/PerceivedComplexity:
   Max: 30
+
+Style/Next:
+  Enabled: false
+
+Naming/BlockForwarding:
+  Enabled: false

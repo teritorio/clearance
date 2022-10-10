@@ -58,13 +58,14 @@ ORDER BY
     id
   "
 
+    conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
     conn.exec(query) { |result|
       result.each(&block)
     }
   end
 
 
-  sig { params(before: T.nilable(OSMObject), after: OSMObject).returns([HashActions, HashActions]) }
+  sig { params(before: T.nilable(OSMChangeProperties), after: OSMChangeProperties).returns([HashActions, HashActions]) }
   def self.diff_osm_object(before, after)
     diff_attribs = T.let({}, HashActions)
     diff_tags = T.let({}, HashActions)
@@ -85,49 +86,105 @@ ORDER BY
     [diff_attribs, diff_tags]
   end
 
+  class ValidationResult < T::Struct
+    const :action, T.nilable(Validators::ActionType)
+    const :version, Integer
+    const :diff_attribs, Validators::HashActions
+    const :diff_tags, Validators::HashActions
+  end
 
-  sig { params(validators: T::Array[Validator]).void }
-  def self.time_machine(validators)
-    fetch_changes { |row|
-      changes = T.cast(JSON.parse(row['p']).sort_by{ |change| change['version'] }, T::Array[OSMObject])
+  sig {
+    params(
+      validators: T::Array[Validator],
+      changes: T::Array[OSMChangeProperties]
+    ).returns(T::Array[ValidationResult])
+  }
+  def self.object_validation(validators, changes)
+    before = T.let(nil, T.nilable(OSMChangeProperties))
+    afters = T.let([], T::Array[OSMChangeProperties])
+    if changes.size == 1
+      afters = [changes[0]]
+    elsif changes.size > 1
+      before = changes[0]
+      afters = changes[1..]
+    end
 
-      before = T.let(nil, T.nilable(OSMObject))
-      afters = T.let([], T::Array[OSMObject])
-      if changes.size == 1
-        afters = [changes[0]]
-      elsif changes.size > 1
-        before = changes[0]
-        afters = changes[1..]
-      end
+    accepted_version = T.let(nil, T.nilable(ValidationResult))
+    rejected_version = T.let(nil, T.nilable(ValidationResult))
 
-      afters.reverse.each{ |after|
-        diff_attribs, diff_tags = diff_osm_object(before, after)
+    afters.reverse.each_with_index{ |after, index|
+      diff_attribs, diff_tags = diff_osm_object(before, after)
 
-        validators.each{ |validator|
-          validator.apply(before, after, diff_attribs, diff_tags)
-        }
+      validators.each{ |validator|
+        validator.apply(before, after, diff_attribs, diff_tags)
+      }
 
+      if !accepted_version
         fully_accepted = (
           (diff_attribs.empty? || diff_attribs.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } }) &&
           (diff_tags.empty? || diff_tags.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } })
         )
 
+        if fully_accepted
+          accepted_version = ValidationResult.new(
+            action: 'accept',
+            version: after['version'],
+            diff_attribs:,
+            diff_tags:,
+          )
+        end
+      end
+
+      if !fully_accepted && index == 0
         partialy_rejected = (
           diff_attribs.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } } ||
           diff_tags.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } }
         )
 
-        # if fully_accepted
-        #   # if partialy_rejected
-        #   puts '=============='
-        #   puts before.inspect
-        #   puts '-'
-        #   puts after.inspect
-        #   puts diff_attribs.inspect
-        #   puts diff_tags.inspect
-        # end
+        rejected_version = ValidationResult.new(
+          action: partialy_rejected ? 'reject' : nil,
+          version: after['version'],
+          diff_attribs:,
+          diff_tags:,
+        )
+      end
+    }
 
-        [fully_accepted, partialy_rejected]
+    [accepted_version, rejected_version].compact
+  end
+
+  sig {
+    params(
+    validators: T::Array[Validator],
+  ).returns(T::Enumerable[[String, Integer, ValidationResult]])
+  }
+  def self.time_machine(validators)
+    Enumerator.new { |yielder|
+      fetch_changes { |row|
+        osm_change_object = T.cast(row, OSMChangeObject)
+        validation_results = object_validation(validators, osm_change_object['p'])
+        validation_results.each{ |validation_result|
+          yielder << [row['objtype'], row['id'], validation_result]
+        }
+      }
+    }
+  end
+
+  sig {
+    params(
+      validators: T::Array[Validator],
+    ).void
+  }
+  def self.auto_validate(validators)
+    actions = time_machine(validators).group_by { |_objtype, _id, validation_result|
+      validation_result.action
+    }
+
+    # ret = [actions['accept'], actions[nil], actions['reject']]
+    actions.each{ |action, validations|
+      puts action
+      validations.each{ |validation|
+        puts validation.inspect
       }
     }
   end
