@@ -2,11 +2,8 @@
 # typed: true
 
 require 'sorbet-runtime'
-require 'pg'
-require 'json'
+require './changes_db'
 require './validators'
-require 'yaml'
-require 'ostruct'
 require './types'
 
 
@@ -15,57 +12,12 @@ module TimeMachine
   include Types
   extend T::Sig
 
-  sig { params(block: T.proc.params(arg0: T::Hash[String, T.untyped]).void).void }
-  def self.fetch_changes(&block)
-    conn = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
-
-    query = "
-WITH base_i AS (
-  SELECT
-      base.objtype,
-      base.id,
-      base.version,
-      false AS deleted,
-      base.changeset_id,
-      base.created,
-      base.uid,
-      base.username,
-      base.tags,
-      base.lon,
-      base.lat,
-      base.nodes,
-      base.members
-  FROM
-      osm_base AS base
-      JOIN osm_changes AS changes ON
-          changes.objtype = base.objtype AND
-          changes.id = base.id
-)
-SELECT
-    objtype,
-    id,
-    json_agg(row_to_json(t)::jsonb - 'objtype' - 'id')::jsonb AS p
-FROM (
-    SELECT * FROM base_i
-    UNION
-    SELECT * FROM osm_changes
-) AS t
-GROUP BY
-    objtype,
-    id
-ORDER BY
-    objtype,
-    id
-  "
-
-    conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
-    conn.exec(query) { |result|
-      result.each(&block)
-    }
-  end
-
-
-  sig { params(before: T.nilable(OSMChangeProperties), after: OSMChangeProperties).returns([HashActions, HashActions]) }
+  sig {
+    params(
+      before: T.nilable(ChangesDB::OSMChangeProperties),
+      after: ChangesDB::OSMChangeProperties
+    ).returns([HashActions, HashActions])
+  }
   def self.diff_osm_object(before, after)
     diff_attribs = T.let({}, HashActions)
     diff_tags = T.let({}, HashActions)
@@ -96,12 +48,12 @@ ORDER BY
   sig {
     params(
       validators: T::Array[Validator],
-      changes: T::Array[OSMChangeProperties]
+      changes: T::Array[ChangesDB::OSMChangeProperties]
     ).returns(T::Array[ValidationResult])
   }
   def self.object_validation(validators, changes)
-    before = T.let(nil, T.nilable(OSMChangeProperties))
-    afters = T.let([], T::Array[OSMChangeProperties])
+    before = T.let(nil, T.nilable(ChangesDB::OSMChangeProperties))
+    afters = T.let([], T::Array[ChangesDB::OSMChangeProperties])
     if changes.size == 1
       afters = [changes[0]]
     elsif changes.size > 1
@@ -160,11 +112,10 @@ ORDER BY
   }
   def self.time_machine(validators)
     Enumerator.new { |yielder|
-      fetch_changes { |row|
-        osm_change_object = T.cast(row, OSMChangeObject)
+      ChangesDB.fetch_changes { |osm_change_object|
         validation_results = object_validation(validators, osm_change_object['p'])
         validation_results.each{ |validation_result|
-          yielder << [row['objtype'], row['id'], validation_result]
+          yielder << [osm_change_object['objtype'], osm_change_object['id'], validation_result]
         }
       }
     }

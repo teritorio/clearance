@@ -2,6 +2,7 @@
 # typed: true
 
 require 'optparse'
+require 'yaml'
 require './watches'
 require './time_machine'
 require './validators'

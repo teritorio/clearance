@@ -22,28 +22,4 @@ module Types
     const :validators, T.nilable(T::Hash[String, T::Hash[String, Object]])
     const :customers, Object
   end
-
-  OSMChangeProperties = T.type_alias {
-    {
-    'lat' => T.nilable(Float),
-    'lon' => T.nilable(Float),
-    'nodes' => T.nilable(T::Array[Integer]),
-    'deleted' => T::Boolean,
-    'members' => T.nilable(T::Array[Integer]),
-    'version' => Integer,
-    'changeset_id' => Integer,
-    'uid' => Integer,
-    'username' => String,
-    'created' => String,
-    'tags' => T::Hash[String, String],
-    }
-  }
-
-  OSMChangeObject = T.type_alias {
-    {
-      'objtype' => String,
-      'id' => Integer,
-      'p' => T::Array[OSMChangeProperties]
-    }
-  }
 end
