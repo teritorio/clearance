@@ -22,4 +22,25 @@ module Types
     const :validators, T.nilable(T::Hash[String, T::Hash[String, Object]])
     const :customers, Object
   end
+
+  # class ActionType < T::Enum
+  #   enums do
+  #     Accept = new
+  #     Reject = new
+  #   end
+  # end
+
+  ActionType = String
+
+  class Action < T::Struct
+    const :validator_id, String
+    const :description, T.nilable(String)
+    const :action, ActionType
+
+    def inspect
+      "<#{@validator_id}:#{@action}>"
+    end
+  end
+
+  HashActions = T.type_alias { T::Hash[String, T::Array[Action]] }
 end

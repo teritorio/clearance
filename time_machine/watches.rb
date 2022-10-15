@@ -23,7 +23,7 @@ module  Watches
           "tags?'#{key}'"
         elsif value.is_a?(String)
           "tags?'#{key}' AND tags->>'#{key}' = '#{value}'"
-        else
+        elsif value.is_a?(Regexp)
           "tags?'#{key}' AND tags->>'#{key}' ~ '#{value}'"
         end
       }.join(' AND ') + ')'

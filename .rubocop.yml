@@ -64,3 +64,12 @@ Style/Next:
 
 Naming/BlockForwarding:
   Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Layout/FirstArrayElementIndentation:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false

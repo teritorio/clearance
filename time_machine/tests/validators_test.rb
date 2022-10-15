@@ -14,7 +14,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validator.new(id: id, action: action)
+    validator = Validator.new(id:, action:)
 
     actions = T.let([], T::Array[Action])
     validator.assign_action(actions)
@@ -28,7 +28,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validator.new(id: id, action_force: action)
+    validator = Validator.new(id:, action_force: action)
     puts validator.inspect
 
     actions = T.let([], T::Array[Action])
@@ -50,7 +50,7 @@ class TestUserList < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = UserList.new(id: id, action: action, list: ['bob'])
+    validator = UserList.new(id:, action:, list: ['bob'])
 
     before = nil
     after = {

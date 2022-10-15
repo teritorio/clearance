@@ -13,11 +13,14 @@ OptionParser.new { |opts|
   opts.on('-h', '--help', 'Help') do
     @options[:help] = true
   end
-  opts.on('-sql', '--sql-filter', 'Output SQL tags filter.') do
-    @options[:sql_filter] = true
+  opts.on('-p', '--changes-prune', 'Changes prune.') do
+    @options[:changes_prune] = true
   end
-  opts.on('-auto', '--auto-validate', 'Ouput list of acceptable changes.') do
-    @options[:auto_validate] = true
+  opts.on('-u', '--apply-unclibled-changes', 'Apply unclibled changes.') do
+    @options[:apply_unclibled_changes] = true
+  end
+  opts.on('-v', '--validate', 'Ouput list of acceptable changes.') do
+    @options[:validate] = true
   end
 }.parse!
 
@@ -27,14 +30,19 @@ else
   config_yaml = YAML.unsafe_load_file(T.must(ENV.fetch('CONFIG', nil)))
   config = T.let(config_yaml, Types::Config)
 
-  if @options[:sql_filter]
+  if @options[:changes_prune]
+    ChangesDB.changes_prune
+  end
+
+  if @options[:apply_unclibled_changes]
     osm_filters_tags = Watches.all_osm_filters_tags(config.watches)
     sql = Watches.osm_filters_tags_to_sql(osm_filters_tags)
-    puts sql
-  elsif @options[:auto_validate]
+    ChangesDB.apply_unclibled_changes(sql)
+  end
+
+  if @options[:validate]
     config_validators = config.validators
     validators = config_validators ? Validators.validators_factory(config_validators) : nil
-
-    TimeMachine.auto_validate(validators || [])
+    TimeMachine.validate(validators || [])
   end
 end

@@ -39,10 +39,13 @@ module TimeMachine
   end
 
   class ValidationResult < T::Struct
-    const :action, T.nilable(Validators::ActionType)
+    const :action, T.nilable(Types::ActionType)
     const :version, Integer
-    const :diff_attribs, Validators::HashActions
-    const :diff_tags, Validators::HashActions
+    const :created, String
+    const :uid, Integer
+    const :username, T.nilable(String)
+    const :diff_attribs, Types::HashActions
+    const :diff_tags, Types::HashActions
   end
 
   sig {
@@ -81,6 +84,9 @@ module TimeMachine
           accepted_version = ValidationResult.new(
             action: 'accept',
             version: after['version'],
+            created: after['created'],
+            uid: after['uid'],
+            username: after['username'],
             diff_attribs:,
             diff_tags:,
           )
@@ -96,6 +102,9 @@ module TimeMachine
         rejected_version = ValidationResult.new(
           action: partialy_rejected ? 'reject' : nil,
           version: after['version'],
+          created: after['created'],
+          uid: after['uid'],
+          username: after['username'],
           diff_attribs:,
           diff_tags:,
         )
@@ -126,17 +135,22 @@ module TimeMachine
       validators: T::Array[Validator],
     ).void
   }
-  def self.auto_validate(validators)
-    actions = time_machine(validators).group_by { |_objtype, _id, validation_result|
-      validation_result.action
-    }
+  def self.validate(validators)
+    validations = time_machine(validators)
 
-    # ret = [actions['accept'], actions[nil], actions['reject']]
-    actions.each{ |action, validations|
-      puts action
-      validations.each{ |validation|
-        puts validation.inspect
-      }
-    }
+    ChangesDB.apply_logs(validations.collect{ |objtype, id, validation|
+      ChangesDB::ValidationLog.new(
+        objtype:,
+        id:,
+        version: validation.version,
+        created: validation.created,
+        uid: validation.uid,
+        username: validation.username,
+        action: validation.action,
+        validator_uid: nil,
+        diff_attribs: validation.diff_attribs,
+        diff_tags: validation.diff_tags,
+      )
+    })
   end
 end

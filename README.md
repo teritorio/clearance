@@ -13,11 +13,6 @@ docker-compose build
 
 Adjust config.yaml
 
-Then
-```
-docker-compose run --rm time_machine sh -c "ruby main.rb -sql" > sql/osm_filter_tags.sql
-```
-
 ## Start
 ```
 docker-compose up -d postgres
@@ -55,14 +50,11 @@ docker-compose exec -u postgres postgres bash -c "psql -c \"\\copy osm_changes f
 rm -f pbf/diff.osc.xml.bz2 pbf/osm_changes.pgcopy
 ```
 
-Apply untracked changes
-```
-docker-compose exec -u postgres postgres bash -c 'psql -v ON_ERROR_STOP=1 -v osm_filter_tags="`cat /sql/osm_filter_tags.sql`" < /sql/update.sql'
-```
-
 Validation report
 ```
-docker-compose run --rm time_machine sh -c "ruby main.rb"
+docker-compose run --rm time_machine sh -c "ruby main.rb --changes-prune"
+docker-compose run --rm time_machine sh -c "ruby main.rb --apply_unclibled_changes"
+docker-compose run --rm time_machine sh -c "ruby main.rb --validate"
 ```
 
 ## Dev

@@ -32,3 +32,18 @@ CREATE TABLE "osm_changes" (
     "members" JSONB -- %COL:osm_changes:members%
 );
 ALTER TABLE "osm_changes" ADD PRIMARY KEY(objtype, id, version); -- %PK:osm_changes%
+
+DROP TABLE IF EXISTS "validations_log" CASCADE;
+CREATE TABLE "validations_log" (
+    "objtype" CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
+    "id" BIGINT NOT NULL,
+    "version" INTEGER NOT NULL,
+    "created" TIMESTAMP (0) WITHOUT TIME ZONE,
+    "uid" INTEGER,
+    "username" TEXT,
+    "action" TEXT,
+    "validator_uid" INTEGER,
+    "diff_attribs" JSONB,
+    "diff_tags"  JSONB
+);
+ALTER TABLE "validations_log" ADD PRIMARY KEY(objtype, id, version);

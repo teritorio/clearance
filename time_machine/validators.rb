@@ -9,47 +9,26 @@ module Validators
   include Types
   extend T::Sig
 
-  # class ActionType < T::Enum
-  #   enums do
-  #     Accept = new
-  #     Reject = new
-  #   end
-  # end
-
-  ActionType = String
-
-  class Action < T::Struct
-    const :validator_id, String
-    const :description, T.nilable(String)
-    const :action, ActionType
-
-    def inspect
-      "<#{@validator_id}:#{@action}>"
-    end
-  end
-
-  HashActions = T.type_alias { T::Hash[String, T::Array[Action]] }
-
   class Validator
     extend T::Sig
     sig {
       params(
         id: String,
-        action: T.nilable(ActionType),
-        action_force: T.nilable(ActionType),
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
     def initialize(id:, action: nil, action_force: nil, description: nil)
       @action_force = T.let(!action_force.nil?, T::Boolean)
-      @action = Action.new(
+      @action = Types::Action.new(
         validator_id: id,
-        description: description,
+        description:,
         action: action || action_force || 'reject'
       )
     end
 
-    sig { params(actions: T::Array[Action]).void }
+    sig { params(actions: T::Array[Types::Action]).void }
     def assign_action(actions)
       # Side effect in actions
       actions.clear if @action_force
@@ -58,10 +37,10 @@ module Validators
 
     sig {
       params(
-        _before: T.nilable(Types::OSMChangeProperties),
-        _after: Types::OSMChangeProperties,
-        _diff_attrib: HashActions,
-        _diff_tags: HashActions,
+        _before: T.nilable(ChangesDB::OSMChangeProperties),
+        _after: ChangesDB::OSMChangeProperties,
+        _diff_attrib: Types::HashActions,
+        _diff_tags: Types::HashActions,
       ).void
     }
     def apply(_before, _after, _diff_attrib, _diff_tags); end
@@ -72,13 +51,13 @@ module Validators
       params(
         id: String,
         list: T::Array[String],
-        action: T.nilable(ActionType),
-        action_force: T.nilable(ActionType),
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
     def initialize(id:, list:, action: nil, action_force: nil, description: nil)
-      super(id: id, action: action, action_force: action_force, description: description)
+      super(id:, action:, action_force:, description:)
       @list = list
     end
 
@@ -95,13 +74,13 @@ module Validators
     sig {
       params(
         id: String,
-        action: T.nilable(ActionType),
-        action_force: T.nilable(ActionType),
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
     def initialize(id:, action: nil, action_force: nil, description: nil)
-      super(id: id, action: action, action_force: action_force, description: description)
+      super(id:, action:, action_force:, description:)
     end
 
     def apply(before, _after, diff_attrib, _diff_tags)
@@ -116,13 +95,13 @@ module Validators
       params(
         id: String,
         dist: Float,
-        action: T.nilable(ActionType),
-        action_force: T.nilable(ActionType),
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
     def initialize(id:, dist:, action: nil, action_force: nil, description: nil)
-      super(id: id, action: action, action_force: action_force, description: description)
+      super(id:, action:, action_force:, description:)
       @dist = dist
     end
 
@@ -148,13 +127,13 @@ module Validators
       params(
         id: String,
         tags: T::Array[String],
-        action: T.nilable(ActionType),
-        action_force: T.nilable(ActionType),
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
     def initialize(id:, tags:, action: nil, action_force: nil, description: nil)
-      super(id: id, action: action, action_force: action_force, description: description)
+      super(id:, action:, action_force:, description:)
       @tags = tags
     end
 
@@ -185,8 +164,8 @@ module Validators
   def self.validators_factory(validators_config)
     validators_config.collect{ |id, config|
       class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
-      args = config.reject{ |k, _v| k == 'instance' }.transform_keys(&:to_sym)
-      Object.const_get(class_name).new(id: id, **args)
+      args = config.except('instance').transform_keys(&:to_sym)
+      Object.const_get(class_name).new(id:, **args)
     }
   end
 end
