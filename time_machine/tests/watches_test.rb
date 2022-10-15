@@ -35,11 +35,14 @@ class TestWatches < Test::Unit::TestCase
       florist: Watch.new(
         osm_filters_tags: [{ 'shop' => 'florist' }]
       ),
+      pizza: Watch.new(
+        osm_filters_tags: [{ 'shop' => /pizza.*/ }]
+      ),
     }
 
     filters = Watches.all_osm_filters_tags(watches)
     sql = Watches.osm_filters_tags_to_sql(filters)
 
-    assert_equal("(tags?'amenity') OR (tags?'shop' AND tags->>'shop' = 'florist')", sql)
+    assert_equal("(tags?'amenity') OR (tags?'shop' AND tags->>'shop' = 'florist') OR (tags?'shop' AND tags->>'shop' ~ '(?-mix:pizza.*)')", sql)
   end
 end
