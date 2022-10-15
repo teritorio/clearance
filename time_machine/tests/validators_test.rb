@@ -51,8 +51,13 @@ class TestUserList < Test::Unit::TestCase
     id = 'foo'
     action = 'accept'
     validator = UserList.new(id:, action:, list: ['bob'])
+    validator.instance_eval {
+      def action
+        @action
+      end
+    }
+    validation_action = [validator.action]
 
-    before = nil
     after = {
       'lat' => 0.0,
       'lon' => 0.0,
@@ -68,11 +73,21 @@ class TestUserList < Test::Unit::TestCase
         'foo' => 'bar',
       },
     }
-    diff_attrib, diff_tags = TimeMachine.diff_osm_object(before, after)
-    validator.apply(before, after, diff_attrib, diff_tags)
 
+    diff_attrib, diff_tags = TimeMachine.diff_osm_object(nil, after)
     validator.apply(nil, after, diff_attrib, diff_tags)
+    assert_equal(
+      { 'lat' => validation_action, 'lon' => validation_action },
+      diff_attrib,
+    )
+    assert_equal(
+      { 'foo' => validation_action },
+      diff_tags
+    )
 
-    # TODO, assert
+    diff_attrib, diff_tags = TimeMachine.diff_osm_object(after, after)
+    validator.apply(after, after, diff_attrib, diff_tags)
+    assert_equal({}, diff_attrib)
+    assert_equal({}, diff_tags)
   end
 end
