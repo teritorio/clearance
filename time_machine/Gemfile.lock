@@ -23,6 +23,7 @@ GEM
       stringio
     racc (1.6.0)
     rainbow (3.1.1)
+    rake (13.0.6)
     rbi (0.0.16)
       ast
       parser (>= 2.6.4.0)
@@ -30,7 +31,7 @@ GEM
       unparser
     regexp_parser (2.5.0)
     reline (0.3.1)
-      io-console (~> 0.5)
+      io-console (>= 0.5)
     rexml (3.2.5)
     rubocop (1.31.0)
       parallel (~> 1.10)
@@ -90,6 +91,7 @@ DEPENDENCIES
   pg
   psych
   racc
+  rake
   rbi
   rubocop
   sorbet
@@ -99,4 +101,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.3.22
+   2.3.23

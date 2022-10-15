@@ -61,6 +61,11 @@ docker-compose run --rm time_machine sh -c "ruby main.rb --validate"
 
 ```
 bundle install
+bundle exec tapioca init
+```
+
+```
 bundle exec srb typecheck
 bundle exec rubocop -c ../.rubocop.yml --autocorrect
+bundle exec rake test
 ```
