@@ -7,6 +7,7 @@ gem 'optparse'
 gem 'pg'
 gem 'rake', group: :development
 gem 'rubocop', group: :development
+gem 'rubocop-rake', group: :development
 gem 'sorbet', group: :development
 gem 'sorbet-runtime'
 gem 'tapioca', require: false, group: :development

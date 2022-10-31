@@ -120,13 +120,13 @@ module Validators
 
     def apply(before, after, diff)
       # TODO, impl for ways (and relations)
-      return if !before || !(diff.attrib['lat'] || diff.attrib['lon'])
+      return if !before || !(diff.attribs['lat'] || diff.attribs['lon'])
 
       dist = dist(before, after)
       return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
-      assign_action(diff.attrib['lon']) if diff.attrib['lon']
-      assign_action(diff.attrib['lat']) if diff.attrib['lat']
+      assign_action(diff.attribs['lon']) if diff.attribs['lon']
+      assign_action(diff.attribs['lat']) if diff.attribs['lat']
     end
   end
 
@@ -154,7 +154,7 @@ module Validators
 
   class Deleted < Validator
     def apply(_before, after, diff)
-      assign_action(diff.attrib['deleted']) if after['deleted']
+      assign_action(diff.attribs['deleted']) if after['deleted']
     end
   end
 
@@ -162,7 +162,7 @@ module Validators
   sig { params(term: String).returns(String) }
   def self.camelize(term)
     string = term.to_s
-    string = string.sub(/^[a-z\d]*/) { |match| match.capitalize }
+    string = string.sub(/^[a-z\d]*/, &:capitalize)
     string.gsub!(%r{(?:_|(/))([a-z\d]*)}) { "#{Regexp.last_match(1)}#{T.must(Regexp.last_match(2)).capitalize}" }
     string.gsub!('/', '::')
     string

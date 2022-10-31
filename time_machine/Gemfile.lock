@@ -44,6 +44,8 @@ GEM
       unicode-display_width (>= 1.4.0, < 3.0)
     rubocop-ast (1.18.0)
       parser (>= 3.1.1.0)
+    rubocop-rake (0.6.0)
+      rubocop (~> 1.0)
     ruby-progressbar (1.11.0)
     sorbet (0.5.10481)
       sorbet-static (= 0.5.10481)
@@ -94,6 +96,7 @@ DEPENDENCIES
   rake
   rbi
   rubocop
+  rubocop-rake
   sorbet
   sorbet-runtime
   tapioca

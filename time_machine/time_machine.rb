@@ -72,10 +72,10 @@ module TimeMachine
     before = T.let(nil, T.nilable(ChangesDB::OSMChangeProperties))
     afters = T.let([], T::Array[ChangesDB::OSMChangeProperties])
     if changes.size == 1
-      afters = [changes[0]]
+      afters = [T.must(changes[0])] # T.must useless here, but added to keep sorbet hapy
     elsif changes.size > 1
       before = changes[0]
-      afters = changes[1..]
+      afters = T.must(changes[1..]) # T.must useless here, but added to keep sorbet hapy
     end
 
     accepted_version = T.let(nil, T.nilable(ValidationResult))
