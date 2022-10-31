@@ -59,6 +59,9 @@ Metrics/AbcSize:
 Metrics/PerceivedComplexity:
   Max: 30
 
+Metrics/ModuleLength:
+  Max: 300
+
 Style/Next:
   Enabled: false
 

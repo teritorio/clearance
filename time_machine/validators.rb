@@ -39,11 +39,19 @@ module Validators
       params(
         _before: T.nilable(ChangesDB::OSMChangeProperties),
         _after: ChangesDB::OSMChangeProperties,
-        _diff_attrib: Types::HashActions,
-        _diff_tags: Types::HashActions,
+        _diff: TimeMachine::DiffActions,
       ).void
     }
-    def apply(_before, _after, _diff_attrib, _diff_tags); end
+    def apply(_before, _after, _diff); end
+  end
+
+  # Dummy Validator
+  class All < Validator
+    def apply(_before, _after, diff)
+      (diff.attribs.values + diff.tags.values).each{ |action|
+        assign_action(action)
+      }
+    end
   end
 
   class UserList < Validator
@@ -61,10 +69,10 @@ module Validators
       @list = list
     end
 
-    def apply(_before, after, diff_attrib, diff_tags)
+    def apply(_before, after, diff)
       return if !@list.include?(after['username'])
 
-      (diff_attrib.values + diff_tags.values).each{ |action|
+      (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)
       }
     end
@@ -83,9 +91,9 @@ module Validators
       super(id:, action:, action_force:, description:)
     end
 
-    def apply(before, _after, diff_attrib, _diff_tags)
+    def apply(before, _after, diff)
       %w[lon lat nodes members].each{ |attrib|
-        assign_action(diff_attrib[attrib]) if !before && diff_attrib[attrib]
+        assign_action(diff.attrib[attrib]) if !before && diff.attrib[attrib]
       }
     end
   end
@@ -110,15 +118,15 @@ module Validators
       (before['lon'] - after['lon']).abs + (before['lat'] - after['lat']).abs
     end
 
-    def apply(before, after, diff_attrib, _diff_tags)
+    def apply(before, after, diff)
       # TODO, impl for ways (and relations)
-      return if !before || !(diff_attrib['lat'] || diff_attrib['lon'])
+      return if !before || !(diff.attrib['lat'] || diff.attrib['lon'])
 
       dist = dist(before, after)
       return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
-      assign_action(diff_attrib['lon']) if diff_attrib['lon']
-      assign_action(diff_attrib['lat']) if diff_attrib['lat']
+      assign_action(diff.attrib['lon']) if diff.attrib['lon']
+      assign_action(diff.attrib['lat']) if diff.attrib['lat']
     end
   end
 
@@ -137,16 +145,16 @@ module Validators
       @tags = tags
     end
 
-    def apply(_before, _after, _diff_attrib, diff_tags)
-      @tags.intersection(diff_tags.keys).each{ |tag|
-        assign_action(diff_tags[tag])
+    def apply(_before, _after, diff)
+      @tags.intersection(diff.tags.keys).each{ |tag|
+        assign_action(diff.tags[tag])
       }
     end
   end
 
   class Deleted < Validator
-    def apply(_before, after, diff_attrib, _diff_tags)
-      assign_action(diff_attrib['deleted']) if after['deleted']
+    def apply(_before, after, diff)
+      assign_action(diff.attrib['deleted']) if after['deleted']
     end
   end
 

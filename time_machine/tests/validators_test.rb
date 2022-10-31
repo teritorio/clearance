@@ -44,19 +44,17 @@ end
 
 class TestUserList < Test::Unit::TestCase
   extend T::Sig
-  include TimeMachine
   include Validators
 
   def test_simple
     id = 'foo'
     action = 'accept'
     validator = UserList.new(id:, action:, list: ['bob'])
-    validator.instance_eval {
-      def action
-        @action
-      end
-    }
-    validation_action = [validator.action]
+    validation_action = [Types::Action.new(
+      validator_id: id,
+      description: nil,
+      action:,
+    )]
 
     after = {
       'lat' => 0.0,
@@ -74,20 +72,24 @@ class TestUserList < Test::Unit::TestCase
       },
     }
 
-    diff_attrib, diff_tags = TimeMachine.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff_attrib, diff_tags)
+    diff = TimeMachine.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
     assert_equal(
-      { 'lat' => validation_action, 'lon' => validation_action },
-      diff_attrib,
-    )
-    assert_equal(
-      { 'foo' => validation_action },
-      diff_tags
+      TimeMachine::DiffActions.new(
+        attribs: { 'lat' => validation_action, 'lon' => validation_action },
+        tags: { 'foo' => validation_action }
+      ).inspect,
+      diff.inspect
     )
 
-    diff_attrib, diff_tags = TimeMachine.diff_osm_object(after, after)
-    validator.apply(after, after, diff_attrib, diff_tags)
-    assert_equal({}, diff_attrib)
-    assert_equal({}, diff_tags)
+    diff = TimeMachine.diff_osm_object(after, after)
+    validator.apply(after, after, diff)
+    assert_equal(
+      TimeMachine::DiffActions.new(
+        attribs: {},
+        tags: {}
+      ).inspect,
+      diff.inspect
+    )
   end
 end

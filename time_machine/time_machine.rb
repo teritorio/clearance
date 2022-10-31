@@ -12,11 +12,26 @@ module TimeMachine
   include Types
   extend T::Sig
 
+  class DiffActions < T::Struct
+    const :attribs, Types::HashActions
+    const :tags, Types::HashActions
+
+    def fully_accepted?
+      (attribs.empty? || attribs.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } }) &&
+        (tags.empty? || tags.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } })
+    end
+
+    def partialy_rejected?
+      attribs.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } } ||
+        tags.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } }
+    end
+  end
+
   sig {
     params(
       before: T.nilable(ChangesDB::OSMChangeProperties),
       after: ChangesDB::OSMChangeProperties
-    ).returns([HashActions, HashActions])
+    ).returns(DiffActions)
   }
   def self.diff_osm_object(before, after)
     diff_attribs = T.let({}, HashActions)
@@ -35,7 +50,7 @@ module TimeMachine
       diff_tags[tag] = [] if !before || before['tags'][tag] != after['tags'][tag]
     }
 
-    [diff_attribs, diff_tags]
+    DiffActions.new(attribs: diff_attribs, tags: diff_tags)
   end
 
   class ValidationResult < T::Struct
@@ -44,8 +59,7 @@ module TimeMachine
     const :created, String
     const :uid, Integer
     const :username, T.nilable(String)
-    const :diff_attribs, Types::HashActions
-    const :diff_tags, Types::HashActions
+    const :diff, DiffActions
   end
 
   sig {
@@ -67,19 +81,16 @@ module TimeMachine
     accepted_version = T.let(nil, T.nilable(ValidationResult))
     rejected_version = T.let(nil, T.nilable(ValidationResult))
 
+    fully_accepted = T.let(false, T::Boolean)
     afters.reverse.each_with_index{ |after, index|
-      diff_attribs, diff_tags = diff_osm_object(before, after)
+      diff = diff_osm_object(before, after)
 
       validators.each{ |validator|
-        validator.apply(before, after, diff_attribs, diff_tags)
+        validator.apply(before, after, diff)
       }
 
       if !accepted_version
-        fully_accepted = (
-          (diff_attribs.empty? || diff_attribs.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } }) &&
-          (diff_tags.empty? || diff_tags.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } })
-        )
-
+        fully_accepted = diff.fully_accepted?
         if fully_accepted
           accepted_version = ValidationResult.new(
             action: 'accept',
@@ -87,26 +98,21 @@ module TimeMachine
             created: after['created'],
             uid: after['uid'],
             username: after['username'],
-            diff_attribs:,
-            diff_tags:,
+            diff:,
           )
+          break
         end
       end
 
       if !fully_accepted && index == 0
-        partialy_rejected = (
-          diff_attribs.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } } ||
-          diff_tags.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } }
-        )
-
+        partialy_rejected = diff.partialy_rejected?
         rejected_version = ValidationResult.new(
           action: partialy_rejected ? 'reject' : nil,
           version: after['version'],
           created: after['created'],
           uid: after['uid'],
           username: after['username'],
-          diff_attribs:,
-          diff_tags:,
+          diff:,
         )
       end
     }
@@ -148,8 +154,8 @@ module TimeMachine
         username: validation.username,
         action: validation.action,
         validator_uid: nil,
-        diff_attribs: validation.diff_attribs,
-        diff_tags: validation.diff_tags,
+        diff_attribs: validation.diff.attribs,
+        diff_tags: validation.diff.tags,
       )
     })
   end

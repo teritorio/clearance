@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
+require './types'
 require './time_machine'
 
 
@@ -22,6 +23,22 @@ class TestTimeMachine < Test::Unit::TestCase
     'created' => 'today',
     'tags' => {
       'foo' => 'bar',
+    },
+  }, ChangesDB::OSMChangeProperties)
+
+  @@fixture_node_b = T.let({
+    'lat' => 1.0,
+    'lon' => 1.0,
+    'nodes' => nil,
+    'deleted' => false,
+    'members' => nil,
+    'version' => 2,
+    'changeset_id' => 2,
+    'uid' => 2,
+    'username' => 'mom',
+    'created' => 'today',
+    'tags' => {
+      'bar' => 'foo',
     },
   }, ChangesDB::OSMChangeProperties)
 
@@ -94,5 +111,33 @@ class TestTimeMachine < Test::Unit::TestCase
       ),
     )]
     assert_equal(validation_result.inspect, validation.inspect)
+  end
+
+  def test_object_validation_many
+    id = 'all'
+    ['accept', 'reject', nil].each{ |action|
+      accept_validator = Validators::All.new(id:, action:)
+      validation = TimeMachine.object_validation(
+        [accept_validator],
+        [@@fixture_node_a, @@fixture_node_b],
+      )
+
+      validated = [Types::Action.new(
+        validator_id: id,
+        action: action || 'reject',
+      )]
+      validation_result = [TimeMachine::ValidationResult.new(
+        action: action || 'reject',
+        version: @@fixture_node_b['version'],
+        created: @@fixture_node_b['created'],
+        uid: @@fixture_node_b['uid'],
+        username: @@fixture_node_b['username'],
+        diff: TimeMachine::DiffActions.new(
+          attribs: { 'lat' => validated, 'lon' => validated },
+          tags: { 'foo' => validated, 'bar' => validated },
+        ),
+      )]
+      assert_equal(validation_result.inspect, validation.inspect)
+    }
   end
 end
