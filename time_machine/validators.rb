@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './types'
+require './watches'
 
 
 module Validators
@@ -14,12 +15,14 @@ module Validators
     sig {
       params(
         id: String,
+        watches: T::Hash[String, Types::Watch],
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, action: nil, action_force: nil, description: nil)
+    def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
+      @watches = watches
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = Types::Action.new(
         validator_id: id,
@@ -58,14 +61,15 @@ module Validators
     sig {
       params(
         id: String,
+        watches: T::Hash[String, Types::Watch],
         list: T::Array[String],
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, list:, action: nil, action_force: nil, description: nil)
-      super(id:, action:, action_force:, description:)
+    def initialize(id:, watches:, list:, action: nil, action_force: nil, description: nil)
+      super(id:, watches:, action:, action_force:, description:)
       @list = list
     end
 
@@ -82,13 +86,14 @@ module Validators
     sig {
       params(
         id: String,
+        watches: T::Hash[String, Types::Watch],
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, action: nil, action_force: nil, description: nil)
-      super(id:, action:, action_force:, description:)
+    def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
+      super(id:, watches:, action:, action_force:, description:)
     end
 
     def apply(before, _after, diff)
@@ -102,14 +107,15 @@ module Validators
     sig {
       params(
         id: String,
-        dist: Float,
+        watches: T::Hash[String, Types::Watch],
+        dist: T.any(Float, Integer),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, dist:, action: nil, action_force: nil, description: nil)
-      super(id:, action:, action_force:, description:)
+    def initialize(id:, watches:, dist:, action: nil, action_force: nil, description: nil)
+      super(id:, watches:, action:, action_force:, description:)
       @dist = dist
     end
 
@@ -130,20 +136,22 @@ module Validators
     sig {
       params(
         id: String,
-        tags: T::Array[String],
+        watches: T::Hash[String, Types::Watch],
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, tags:, action: nil, action_force: nil, description: nil)
-      super(id:, action:, action_force:, description:)
-      @tags = tags
+    def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
+      super(id:, watches:, action:, action_force:, description:)
     end
 
-    def apply(_before, _after, diff)
-      @tags.intersection(diff.tags.keys).each{ |tag|
-        assign_action(diff.tags[tag])
+    def apply(before, after, diff)
+      (
+        (before && Watches.match_osm_filters_tags(@watches, before['tags']) || []) +
+        Watches.match_osm_filters_tags(@watches, after['tags'])
+      ).intersection(diff.tags.keys).each{ |key|
+        assign_action(diff.tags[key])
       }
     end
   end
@@ -164,12 +172,17 @@ module Validators
     string
   end
 
-  sig { params(validators_config: T::Hash[String, T::Hash[String, Object]]).returns(T::Array[Validator]) }
-  def self.validators_factory(validators_config)
+  sig {
+    params(
+      validators_config: T::Hash[String, T::Hash[String, Object]],
+      watches: T::Hash[String, Types::Watch],
+    ).returns(T::Array[Validator])
+  }
+  def self.validators_factory(validators_config, watches)
     validators_config.collect{ |id, config|
       class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
       args = config.except('instance').transform_keys(&:to_sym)
-      Object.const_get(class_name).new(id:, **args)
+      Object.const_get(class_name).new(id:, watches:, **args)
     }
   end
 end

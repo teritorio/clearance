@@ -4,18 +4,18 @@ ontologies:
   city: https://vecto.teritorio.xyz/data/teritorio-city-ontology-latest.json
 
 watches:
-  _default_: !ruby/object:Types::Watch
-    osm_tags_extra:
-      - phone
   amenity: !ruby/object:Types::Watch
     osm_filters_tags:
       - amenity: null
+    osm_tags_extra:
+      - phone
   florist: !ruby/object:Types::Watch
     label:
       en: CDB Shop
     osm_filters_tags:
       - shop: florist
     osm_tags_extra:
+      - phone
       - fax
 
 validators:
@@ -47,18 +47,9 @@ validators:
     dist: 20
     action: reject
 
-  tags_changes_insignificant:
-    instance: Validators::TagsChanges
-    action_force: accept
-    tags: # TODO import tags from sources
-      - crossing:island
-      - survey:date
-
   tags_changes_significant:
     instance: Validators::TagsChanges
     action: reject
-    tags:
-      - backrest
 
   deleted:
     action: reject

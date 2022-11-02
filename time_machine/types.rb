@@ -8,7 +8,9 @@ module Types
 
   MultilingualString = T.type_alias { T::Hash[String, String] }
 
-  OsmFiltersTags = T.type_alias { T::Hash[String, T.any(NilClass, String, Regexp)] }
+  OsmFilterKey = T.type_alias { String }
+  OsmFilterValue = T.type_alias { T.any(NilClass, String, Regexp) }
+  OsmFiltersTags = T.type_alias { T::Hash[OsmFilterKey, T.any(OsmFilterValue, T::Array[OsmFilterValue])] }
 
   class Watch < T::Struct
     const :label, T.nilable(MultilingualString)

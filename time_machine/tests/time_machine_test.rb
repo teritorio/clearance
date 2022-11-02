@@ -119,7 +119,7 @@ class TestTimeMachine < Test::Unit::TestCase
   def test_object_validation_many
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
-      accept_validator = Validators::All.new(id:, action:)
+      accept_validator = Validators::All.new(id:, watches: {}, action:)
       validation = TimeMachine.object_validation(
         [accept_validator],
         [@@fixture_node_a, @@fixture_node_b],

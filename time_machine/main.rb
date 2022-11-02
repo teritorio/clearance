@@ -42,7 +42,7 @@ else
 
   if @options[:validate]
     config_validators = config.validators
-    validators = config_validators ? Validators.validators_factory(config_validators) : nil
+    validators = config_validators ? Validators.validators_factory(config_validators, config.watches) : nil
     TimeMachine.validate(validators || [])
   end
 end
