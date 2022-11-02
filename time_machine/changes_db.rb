@@ -22,6 +22,7 @@ module ChangesDB
       'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
+      'change_distance' => T.any(Float, Integer),
     }
   }
 

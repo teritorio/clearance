@@ -24,6 +24,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'foo' => 'bar',
     },
+    'change_distance' => 0,
   }, ChangesDB::OSMChangeProperties)
 
   @@fixture_node_b = T.let({
@@ -40,6 +41,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'bar' => 'foo',
     },
+    'change_distance' => 0,
   }, ChangesDB::OSMChangeProperties)
 
   @@fixture_way_a = T.let({
@@ -56,6 +58,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'foo' => 'bar',
     },
+    'change_distance' => 0,
   }, ChangesDB::OSMChangeProperties)
 
   def test_diff_osm_object_same

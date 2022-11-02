@@ -113,20 +113,16 @@ module Validators
       @dist = dist
     end
 
-    def dist(before, after)
-      # TODO, make a real impl
-      (before['lon'] - after['lon']).abs + (before['lat'] - after['lat']).abs
-    end
-
     def apply(before, after, diff)
       # TODO, impl for ways (and relations)
-      return if !before || !(diff.attribs['lat'] || diff.attribs['lon'])
+      return if !before || !diff.attribs['change_distance']
 
-      dist = dist(before, after)
+      dist = after['change_distance']
       return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
       assign_action(diff.attribs['lon']) if diff.attribs['lon']
       assign_action(diff.attribs['lat']) if diff.attribs['lat']
+      assign_action(diff.attribs['change_distance'])
     end
   end
 

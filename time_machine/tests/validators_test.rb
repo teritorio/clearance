@@ -70,6 +70,7 @@ class TestUserList < Test::Unit::TestCase
       'tags' => {
         'foo' => 'bar',
       },
+      'change_distance' => 0,
     }
 
     diff = TimeMachine.diff_osm_object(nil, after)

@@ -39,12 +39,12 @@ validators:
 
   geom_changes_insignificant:
     instance: Validators::GeomChanges
-    dist: -0.0001
+    dist: -5
     action: accept
 
   geom_changes_significant:
     instance: Validators::GeomChanges
-    dist: 0.01
+    dist: 20
     action: reject
 
   tags_changes_insignificant:
