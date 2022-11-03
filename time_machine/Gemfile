@@ -5,18 +5,20 @@ source 'https://rubygems.org'
 gem 'json'
 gem 'optparse'
 gem 'pg'
-gem 'rake', group: :development
-gem 'rubocop', group: :development, require: false
-gem 'rubocop-rake', group: :development, require: false
-gem 'ruby-lsp', group: :development, require: false
-gem 'sorbet', group: :development
 gem 'sorbet-runtime'
-gem 'tapioca', require: false, group: :development
-gem 'test-unit', group: :development
 
-# Only for sorbet typechecker
-gem 'irb', group: :development
-gem 'psych', group: :development
-gem 'racc', group: :development
-gem 'rbi', group: :development
-gem 'yard', group: :development
+group :development do
+  gem 'rake'
+  gem 'rubocop', require: false
+  gem 'rubocop-rake', require: false
+  gem 'ruby-lsp', require: false
+  gem 'sorbet'
+  gem 'tapioca', require: false
+  gem 'test-unit'
+
+  # Only for sorbet typechecker
+  gem 'psych'
+  gem 'racc'
+  gem 'rbi'
+  gem 'yard'
+end
