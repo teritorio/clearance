@@ -42,6 +42,10 @@ module Types
     def inspect
       "<#{@validator_id}:#{@action}>"
     end
+
+    def to_json(_)
+      [@validator_id, @action].to_json
+    end
   end
 
   HashActions = T.type_alias { T::Hash[String, T::Array[Action]] }

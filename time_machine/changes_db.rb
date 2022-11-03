@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'pg'
 require './types'
+require 'json'
 
 
 module ChangesDB
@@ -125,8 +126,19 @@ module ChangesDB
     conn0.transaction{ |conn|
       apply_changes(conn, accepts)
 
+      conn.exec("
+        DELETE FROM
+          validations_log
+        WHERE
+          action IS NULL OR
+          action = 'reject'
+      ")
+
       conn.prepare('validations_log_insert', "
-        INSERT INTO validations_log VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO
+          validations_log
+        VALUES
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       ")
       i = 0
       changes.each{ |change|
@@ -140,8 +152,8 @@ module ChangesDB
             change.username,
             change.action,
             change.validator_uid,
-            change.diff_attribs,
-            change.diff_tags,
+            change.diff_attribs.empty? ? nil : change.diff_attribs.to_json,
+            change.diff_tags.empty? ? nil : change.diff_tags.to_json,
         ])
       }
       puts "Logs #{i} changes"
