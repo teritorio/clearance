@@ -23,20 +23,6 @@ validators:
     instance: Validators::GeomNewObject
     action: accept
 
-  user_white_list:
-    instance: Validators::UserList
-    description: Change by local white listed user
-    list:
-      - frodrigo
-    action: accept
-
-  user_black_list:
-    instance: Validators::UserList
-    description: Change by local black listed user
-    list:
-      - 666
-    action: reject
-
   geom_changes_insignificant:
     instance: Validators::GeomChanges
     dist: -5
@@ -51,8 +37,22 @@ validators:
     instance: Validators::TagsChanges
     action: reject
 
-  deleted:
+  user_white_list:
+    instance: Validators::UserList
+    description: Change by local white listed user
+    list:
+      - frodrigo
+    action_force: accept
+
+  user_black_list:
+    instance: Validators::UserList
+    description: Change by local black listed user
+    list:
+      - 666
     action: reject
+
+  deleted:
+    action_force: reject
 
 customers:
   cdt99:
