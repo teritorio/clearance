@@ -103,6 +103,7 @@ module ChangesDB
     const :objtype, String
     const :id, Integer
     const :version, Integer
+    const :changeset_id, Integer
     const :created, String
     const :uid, Integer
     const :username, T.nilable(String)
@@ -138,7 +139,7 @@ module ChangesDB
         INSERT INTO
           validations_log
         VALUES
-          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       ")
       i = 0
       changes.each{ |change|
@@ -147,6 +148,7 @@ module ChangesDB
             change.objtype,
             change.id,
             change.version,
+            change.changeset_id,
             change.created,
             change.uid,
             change.username,

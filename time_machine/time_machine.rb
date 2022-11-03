@@ -56,6 +56,7 @@ module TimeMachine
   class ValidationResult < T::Struct
     const :action, T.nilable(Types::ActionType)
     const :version, Integer
+    const :changeset_id, Integer
     const :created, String
     const :uid, Integer
     const :username, T.nilable(String)
@@ -95,6 +96,7 @@ module TimeMachine
           accepted_version = ValidationResult.new(
             action: 'accept',
             version: after['version'],
+            changeset_id: after['changeset_id'],
             created: after['created'],
             uid: after['uid'],
             username: after['username'],
@@ -109,6 +111,7 @@ module TimeMachine
         rejected_version = ValidationResult.new(
           action: partialy_rejected ? 'reject' : nil,
           version: after['version'],
+          changeset_id: after['changeset_id'],
           created: after['created'],
           uid: after['uid'],
           username: after['username'],
@@ -149,6 +152,7 @@ module TimeMachine
         objtype:,
         id:,
         version: validation.version,
+        changeset_id: validation.changeset_id,
         created: validation.created,
         uid: validation.uid,
         username: validation.username,

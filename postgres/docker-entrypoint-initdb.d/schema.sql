@@ -13,7 +13,7 @@ CREATE TABLE "osm_base" (
     "nodes" BIGINT[], -- %COL:osm_base:nodes%
     "members" JSONB -- %COL:osm_base:members%
 );
-ALTER TABLE "osm_base" ADD PRIMARY KEY(objtype, id); -- %PK:osm_base%
+ALTER TABLE "osm_base" ADD PRIMARY KEY(id, objtype); -- %PK:osm_base%
 
 DROP TABLE IF EXISTS "osm_changes" CASCADE;
 CREATE TABLE "osm_changes" (
@@ -31,13 +31,14 @@ CREATE TABLE "osm_changes" (
     "nodes" BIGINT[], -- %COL:osm_changes:nodes%
     "members" JSONB -- %COL:osm_changes:members%
 );
-ALTER TABLE "osm_changes" ADD PRIMARY KEY(objtype, id, version); -- %PK:osm_changes%
+ALTER TABLE "osm_changes" ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes%
 
 DROP TABLE IF EXISTS "validations_log" CASCADE;
 CREATE TABLE "validations_log" (
     "objtype" CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
     "id" BIGINT NOT NULL,
     "version" INTEGER NOT NULL,
+    "changeset_id" INTEGER NOT NULL,
     "created" TIMESTAMP (0) WITHOUT TIME ZONE,
     "uid" INTEGER,
     "username" TEXT,
@@ -46,4 +47,4 @@ CREATE TABLE "validations_log" (
     "diff_attribs" JSONB,
     "diff_tags"  JSONB
 );
-ALTER TABLE "validations_log" ADD PRIMARY KEY(objtype, id, version);
+ALTER TABLE "validations_log" ADD PRIMARY KEY(id, objtype, version);

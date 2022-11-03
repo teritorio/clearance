@@ -91,6 +91,7 @@ class TestTimeMachine < Test::Unit::TestCase
     validation_result = [TimeMachine::ValidationResult.new(
       action: nil,
       version: @@fixture_node_a['version'],
+      changeset_id: @@fixture_node_a['changeset_id'],
       created: @@fixture_node_a['created'],
       uid: @@fixture_node_a['uid'],
       username: @@fixture_node_a['username'],
@@ -105,6 +106,7 @@ class TestTimeMachine < Test::Unit::TestCase
     validation_result = [TimeMachine::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
+      changeset_id: @@fixture_node_a['changeset_id'],
       created: @@fixture_node_a['created'],
       uid: @@fixture_node_a['uid'],
       username: @@fixture_node_a['username'],
@@ -132,6 +134,7 @@ class TestTimeMachine < Test::Unit::TestCase
       validation_result = [TimeMachine::ValidationResult.new(
         action: action || 'reject',
         version: @@fixture_node_b['version'],
+        changeset_id: @@fixture_node_b['changeset_id'],
         created: @@fixture_node_b['created'],
         uid: @@fixture_node_b['uid'],
         username: @@fixture_node_b['username'],
