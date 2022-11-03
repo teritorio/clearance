@@ -115,6 +115,11 @@ class TestTagsChanges < Test::Unit::TestCase
       description: nil,
       action:,
     )]
+    validation_action_accept = [Types::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'accept',
+    )]
 
     after = {
       'lat' => 0.0,
@@ -140,7 +145,7 @@ class TestTagsChanges < Test::Unit::TestCase
     assert_equal(
       TimeMachine::DiffActions.new(
         attribs: { 'lat' => [], 'lon' => [] },
-        tags: { 'shop' => validation_action, 'phone' => validation_action, 'foo' => [] }
+        tags: { 'shop' => validation_action, 'phone' => validation_action, 'foo' => validation_action_accept }
       ).inspect,
       diff.inspect
     )

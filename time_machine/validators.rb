@@ -29,13 +29,24 @@ module Validators
         description:,
         action: action || action_force || 'reject'
       )
+
+      @action_accept = Types::Action.new(
+        validator_id: id,
+        description:,
+        action: 'accept'
+      )
     end
 
-    sig { params(actions: T::Array[Types::Action]).void }
-    def assign_action(actions)
+    sig {
+      params(
+        actions: T::Array[Types::Action],
+        value: T.nilable(Types::Action),
+      ).void
+    }
+    def assign_action(actions, value = nil)
       # Side effect in actions
       actions.clear if @action_force
-      actions << @action
+      actions << (value || @action)
     end
 
     sig {
@@ -147,18 +158,29 @@ module Validators
     end
 
     def apply(before, after, diff)
-      (
+      match_keys = (
         (before && Watches.match_osm_filters_tags(@watches, before['tags']) || []) +
         Watches.match_osm_filters_tags(@watches, after['tags'])
-      ).intersection(diff.tags.keys).each{ |key|
+      ).intersection(diff.tags.keys)
+      match_keys.each{ |key|
         assign_action(diff.tags[key])
+      }
+      (diff.tags.keys - match_keys).each{ |key|
+        assign_action(diff.tags[key], @action_accept)
       }
     end
   end
 
   class Deleted < Validator
     def apply(_before, after, diff)
-      assign_action(diff.attribs['deleted']) if after['deleted']
+      return if !after['deleted']
+
+      diff.attribs.each { |_key, action|
+        assign_action(action)
+      }
+      diff.tags.each { |_key, action|
+        assign_action(action)
+      }
     end
   end
 
