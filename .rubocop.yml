@@ -54,7 +54,7 @@ Metrics/CyclomaticComplexity:
   Max: 30
 
 Metrics/MethodLength:
-  Max: 50
+  Max: 60
 
 Metrics/AbcSize:
   Max: 50
@@ -67,6 +67,9 @@ Metrics/ModuleLength:
 
 Metrics/ClassLength:
   Max: 1000
+
+Metrics/ParameterLists:
+  Max: 10
 
 Style/Next:
   Enabled: false
