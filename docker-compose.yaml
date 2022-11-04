@@ -27,5 +27,14 @@ services:
     depends_on:
       - postgres
 
+  api:
+    image: pramsey/pg_featureserv
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
+    ports:
+      - 9000:9000
+
 volumes:
   pgdata:

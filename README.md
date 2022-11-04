@@ -16,6 +16,7 @@ Adjust config.yaml
 ## Start
 ```
 docker-compose up -d postgres
+docker-compose up -d api
 ```
 
 Enter postgres with
