@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION postgisftw.changes_logs() RETURNS TABLE(
     objtype character(1),
     id bigint,
     base json,
-    chnages json,
+    change json,
     action text,
     diff_attribs json,
     diff_tags json
@@ -22,6 +22,7 @@ CREATE OR REPLACE FUNCTION postgisftw.changes_logs() RETURNS TABLE(
             'lon', osm_base.lon,
             'lat', osm_base.lat,
             'nodes', osm_base.nodes,
+            'deleted', false,
             'members', osm_base.members
         ) AS base,
         json_build_object(
@@ -34,8 +35,9 @@ CREATE OR REPLACE FUNCTION postgisftw.changes_logs() RETURNS TABLE(
             'lon', osm_changes.lon,
             'lat', osm_changes.lat,
             'nodes', osm_changes.nodes,
+            'deleted', osm_changes.deleted,
             'members', osm_changes.members
-        ) AS changes,
+        ) AS change,
         validations_log.action,
         validations_log.diff_attribs,
         validations_log.diff_tags
