@@ -2,8 +2,8 @@
 # typed: true
 
 require 'sorbet-runtime'
-require './types'
-require './watches'
+require './time_machine/types'
+require './time_machine/watches'
 
 
 module Validators

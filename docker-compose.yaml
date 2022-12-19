@@ -10,13 +10,19 @@ services:
 #    restart: unless-stopped
 
   api:
-    image: pramsey/pg_featureserv
-    depends_on:
-      - postgres
+    build:
+      context: api
     environment:
+      - CONFIG=/srv/app/conf.yaml
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
     ports:
       - 9000:9000
+    volumes:
+      - ./api/time_machine/sql:/sql
+      - ./api/:/srv/app/
+      - ./conf.yaml:/srv/app/conf.yaml
+    depends_on:
+      - postgres
 #    restart: unless-stopped
 
 volumes:

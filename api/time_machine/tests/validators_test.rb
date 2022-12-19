@@ -3,9 +3,9 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './validators'
-require './time_machine'
-require './types'
+require './time_machine/validators'
+require './time_machine/time_machine'
+require './time_machine/types'
 
 
 class TestValidator < Test::Unit::TestCase

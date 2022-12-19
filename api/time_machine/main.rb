@@ -3,10 +3,10 @@
 
 require 'optparse'
 require 'yaml'
-require './watches'
-require './time_machine'
-require './validators'
-require './types'
+require './time_machine/watches'
+require './time_machine/time_machine'
+require './time_machine/validators'
+require './time_machine/types'
 
 @options = {}
 OptionParser.new { |opts|

@@ -2,9 +2,9 @@
 # typed: true
 
 require 'sorbet-runtime'
-require './changes_db'
-require './validators'
-require './types'
+require './time_machine/changes_db'
+require './time_machine/validators'
+require './time_machine/types'
 
 
 module TimeMachine

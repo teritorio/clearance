@@ -56,9 +56,9 @@ rm -f pbf/diff.osc.xml.bz2 pbf/osm_changes.pgcopy
 
 Validation report
 ```
-docker-compose --env-file .tools.env run --rm time_machine ruby main.rb --changes-prune
-docker-compose --env-file .tools.env run --rm time_machine ruby main.rb --apply_unclibled_changes
-docker-compose --env-file .tools.env run --rm time_machine ruby main.rb --validate
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --changes-prune
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --apply_unclibled_changes
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --validate
 ```
 
 ## Dev

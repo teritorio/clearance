@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # typed: true
 
-require './types'
+require './time_machine/types'
 
 
 module  Watches

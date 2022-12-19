@@ -3,8 +3,8 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './types'
-require './time_machine'
+require './time_machine/types'
+require './time_machine/time_machine'
 
 
 class TestTimeMachine < Test::Unit::TestCase

@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require 'pg'
-require './types'
+require './time_machine/types'
 require 'json'
 
 
