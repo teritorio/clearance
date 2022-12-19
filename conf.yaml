@@ -35,7 +35,8 @@ validators:
 
   tags_changes_significant:
     instance: Validators::TagsChanges
-    action: reject
+    reject: tags_changes_significant
+    accept: tags_changes_non_significant
 
   user_white_list:
     instance: Validators::UserList

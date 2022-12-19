@@ -10,30 +10,49 @@ module Validators
   include Types
   extend T::Sig
 
-  class Validator
+  class ValidatorBase
     extend T::Sig
     sig {
       params(
         id: String,
         watches: T::Hash[String, Types::Watch],
-        action: T.nilable(Types::ActionType),
-        action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
+    def initialize(id:, watches:, description: nil)
+      @id = id
       @watches = watches
+      @description = description
+    end
+
+    sig {
+      params(
+        _before: T.nilable(ChangesDB::OSMChangeProperties),
+        _after: ChangesDB::OSMChangeProperties,
+        _diff: TimeMachine::DiffActions,
+      ).void
+    }
+    def apply(_before, _after, _diff); end
+  end
+
+  class Validator < ValidatorBase
+    extend T::Sig
+    sig {
+      params(
+        id: String,
+        watches: T::Hash[String, Types::Watch],
+        description: T.nilable(String),
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
+      ).void
+    }
+    def initialize(id:, watches:, description: nil, action: nil, action_force: nil)
+      super(id:, watches:)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = Types::Action.new(
         validator_id: id,
         description:,
         action: action || action_force || 'reject'
-      )
-
-      @action_accept = Types::Action.new(
-        validator_id: id,
-        description:,
-        action: 'accept'
       )
     end
 
@@ -48,15 +67,52 @@ module Validators
       actions.clear if @action_force
       actions << (value || @action)
     end
+  end
+
+  class ValidatorDual < ValidatorBase
+    extend T::Sig
+    sig {
+      params(
+        id: String,
+        watches: T::Hash[String, Types::Watch],
+        accept: String,
+        reject: String,
+        description: T.nilable(String),
+      ).void
+    }
+    def initialize(id:, watches:, accept:, reject:, description: nil)
+      super(id:, watches:)
+      @action_accept = Types::Action.new(
+        validator_id: accept,
+        description:,
+        action: 'accept'
+      )
+      @action_reject = Types::Action.new(
+        validator_id: reject,
+        description:,
+        action: 'reject'
+      )
+    end
 
     sig {
       params(
-        _before: T.nilable(ChangesDB::OSMChangeProperties),
-        _after: ChangesDB::OSMChangeProperties,
-        _diff: TimeMachine::DiffActions,
+        actions: T::Array[Types::Action],
       ).void
     }
-    def apply(_before, _after, _diff); end
+    def assign_action_accept(actions)
+      # Side effect in actions
+      actions << @action_accept
+    end
+
+    sig {
+      params(
+        actions: T::Array[Types::Action],
+      ).void
+    }
+    def assign_action_reject(actions)
+      # Side effect in actions
+      actions << @action_reject
+    end
   end
 
   # Dummy Validator
@@ -143,18 +199,18 @@ module Validators
     end
   end
 
-  class TagsChanges < Validator
+  class TagsChanges < ValidatorDual
     sig {
       params(
         id: String,
         watches: T::Hash[String, Types::Watch],
-        action: T.nilable(Types::ActionType),
-        action_force: T.nilable(Types::ActionType),
+        accept: String,
+        reject: String,
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
-      super(id:, watches:, action:, action_force:, description:)
+    def initialize(id:, watches:, accept:, reject:, description: nil)
+      super(id:, watches:, accept:, reject:, description:)
     end
 
     def apply(before, after, diff)
@@ -163,10 +219,10 @@ module Validators
         Watches.match_osm_filters_tags(@watches, after['tags'])
       ).intersection(diff.tags.keys)
       match_keys.each{ |key|
-        assign_action(diff.tags[key])
+        assign_action_reject(diff.tags[key])
       }
       (diff.tags.keys - match_keys).each{ |key|
-        assign_action(diff.tags[key], @action_accept)
+        assign_action_accept(diff.tags[key])
       }
     end
   end

@@ -102,23 +102,22 @@ class TestTagsChanges < Test::Unit::TestCase
 
   def test_simple
     id = 'foo'
-    action = 'reject'
     watches = T.let({
       florist: Watch.new(
         osm_filters_tags: [{ 'shop' => 'florist' }],
         osm_tags_extra: %w[phone fee],
       ),
     }, T::Hash[String, Types::Watch])
-    validator = TagsChanges.new(id:, watches:, action:)
-    validation_action = [Types::Action.new(
-      validator_id: id,
-      description: nil,
-      action:,
-    )]
+    validator = TagsChanges.new(id:, watches:, accept: 'action_accept', reject: 'action_reject')
     validation_action_accept = [Types::Action.new(
-      validator_id: id,
+      validator_id: 'action_accept',
       description: nil,
       action: 'accept',
+    )]
+    validation_action_reject = [Types::Action.new(
+      validator_id: 'action_reject',
+      description: nil,
+      action: 'reject',
     )]
 
     after = {
@@ -145,7 +144,7 @@ class TestTagsChanges < Test::Unit::TestCase
     assert_equal(
       TimeMachine::DiffActions.new(
         attribs: { 'lat' => [], 'lon' => [] },
-        tags: { 'shop' => validation_action, 'phone' => validation_action, 'foo' => validation_action_accept }
+        tags: { 'shop' => validation_action_reject, 'phone' => validation_action_reject, 'foo' => validation_action_accept }
       ).inspect,
       diff.inspect
     )

@@ -30,10 +30,9 @@ wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde.s
 ```
 
 ```
-docker-compose --env-file .tools.env run --rm ope \
-    ope /pbf/gironde-latest.osm.pbf /pbf/osm_base=o
-docker-compose exec -u postgres postgres \
-    psql -c "\copy osm_base from '/pbf/osm_base.pgcopy'"
+docker-compose --env-file .tools.env run --rm ope ope /pbf/gironde-latest.osm.pbf /pbf/osm_base=o
+
+docker-compose exec -u postgres postgres psql -c "\copy osm_base from '/pbf/osm_base.pgcopy'"
 ```
 
 ```
@@ -47,10 +46,11 @@ maxInterval=86400" > replication/configuration.txt
 ## Update
 ```
 osmosis --read-replication-interval workingDirectory=replication --write-xml-change diff.osc.xml.bz2
-docker-compose --env-file .tools.env run --rm ope \
-    ope -H /pbf/diff.osc.xml.bz2 /pbf/osm_changes=o
-docker-compose exec -u postgres postgres \
-    psql -c "\copy osm_changes from '/pbf/osm_changes.pgcopy'"
+
+docker-compose --env-file .tools.env run --rm ope ope -H /pbf/diff.osc.xml.bz2 /pbf/osm_changes=o
+
+docker-compose exec -u postgres postgres psql -c "\copy osm_changes from '/pbf/osm_changes.pgcopy'"
+
 rm -f pbf/diff.osc.xml.bz2 pbf/osm_changes.pgcopy
 ```
 
