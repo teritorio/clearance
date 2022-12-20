@@ -23,6 +23,7 @@ services:
       - ./conf.yaml:/srv/app/conf.yaml
     depends_on:
       - postgres
+    command: bundle exec rails server --binding=0.0.0.0 --port 9000
 #    restart: unless-stopped
 
 volumes:
