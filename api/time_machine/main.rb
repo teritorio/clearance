@@ -2,11 +2,11 @@
 # typed: true
 
 require 'optparse'
-require 'yaml'
 require './time_machine/watches'
 require './time_machine/time_machine'
 require './time_machine/validators'
 require './time_machine/types'
+require './time_machine/config'
 
 @options = {}
 OptionParser.new { |opts|
@@ -27,8 +27,7 @@ OptionParser.new { |opts|
 if @options[:help]
   puts 'RTFC'
 else
-  config_yaml = YAML.unsafe_load_file(T.must(ENV.fetch('CONFIG', nil)))
-  config = T.let(config_yaml, Types::Config)
+  config = Config.load
 
   if @options[:changes_prune]
     ChangesDB.changes_prune

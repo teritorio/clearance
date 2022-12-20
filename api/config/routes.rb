@@ -8,4 +8,5 @@ Rails.application.routes.draw do
   # root "articles#index"
 
   get ':project/changes_logs/', to: 'changes_logs#index'
+  get ':project/validators/', to: 'validators#index'
 end
