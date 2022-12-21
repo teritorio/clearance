@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: false
 
 # class ChangesLogsController < ApplicationController
 class ChangesLogsController < ActionController::API

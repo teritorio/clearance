@@ -66,6 +66,10 @@ docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --va
 ```
 bundle install
 bundle exec tapioca init
+
+bundle exec rake rails_rbi:all
+bundle exec srb rbi hidden-definitions
+bundle exec srb rbi suggest-typed
 ```
 
 ```

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'optparse'
 require './time_machine/watches'
@@ -8,7 +8,7 @@ require './time_machine/validators'
 require './time_machine/types'
 require './time_machine/config'
 
-@options = {}
+@options = T.let({}, T::Hash[Symbol, T.untyped])
 OptionParser.new { |opts|
   opts.on('-h', '--help', 'Help') do
     @options[:help] = true
