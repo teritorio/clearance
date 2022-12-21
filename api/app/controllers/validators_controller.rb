@@ -9,6 +9,6 @@ class ValidatorsController < ActionController::API
       puts validator
       validator.to_h.except('instance')
     }
-    render json:
+    render json: json
   end
 end

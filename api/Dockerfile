@@ -1,4 +1,4 @@
-FROM ruby:3.1-alpine
+FROM ruby:3.0-alpine
 
 RUN apk add --no-cache --virtual build-dependencies build-base ruby-dev ruby-json
 

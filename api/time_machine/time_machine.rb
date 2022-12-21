@@ -100,7 +100,7 @@ module TimeMachine
             created: after['created'],
             uid: after['uid'],
             username: after['username'],
-            diff:,
+            diff: diff,
           )
           break
         end
@@ -115,7 +115,7 @@ module TimeMachine
           created: after['created'],
           uid: after['uid'],
           username: after['username'],
-          diff:,
+          diff: diff,
         )
       end
     }
@@ -149,8 +149,8 @@ module TimeMachine
 
     ChangesDb.apply_logs(validations.collect{ |objtype, id, validation|
       ChangesDb::ValidationLog.new(
-        objtype:,
-        id:,
+        objtype: objtype,
+        id: id,
         version: validation.version,
         changeset_id: validation.changeset_id,
         created: validation.created,

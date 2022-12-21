@@ -15,7 +15,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validator.new(id:, watches: {}, action:)
+    validator = Validator.new(id: id, watches: {}, action: action)
 
     actions = T.let([], T::Array[Action])
     validator.assign_action(actions)
@@ -29,7 +29,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validator.new(id:, watches: {}, action_force: action)
+    validator = Validator.new(id: id, watches: {}, action_force: action)
     puts validator.inspect
 
     actions = T.let([], T::Array[Action])
@@ -50,11 +50,11 @@ class TestUserList < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = UserList.new(id:, watches: {}, action:, list: ['bob'])
+    validator = UserList.new(id: id, watches: {}, action: action, list: ['bob'])
     validation_action = [Types::Action.new(
       validator_id: id,
       description: nil,
-      action:,
+      action: action,
     )]
 
     after = {
@@ -108,7 +108,7 @@ class TestTagsChanges < Test::Unit::TestCase
         osm_tags_extra: %w[phone fee],
       ),
     }, T::Hash[String, Types::Watch])
-    validator = TagsChanges.new(id:, watches:, accept: 'action_accept', reject: 'action_reject')
+    validator = TagsChanges.new(id: id, watches: watches, accept: 'action_accept', reject: 'action_reject')
     validation_action_accept = [Types::Action.new(
       validator_id: 'action_accept',
       description: nil,

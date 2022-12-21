@@ -12,7 +12,7 @@ class ChangesLogsController < ActionController::API
       row['diff_attribs'] = JSON.parse(row['diff_attribs']) if row['diff_attribs']
       row
     }
-    render json:
+    render json: json
   end
 
   def sets

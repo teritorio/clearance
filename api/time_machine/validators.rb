@@ -47,11 +47,11 @@ module Validators
       ).void
     }
     def initialize(id:, watches:, description: nil, action: nil, action_force: nil)
-      super(id:, watches:)
+      super(id: id, watches: watches)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = Types::Action.new(
         validator_id: id,
-        description:,
+        description: description,
         action: action || action_force || 'reject'
       )
     end
@@ -81,15 +81,15 @@ module Validators
       ).void
     }
     def initialize(id:, watches:, accept:, reject:, description: nil)
-      super(id:, watches:)
+      super(id: id, watches: watches)
       @action_accept = Types::Action.new(
         validator_id: accept,
-        description:,
+        description: description,
         action: 'accept'
       )
       @action_reject = Types::Action.new(
         validator_id: reject,
-        description:,
+        description: description,
         action: 'reject'
       )
     end
@@ -136,7 +136,7 @@ module Validators
       ).void
     }
     def initialize(id:, watches:, list:, action: nil, action_force: nil, description: nil)
-      super(id:, watches:, action:, action_force:, description:)
+      super(id: id, watches: watches, action: action, action_force: action_force, description: description)
       @list = list
     end
 
@@ -160,7 +160,7 @@ module Validators
       ).void
     }
     def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
-      super(id:, watches:, action:, action_force:, description:)
+      super(id: id, watches: watches, action: action, action_force: action_force, description: description)
     end
 
     def apply(before, _after, diff)
@@ -182,7 +182,7 @@ module Validators
       ).void
     }
     def initialize(id:, watches:, dist:, action: nil, action_force: nil, description: nil)
-      super(id:, watches:, action:, action_force:, description:)
+      super(id: id, watches: watches, action: action, action_force: action_force, description: description)
       @dist = dist
     end
 
@@ -210,7 +210,7 @@ module Validators
       ).void
     }
     def initialize(id:, watches:, accept:, reject:, description: nil)
-      super(id:, watches:, accept:, reject:, description:)
+      super(id: id, watches: watches, accept: accept, reject: reject, description: description)
     end
 
     def apply(before, after, diff)
@@ -260,7 +260,7 @@ module Validators
     validators_config.collect{ |id, config|
       class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
       args = config.except('instance').transform_keys(&:to_sym)
-      Object.const_get(class_name).new(id:, watches:, **args)
+      Object.const_get(class_name).new(id: id, watches: watches, **args)
     }
   end
 end
