@@ -29,8 +29,8 @@ module TimeMachine
 
   sig {
     params(
-      before: T.nilable(ChangesDB::OSMChangeProperties),
-      after: ChangesDB::OSMChangeProperties
+      before: T.nilable(ChangesDb::OSMChangeProperties),
+      after: ChangesDb::OSMChangeProperties
     ).returns(DiffActions)
   }
   def self.diff_osm_object(before, after)
@@ -66,12 +66,12 @@ module TimeMachine
   sig {
     params(
       validators: T::Array[Validator],
-      changes: T::Array[ChangesDB::OSMChangeProperties]
+      changes: T::Array[ChangesDb::OSMChangeProperties]
     ).returns(T::Array[ValidationResult])
   }
   def self.object_validation(validators, changes)
-    before = T.let(nil, T.nilable(ChangesDB::OSMChangeProperties))
-    afters = T.let([], T::Array[ChangesDB::OSMChangeProperties])
+    before = T.let(nil, T.nilable(ChangesDb::OSMChangeProperties))
+    afters = T.let([], T::Array[ChangesDb::OSMChangeProperties])
     if changes.size == 1
       afters = [T.must(changes[0])] # T.must useless here, but added to keep sorbet hapy
     elsif changes.size > 1
@@ -130,7 +130,7 @@ module TimeMachine
   }
   def self.time_machine(validators)
     Enumerator.new { |yielder|
-      ChangesDB.fetch_changes { |osm_change_object|
+      ChangesDb.fetch_changes { |osm_change_object|
         validation_results = object_validation(validators, osm_change_object['p'])
         validation_results.each{ |validation_result|
           yielder << [osm_change_object['objtype'], osm_change_object['id'], validation_result]
@@ -147,8 +147,8 @@ module TimeMachine
   def self.validate(validators)
     validations = time_machine(validators)
 
-    ChangesDB.apply_logs(validations.collect{ |objtype, id, validation|
-      ChangesDB::ValidationLog.new(
+    ChangesDb.apply_logs(validations.collect{ |objtype, id, validation|
+      ChangesDb::ValidationLog.new(
         objtype:,
         id:,
         version: validation.version,

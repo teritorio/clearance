@@ -25,7 +25,7 @@ class TestTimeMachine < Test::Unit::TestCase
       'foo' => 'bar',
     },
     'change_distance' => 0,
-  }, ChangesDB::OSMChangeProperties)
+  }, ChangesDb::OSMChangeProperties)
 
   @@fixture_node_b = T.let({
     'lat' => 1.0,
@@ -42,7 +42,7 @@ class TestTimeMachine < Test::Unit::TestCase
       'bar' => 'foo',
     },
     'change_distance' => 0,
-  }, ChangesDB::OSMChangeProperties)
+  }, ChangesDb::OSMChangeProperties)
 
   @@fixture_way_a = T.let({
     'lat' => nil,
@@ -59,7 +59,7 @@ class TestTimeMachine < Test::Unit::TestCase
       'foo' => 'bar',
     },
     'change_distance' => 0,
-  }, ChangesDB::OSMChangeProperties)
+  }, ChangesDb::OSMChangeProperties)
 
   def test_diff_osm_object_same
     diff = TimeMachine.diff_osm_object(@@fixture_node_a, @@fixture_node_a)

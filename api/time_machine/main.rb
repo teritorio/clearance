@@ -30,13 +30,13 @@ else
   config = Config.load
 
   if @options[:changes_prune]
-    ChangesDB.changes_prune
+    ChangesDb.changes_prune
   end
 
   if @options[:apply_unclibled_changes]
     osm_filters_tags = Watches.all_osm_filters_tags(config.watches)
     sql = Watches.osm_filters_tags_to_sql(osm_filters_tags)
-    ChangesDB.apply_unclibled_changes(sql)
+    ChangesDb.apply_unclibled_changes(sql)
   end
 
   if @options[:validate]

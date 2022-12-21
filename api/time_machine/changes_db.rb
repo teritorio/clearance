@@ -7,7 +7,7 @@ require './time_machine/types'
 require 'json'
 
 
-module ChangesDB
+module ChangesDb
   extend T::Sig
 
   OSMChangeProperties = T.type_alias {

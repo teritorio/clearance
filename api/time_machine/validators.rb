@@ -27,8 +27,8 @@ module Validators
 
     sig {
       params(
-        _before: T.nilable(ChangesDB::OSMChangeProperties),
-        _after: ChangesDB::OSMChangeProperties,
+        _before: T.nilable(ChangesDb::OSMChangeProperties),
+        _after: ChangesDb::OSMChangeProperties,
         _diff: TimeMachine::DiffActions,
       ).void
     }
