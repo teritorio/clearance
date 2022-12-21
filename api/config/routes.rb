@@ -7,6 +7,8 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "articles#index"
 
-  get ':project/changes_logs/', to: 'changes_logs#index'
-  get ':project/validators/', to: 'validators#index'
+  get '/:project/changes_logs', controller: 'changes_logs', action: 'index'
+  post '/:project/changes_logs/accept', controller: 'changes_logs', action: 'sets'
+
+  get '/:project/validators/', to: 'validators#index'
 end

@@ -67,10 +67,16 @@ module ChangesDb
     }
   end
 
+  class ObjectId < T::InexactStruct
+    const :objtype, String
+    const :id, Integer
+    const :version, Integer
+  end
+
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[ValidationLog]
+      changes: T::Enumerable[ObjectId]
     ).void
   }
   def self.apply_changes(conn, changes)
@@ -99,10 +105,7 @@ module ChangesDb
     puts r.inspect
   end
 
-  class ValidationLog < T::Struct
-    const :objtype, String
-    const :id, Integer
-    const :version, Integer
+  class ValidationLog < ObjectId
     const :changeset_id, Integer
     const :created, String
     const :uid, Integer
@@ -159,6 +162,34 @@ module ChangesDb
         ])
       }
       puts "Logs #{i} changes"
+    }
+  end
+
+  sig {
+    params(
+      changes: T::Enumerable[ObjectId]
+    ).void
+  }
+  def self.accept_changes(changes)
+    conn0 = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
+    conn0.transaction{ |conn|
+      apply_changes(conn, changes)
+
+      conn.prepare('validations_log_delete', "
+          DELETE FROM
+            validations_log
+          WHERE
+            objtype = $1 AND
+            id = $2 AND
+            version = $3
+        ")
+      changes.each{ |change|
+        conn.exec_prepared('validations_log_delete', [
+            change.objtype,
+            change.id,
+            change.version,
+        ])
+      }
     }
   end
 end
