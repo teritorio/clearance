@@ -1,8 +1,12 @@
 FROM ruby:3.0-alpine
 
-RUN apk add --no-cache --virtual build-dependencies build-base ruby-dev ruby-json
-
-RUN apk add --no-cache --virtual postgresql-dev libpq-dev
+RUN apk add --no-cache --virtual \
+        build-dependencies \
+        build-base \
+        libpq-dev \
+        postgresql-dev \
+        ruby-dev \
+        ruby-json
 
 WORKDIR /srv/app
 
