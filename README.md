@@ -61,8 +61,13 @@ docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --ap
 docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --validate
 ```
 
+## Export
+
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --export-osm /pbf/dump.osm.xml
+
 ## Dev
 
+Setup
 ```
 bundle install
 bundle exec tapioca init
@@ -72,6 +77,7 @@ bundle exec srb rbi hidden-definitions
 bundle exec srb rbi suggest-typed
 ```
 
+Tests and Validation
 ```
 bundle exec srb typecheck
 bundle exec rubocop -c ../.rubocop.yml --autocorrect

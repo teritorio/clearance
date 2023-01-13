@@ -24,6 +24,7 @@ gem 'rack-cors'
 gem 'tzinfo-data'
 
 gem 'json'
+gem 'nokogiri'
 gem 'optparse'
 gem 'pg', '~> 1.1'
 gem 'sorbet-runtime'

@@ -7,6 +7,7 @@ require './time_machine/time_machine'
 require './time_machine/validators'
 require './time_machine/types'
 require './time_machine/config'
+require './time_machine/db'
 
 @options = T.let({}, T::Hash[Symbol, T.untyped])
 OptionParser.new { |opts|
@@ -21,6 +22,12 @@ OptionParser.new { |opts|
   end
   opts.on('-v', '--validate', 'Ouput list of acceptable changes.') do
     @options[:validate] = true
+  end
+  opts.on('-eDUMP', '--export-osm=DUMP', 'Export XML OSM dump.') do |dump|
+    @options[:export_osm] = dump
+  end
+  opts.on('-cDUMP', '--export-osm-changes=DUMP', 'Export XML OSM Changes.') do |dump|
+    @options[:export_osm_changes] = dump
   end
 }.parse!
 
@@ -43,5 +50,11 @@ else
     config_validators = config.validators
     validators = config_validators ? Validators.validators_factory(config_validators, config.watches) : nil
     TimeMachine.validate(validators || [])
+  end
+
+  if @options[:export_osm]
+    Db.export(@options[:export_osm])
+  elsif @options[:export_osm_changes]
+    Db.export_changes(@options[:export_osm_changes])
   end
 end

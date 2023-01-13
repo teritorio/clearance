@@ -267,6 +267,7 @@ DEPENDENCIES
   bootsnap
   debug
   json
+  nokogiri
   optparse
   pg (~> 1.1)
   psych

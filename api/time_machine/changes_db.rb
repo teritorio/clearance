@@ -5,9 +5,11 @@ require 'sorbet-runtime'
 require 'pg'
 require './time_machine/types'
 require 'json'
+require './time_machine/db'
 
 
 module ChangesDb
+  include Db
   extend T::Sig
 
   OSMChangeProperties = T.type_alias {
@@ -67,16 +69,10 @@ module ChangesDb
     }
   end
 
-  class ObjectId < T::InexactStruct
-    const :objtype, String
-    const :id, Integer
-    const :version, Integer
-  end
-
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[ObjectId]
+      changes: T::Enumerable[Db::ObjectId]
     ).void
   }
   def self.apply_changes(conn, changes)
@@ -105,7 +101,7 @@ module ChangesDb
     puts r.inspect
   end
 
-  class ValidationLog < ObjectId
+  class ValidationLog < Db::ObjectId
     const :changeset_id, Integer
     const :created, String
     const :uid, Integer
@@ -167,7 +163,7 @@ module ChangesDb
 
   sig {
     params(
-      changes: T::Enumerable[ObjectId]
+      changes: T::Enumerable[Db::ObjectId]
     ).void
   }
   def self.accept_changes(changes)

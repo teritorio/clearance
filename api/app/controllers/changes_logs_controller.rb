@@ -17,7 +17,7 @@ class ChangesLogsController < ActionController::API
 
   def sets
     changes = params['_json'].map{ |change|
-      ChangesDb::ObjectId.new(
+      Db::ObjectId.new(
         objtype: change['objtype'],
         id: change['id'],
         version: change['version'],
