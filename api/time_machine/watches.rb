@@ -1,21 +1,19 @@
 # frozen_string_literal: true
 # typed: strict
 
-require './time_machine/types'
+require 'sorbet-runtime'
 
-
-module  Watches
-  include Types
+module Watches
   extend T::Sig
 
-  sig { params(watches: T::Hash[String, Watch]).returns(T::Array[OsmFiltersTags]) }
+  sig { params(watches: T::Hash[String, Types::Watch]).returns(T::Array[Types::OsmFiltersTags]) }
   def self.all_osm_filters_tags(watches)
     watches.values.collect(&:osm_filters_tags).flatten(1).compact
   end
 
   sig {
     params(
-      filter_values: T.any(OsmFilterValue, T::Array[OsmFilterValue]),
+      filter_values: T.any(Types::OsmFilterValue, T::Array[Types::OsmFilterValue]),
       test_value: String,
     ).returns(T::Boolean)
   }
@@ -31,7 +29,7 @@ module  Watches
 
   sig {
     params(
-      watches: T::Hash[String, Watch],
+      watches: T::Hash[String, Types::Watch],
       tags: T::Hash[String, String],
     ).returns(T::Array[String])
   }
@@ -48,7 +46,7 @@ module  Watches
     }.flatten.uniq
   end
 
-  sig { params(filters: T::Array[OsmFiltersTags]).returns(String) }
+  sig { params(filters: T::Array[Types::OsmFiltersTags]).returns(String) }
   def self.osm_filters_tags_to_sql(filters)
     filters.collect { |filter|
       p = filter.collect { |key, value|

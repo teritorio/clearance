@@ -18,13 +18,6 @@ module Types
     const :osm_tags_extra, T.nilable(T::Array[String])
   end
 
-  class Config < T::Struct
-    const :ontologie, Object
-    const :watches, T::Hash[String, Watch]
-    const :validators, T.nilable(T::Hash[String, T::Hash[String, Object]])
-    const :customers, Object
-  end
-
   # class ActionType < T::Enum
   #   enums do
   #     Accept = new

@@ -47,9 +47,7 @@ else
   end
 
   if @options[:validate]
-    config_validators = config.validators
-    validators = config_validators ? Validators.validators_factory(config_validators, config.watches) : nil
-    TimeMachine.validate(validators || [])
+    TimeMachine.validate(config.validators)
   end
 
   if @options[:export_osm]

@@ -5,7 +5,7 @@
 # class ValidatorsController < ApplicationController
 class ValidatorsController < ActionController::API
   def index
-    json = Config.load.validators.transform_values{ |validator|
+    json = Config.load.validators.collect{ |validator|
       puts validator
       validator.to_h.except('instance')
     }

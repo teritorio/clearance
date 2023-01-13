@@ -9,7 +9,6 @@ require './time_machine/db'
 
 
 module ChangesDb
-  include Db
   extend T::Sig
 
   OSMChangeProperties = T.type_alias {

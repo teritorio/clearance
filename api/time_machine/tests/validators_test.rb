@@ -6,18 +6,18 @@ require 'test/unit'
 require './time_machine/validators'
 require './time_machine/time_machine'
 require './time_machine/types'
+require './time_machine/config'
 
 
 class TestValidator < Test::Unit::TestCase
   extend T::Sig
-  include Validators
 
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validator.new(id: id, watches: {}, action: action)
+    validator = Validators::Validator.new(id: id, watches: {}, action: action)
 
-    actions = T.let([], T::Array[Action])
+    actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)
 
     assert_equal(1, actions.size)
@@ -29,10 +29,10 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validator.new(id: id, watches: {}, action_force: action)
+    validator = Validators::Validator.new(id: id, watches: {}, action_force: action)
     puts validator.inspect
 
-    actions = T.let([], T::Array[Action])
+    actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)
     validator.assign_action(actions)
 
@@ -45,12 +45,11 @@ end
 
 class TestUserList < Test::Unit::TestCase
   extend T::Sig
-  include Validators
 
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = UserList.new(id: id, watches: {}, action: action, list: ['bob'])
+    validator = Validators::UserList.new(id: id, watches: {}, action: action, list: ['bob'])
     validation_action = [Types::Action.new(
       validator_id: id,
       description: nil,
@@ -98,17 +97,16 @@ end
 
 class TestTagsChanges < Test::Unit::TestCase
   extend T::Sig
-  include Validators
 
   def test_simple
     id = 'foo'
     watches = T.let({
-      florist: Watch.new(
+      florist: Types::Watch.new(
         osm_filters_tags: [{ 'shop' => 'florist' }],
         osm_tags_extra: %w[phone fee],
       ),
     }, T::Hash[String, Types::Watch])
-    validator = TagsChanges.new(id: id, watches: watches, accept: 'action_accept', reject: 'action_reject')
+    validator = Validators::TagsChanges.new(id: id, watches: watches, accept: 'action_accept', reject: 'action_reject')
     validation_action_accept = [Types::Action.new(
       validator_id: 'action_accept',
       description: nil,

@@ -7,7 +7,6 @@ require './time_machine/watches'
 
 
 module Validators
-  include Types
   extend T::Sig
 
   class ValidatorBase
@@ -254,7 +253,7 @@ module Validators
     params(
       validators_config: T::Hash[String, T::Hash[String, Object]],
       watches: T::Hash[String, Types::Watch],
-    ).returns(T::Array[Validator])
+    ).returns(T::Array[ValidatorBase])
   }
   def self.validators_factory(validators_config, watches)
     validators_config.collect{ |id, config|

@@ -8,8 +8,6 @@ require './time_machine/types'
 
 
 module TimeMachine
-  include Validators
-  include Types
   extend T::Sig
 
   class DiffActions < T::Struct
@@ -34,8 +32,8 @@ module TimeMachine
     ).returns(DiffActions)
   }
   def self.diff_osm_object(before, after)
-    diff_attribs = T.let({}, HashActions)
-    diff_tags = T.let({}, HashActions)
+    diff_attribs = T.let({}, Types::HashActions)
+    diff_tags = T.let({}, Types::HashActions)
 
     # Unchecked attribs
     # - version
@@ -65,7 +63,7 @@ module TimeMachine
 
   sig {
     params(
-      validators: T::Array[Validator],
+      validators: T::Array[Validators::ValidatorBase],
       changes: T::Array[ChangesDb::OSMChangeProperties]
     ).returns(T::Array[ValidationResult])
   }
@@ -125,7 +123,7 @@ module TimeMachine
 
   sig {
     params(
-    validators: T::Array[Validator],
+    validators: T::Array[Validators::ValidatorBase],
   ).returns(T::Enumerable[[String, Integer, ValidationResult]])
   }
   def self.time_machine(validators)
@@ -141,7 +139,7 @@ module TimeMachine
 
   sig {
     params(
-      validators: T::Array[Validator],
+      validators: T::Array[Validators::ValidatorBase],
     ).void
   }
   def self.validate(validators)

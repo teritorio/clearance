@@ -1,22 +1,4 @@
---- !ruby/object:Types::Config
-ontologies:
-  tourism: https://vecto.teritorio.xyz/data/teritorio-tourism-ontology-latest.json
-  city: https://vecto.teritorio.xyz/data/teritorio-city-ontology-latest.json
-
-watches:
-  amenity: !ruby/object:Types::Watch
-    osm_filters_tags:
-      - amenity: null
-    osm_tags_extra:
-      - phone
-  florist: !ruby/object:Types::Watch
-    label:
-      en: CDB Shop
-    osm_filters_tags:
-      - shop: florist
-    osm_tags_extra:
-      - phone
-      - fax
+watches: config-watches.yaml
 
 validators:
   geom_new:

@@ -21,6 +21,7 @@ services:
       - ./api/time_machine/sql:/sql
       - ./api/:/srv/app/
       - ./conf.yaml:/srv/app/conf.yaml
+      - ./config-watches.yaml:/srv/app/config-watches.yaml
       - ./pbf:/pbf
     depends_on:
       - postgres
