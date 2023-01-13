@@ -5,7 +5,8 @@
 class ChangesLogsController < ActionController::API
   def index
     sql = 'SELECT * FROM postgisftw.changes_logs()'
-    json = ActiveRecord::Base.connection.execute(sql).map{ |row|
+    conn = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
+    json = conn.exec(sql).map{ |row|
       row['base'] = JSON.parse(row['base'])
       row['change'] = JSON.parse(row['change'])
       row['diff_tags'] = JSON.parse(row['diff_tags']) if row['diff_tags']
