@@ -48,3 +48,9 @@ CREATE TABLE "validations_log" (
     "diff_tags"  JSONB
 );
 ALTER TABLE "validations_log" ADD PRIMARY KEY(id, objtype, version);
+
+DROP TABLE IF EXISTS "osm_changes_applyed" CASCADE;
+CREATE TABLE "osm_changes_applyed" AS
+SELECT * FROM "osm_changes"
+WITH NO DATA;
+ALTER TABLE "osm_changes_applyed" ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes_applyed%

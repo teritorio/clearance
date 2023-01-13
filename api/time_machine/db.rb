@@ -220,7 +220,7 @@ module Db
 
     sequence_number += 1
 
-    sequence_path = '%09d' % sequence_number
+    sequence_path = format('%09d', sequence_number)
     sequence_path0 = sequence_path[-3..]
     sequence_path1 = sequence_path[-6..-4]
     sequence_path2 = sequence_path[..-7]

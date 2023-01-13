@@ -63,7 +63,8 @@ docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --va
 
 ## Export
 
-docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --export-osm /pbf/dump.osm.xml
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --export-osm /pbf/exports/export.osm.xml
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --export-osm-update /pbf/exports/update/
 
 ## Dev
 

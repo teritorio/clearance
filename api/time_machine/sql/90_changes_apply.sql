@@ -32,6 +32,19 @@ WHERE
     NOT changes.deleted
 ;
 
+INSERT INTO
+    osm_changes_applyed
+SELECT
+    changes.*
+FROM
+    osm_changes AS changes,
+    :changes_source AS update
+WHERE
+    update.objtype = changes.objtype AND
+    update.id = changes.id AND
+    update.version >= changes.version
+;
+
 DELETE FROM
     osm_changes AS changes
 USING

@@ -26,8 +26,8 @@ OptionParser.new { |opts|
   opts.on('-eDUMP', '--export-osm=DUMP', 'Export XML OSM dump.') do |dump|
     @options[:export_osm] = dump
   end
-  opts.on('-cDUMP', '--export-osm-changes=DUMP', 'Export XML OSM Changes.') do |dump|
-    @options[:export_osm_changes] = dump
+  opts.on('-cDUMP', '--export-osm-update=DUMP', 'Export XML OSM Update.') do |dump|
+    @options[:export_osm_update] = dump
   end
 }.parse!
 
@@ -54,7 +54,7 @@ else
 
   if @options[:export_osm]
     Db.export(@options[:export_osm])
-  elsif @options[:export_osm_changes]
-    Db.export_changes(@options[:export_osm_changes])
+  elsif @options[:export_osm_update]
+    Db.export_update(@options[:export_osm_update])
   end
 end

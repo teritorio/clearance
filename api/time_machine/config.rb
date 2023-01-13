@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 # typed: true
 
+require 'sorbet-runtime'
 require 'yaml'
 
 module Config
