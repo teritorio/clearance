@@ -1,0 +1,37 @@
+name: Test Ruby
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: api
+          ruby-version: '3.0'
+
+      - name: Install dependencies
+        run: cd api && bundle install
+
+      - name: Run lint
+        run: |
+          cd api && \
+          bundle exec tapioca init && \
+          bundle exec rake rails_rbi:all && \
+          bundle exec srb rbi hidden-definitions && \
+          bundle exec srb rbi suggest-typed && \
+          bundle exec srb typecheck
+
+      - name: Run lint
+        run: cd api && bundle exec rubocop -c ../.rubocop.yml
+
+      - name: Run tests
+        run: cd api && bundle exec rake test
