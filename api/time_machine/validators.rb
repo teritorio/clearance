@@ -222,7 +222,10 @@ module Validators
       match_keys = (
         (before && Watches.match_osm_filters_tags(@watches, before['tags']) || []) +
         Watches.match_osm_filters_tags(@watches, after['tags'])
-      ).intersection(diff.tags.keys)
+      ).intersection(diff.tags.keys).select{ |tag|
+        # Exclude new tags with insignificant value
+        !(!before['tags'].include?(tag) && after['tags'].include?(tag) && after['tags'][tag] == 'no')
+      }
       match_keys.each{ |key|
         assign_action_reject(diff.tags[key])
       }

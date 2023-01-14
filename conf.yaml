@@ -22,14 +22,14 @@ validators:
 
   user_white_list:
     instance: Validators::UserList
-    description: Change by local white listed user
+    description: Changes by white listed user
     list:
       - frodrigo
     action_force: accept
 
   user_black_list:
     instance: Validators::UserList
-    description: Change by local black listed user
+    description: Changes black listed user
     list:
       - 666
     action: reject
