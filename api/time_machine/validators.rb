@@ -32,6 +32,12 @@ module Validators
       ).void
     }
     def apply(_before, _after, _diff); end
+
+    def to_h
+      instance_variables.select{ |v| ![:@watches].include?(v) }.to_h { |v|
+        [v.to_s.delete('@'), instance_variable_get(v)]
+      }
+    end
   end
 
   class Validator < ValidatorBase

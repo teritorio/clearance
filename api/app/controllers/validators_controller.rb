@@ -5,9 +5,9 @@
 # class ValidatorsController < ApplicationController
 class ValidatorsController < ActionController::API
   def index
-    json = Config.load.validators.collect{ |validator|
-      puts validator
-      validator.to_h.except('instance')
+    json = Config.load.validators.to_h{ |validator|
+      h = validator.to_h
+      [h['id'], h.except('id')]
     }
     render json: json
   end
