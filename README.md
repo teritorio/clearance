@@ -15,7 +15,7 @@ Adjust config.yaml
 
 ## Start
 ```
-docker-compose up -d
+docker-compose up -d postgres
 ```
 
 Enter postgres with
@@ -25,33 +25,33 @@ docker-compose exec -u postgres postgres psql
 
 ## Init
 ```
-wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde-latest.osm.pbf -P pbf
-wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde.state.txt -P pbf
+wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde-latest.osm.pbf -P pbf/import
+wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde.state.txt -P pbf/import
 ```
 
 ```
-docker-compose --env-file .tools.env run --rm ope ope /pbf/gironde-latest.osm.pbf /pbf/osm_base=o
+docker-compose --env-file .tools.env run --rm ope ope /pbf/import/gironde-latest.osm.pbf /pbf/import/osm_base=o
 
-docker-compose exec -u postgres postgres psql -c "\copy osm_base from '/pbf/osm_base.pgcopy'"
+docker-compose exec -u postgres postgres psql -c "\copy osm_base from '/pbf/import/osm_base.pgcopy'"
 ```
 
 ```
-mkdir -p replication
-osmosis --read-replication-interval-init workingDirectory=replication
-cp gironde.state.txt replication/state.txt
+mkdir -p pbf/import/replication
+osmosis --read-replication-interval-init workingDirectory=pbf/import/replication
+cp pbf/import/gironde.state.txt pbf/import/replication/state.txt
 echo "baseUrl=https://download.openstreetmap.fr/replication/europe/france/aquitaine/gironde/minute/
-maxInterval=86400" > replication/configuration.txt
+maxInterval=86400" > pbf/import/replication/configuration.txt
 ```
 
 ## Update
 ```
-osmosis --read-replication-interval workingDirectory=replication --write-xml-change diff.osc.xml.bz2
+osmosis --read-replication-interval workingDirectory=pbf/import/replication --write-xml-change pbf/import/diff.osc.xml.bz2
 
-docker-compose --env-file .tools.env run --rm ope ope -H /pbf/diff.osc.xml.bz2 /pbf/osm_changes=o
+docker-compose --env-file .tools.env run --rm ope ope -H /pbf/import/diff.osc.xml.bz2 /pbf/import/osm_changes=o
 
-docker-compose exec -u postgres postgres psql -c "\copy osm_changes from '/pbf/osm_changes.pgcopy'"
+docker-compose exec -u postgres postgres psql -c "\copy osm_changes from '/pbf/import/osm_changes.pgcopy'"
 
-rm -f pbf/diff.osc.xml.bz2 pbf/osm_changes.pgcopy
+rm -f pbf/import/diff.osc.xml.bz2 pbf/import/osm_changes.pgcopy
 ```
 
 Validation report
