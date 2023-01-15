@@ -2,8 +2,7 @@
 # typed: true
 
 
-# class ValidatorsController < ApplicationController
-class ValidatorsController < ActionController::API
+class ValidatorsController < ApplicationController
   def index
     json = Config.load.validators.to_h{ |validator|
       h = validator.to_h

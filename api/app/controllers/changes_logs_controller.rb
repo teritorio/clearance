@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 # typed: false
 
-# class ChangesLogsController < ApplicationController
-class ChangesLogsController < ActionController::API
+class ChangesLogsController < ApplicationController
   def index
     sql = 'SELECT * FROM postgisftw.changes_logs()'
     conn = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
