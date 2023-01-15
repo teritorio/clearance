@@ -5,6 +5,10 @@ AllCops:
     - '*/bin/*'
     - '**/Rakefile.rb'
 
+require:
+ - rubocop-rake
+ - rubocop-rails
+
 Layout/EmptyLines:
   Enabled: false
 
