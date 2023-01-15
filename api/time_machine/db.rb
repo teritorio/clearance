@@ -233,7 +233,7 @@ module Db
 
     osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
     File.write(osc_gz_state, "#
-timestamp=2022-09-04T20\:21\:24Z
+timestamp=2022-09-04T20:21:24Z
 sequenceNumber=#{sequence_number}
 ")
     FileUtils.copy(osc_gz_state, current_state_file)

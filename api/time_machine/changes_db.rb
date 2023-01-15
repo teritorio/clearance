@@ -61,9 +61,9 @@ module ChangesDb
   def self.apply_unclibled_changes(sql_osm_filter_tags)
     conn0 = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
     conn0.transaction{ |conn|
-      r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read&.gsub(':osm_filter_tags', sql_osm_filter_tags))
+      r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read.gsub(':osm_filter_tags', sql_osm_filter_tags))
       puts r.inspect
-      r = conn.exec(File.new('/sql/90_changes_apply.sql').read&.gsub(':changes_source', 'changes_update'))
+      r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
       puts r.inspect
     }
   end
@@ -96,7 +96,7 @@ module ChangesDb
     r = conn.exec(File.new('/sql/40_validated_changes.sql').read)
     puts r.inspect
 
-    r = conn.exec(File.new('/sql/90_changes_apply.sql').read&.gsub(':changes_source', 'changes_source'))
+    r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_source'))
     puts r.inspect
   end
 
@@ -152,8 +152,8 @@ module ChangesDb
             change.username,
             change.action,
             change.validator_uid,
-            change.diff_attribs.empty? ? nil : change.diff_attribs.to_json,
-            change.diff_tags.empty? ? nil : change.diff_tags.to_json,
+            change.diff_attribs.empty? ? nil : change.diff_attribs.as_json,
+            change.diff_tags.empty? ? nil : change.diff_tags.as_json,
         ])
       }
       puts "Logs #{i} changes"

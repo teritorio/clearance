@@ -36,8 +36,8 @@ module Types
       "<#{@validator_id}:#{@action}>"
     end
 
-    def to_json(_)
-      [@validator_id, @action].to_json
+    def as_json
+      [@validator_id, @action].as_json
     end
   end
 

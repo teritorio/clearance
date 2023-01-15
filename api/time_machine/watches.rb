@@ -50,14 +50,14 @@ module Watches
   def self.osm_filters_tags_to_sql(filters)
     filters.collect { |filter|
       p = filter.collect { |key, value|
-        key = key.gsub("'", "\'")
+        key = key.gsub("'", "'")
         if value.nil?
           "tags?'#{key}'"
         elsif value.is_a?(String)
-          value = value.to_s.gsub("'", "\'") if !value.nil?
+          value = value.to_s.gsub("'", "'") if !value.nil?
           "tags?'#{key}' AND tags->>'#{key}' = '#{value}'"
         elsif value.is_a?(Regexp)
-          value = value.to_s.gsub("'", "\'") if !value.nil?
+          value = value.to_s.gsub("'", "'") if !value.nil?
           "tags?'#{key}' AND tags->>'#{key}' ~ '#{value}'"
         end
       }.join(' AND ')

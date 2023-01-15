@@ -34,7 +34,7 @@ module Validators
     def apply(_before, _after, _diff); end
 
     def to_h
-      instance_variables.select{ |v| ![:@watches].include?(v) }.to_h { |v|
+      instance_variables.select{ |v| [:@watches].exclude?(v) }.to_h { |v|
         [v.to_s.delete('@'), instance_variable_get(v)]
       }
     end
@@ -146,7 +146,7 @@ module Validators
     end
 
     def apply(_before, after, diff)
-      return if !@list.include?(after['username'])
+      return if @list.exclude?(after['username'])
 
       (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)
@@ -224,7 +224,7 @@ module Validators
         Watches.match_osm_filters_tags(@watches, after['tags'])
       ).intersection(diff.tags.keys).select{ |tag|
         # Exclude new tags with insignificant value
-        !(!before['tags'].include?(tag) && after['tags'].include?(tag) && after['tags'][tag] == 'no')
+        !(before['tags'].exclude?(tag) && after['tags'].include?(tag) && after['tags'][tag] == 'no')
       }
       match_keys.each{ |key|
         assign_action_reject(diff.tags[key])
