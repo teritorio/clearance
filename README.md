@@ -73,8 +73,8 @@ Setup
 bundle install
 bundle exec tapioca init
 
-bundle exec rake rails_rbi:all
-bundle exec srb rbi hidden-definitions
+bundle exec rake rails_rbi:routes
+bundle exec tapioca dsl
 bundle exec srb rbi suggest-typed
 ```
 
