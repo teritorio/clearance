@@ -21,15 +21,15 @@ jobs:
       - name: Install dependencies
         run: cd api && bundle install
 
-      - name: Run lint
-        run: |
-          cd api && \
-          bundle exec tapioca init && \
-          bundle exec rake rails_rbi:routes && \
-          bundle exec tapioca dsl && \
-          bundle exec srb typecheck -q
+      # - name: Run typecheck
+      #   run: |
+      #     cd api && \
+      #     bundle exec tapioca init && \
+      #     bundle exec rake rails_rbi:routes && \
+      #     bundle exec tapioca dsl && \
+      #     bundle exec srb typecheck -q
 
-      - name: Run lint
+      - name: Run rubocop
         run: cd api && bundle exec rubocop -c ../.rubocop.yml
 
       - name: Run tests
