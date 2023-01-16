@@ -1,9 +1,8 @@
+version: '3'
+
 services:
   ope:
     build:
       context: ope
     volumes:
       - ./pbf:/pbf
-
-volumes:
-  pgdata:
