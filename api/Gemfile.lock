@@ -260,6 +260,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  activesupport
   bootsnap
   debug
   json
