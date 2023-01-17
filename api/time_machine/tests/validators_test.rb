@@ -3,7 +3,9 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './time_machine/validators'
+require './time_machine/validators/validator'
+require './time_machine/validators/tags_changes'
+require './time_machine/validators/user_list'
 require './time_machine/time_machine'
 require './time_machine/types'
 require './time_machine/config'
@@ -30,7 +32,6 @@ class TestValidator < Test::Unit::TestCase
     id = 'foo'
     action = 'accept'
     validator = Validators::Validator.new(id: id, watches: {}, action_force: action)
-    puts validator.inspect
 
     actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)

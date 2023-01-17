@@ -4,7 +4,7 @@
 require 'optparse'
 require './time_machine/watches'
 require './time_machine/time_machine'
-require './time_machine/validators'
+require './time_machine/validators/validator'
 require './time_machine/types'
 require './time_machine/config'
 require './time_machine/db'

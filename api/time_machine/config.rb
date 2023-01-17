@@ -4,7 +4,7 @@
 require 'sorbet-runtime'
 require 'yaml'
 require './time_machine/types'
-require './time_machine/validators'
+require './time_machine/validators/validator_factory'
 
 module Config
   extend T::Sig
