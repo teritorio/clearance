@@ -41,9 +41,7 @@ else
   end
 
   if @options[:apply_unclibled_changes]
-    osm_filters_tags = Watches.all_osm_filters_tags(config.watches)
-    sql = Watches.osm_filters_tags_to_sql(osm_filters_tags)
-    ChangesDb.apply_unclibled_changes(sql)
+    ChangesDb.apply_unclibled_changes(config.watches.to_sql)
   end
 
   if @options[:validate]

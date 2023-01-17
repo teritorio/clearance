@@ -3,7 +3,6 @@
 
 require 'sorbet-runtime'
 require './time_machine/types'
-require './time_machine/watches'
 require 'active_support'
 require 'active_support/core_ext'
 
@@ -15,13 +14,11 @@ module Validators
     sig {
       params(
         id: String,
-        watches: T::Hash[String, Types::Watch],
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, watches:, description: nil)
+    def initialize(id:, description: nil)
       @id = id
-      @watches = watches
       @description = description
     end
 
@@ -46,14 +43,13 @@ module Validators
     sig {
       params(
         id: String,
-        watches: T::Hash[String, Types::Watch],
         description: T.nilable(String),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
       ).void
     }
-    def initialize(id:, watches:, description: nil, action: nil, action_force: nil)
-      super(id: id, watches: watches)
+    def initialize(id:, description: nil, action: nil, action_force: nil)
+      super(id: id)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = Types::Action.new(
         validator_id: id,
@@ -80,14 +76,13 @@ module Validators
     sig {
       params(
         id: String,
-        watches: T::Hash[String, Types::Watch],
         accept: String,
         reject: String,
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, watches:, accept:, reject:, description: nil)
-      super(id: id, watches: watches)
+    def initialize(id:, accept:, reject:, description: nil)
+      super(id: id)
       @action_accept = Types::Action.new(
         validator_id: accept,
         description: description,

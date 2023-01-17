@@ -2,7 +2,6 @@
 # typed: true
 
 require 'sorbet-runtime'
-require './time_machine/types'
 require './time_machine/watches'
 
 module Validators
@@ -12,20 +11,32 @@ module Validators
     sig {
       params(
         id: String,
-        watches: T::Hash[String, Types::Watch],
+        watches: T.any(String, Watches::Watches),
         accept: String,
         reject: String,
         description: T.nilable(String),
       ).void
     }
     def initialize(id:, watches:, accept:, reject:, description: nil)
-      super(id: id, watches: watches, accept: accept, reject: reject, description: description)
+      super(id: id, accept: accept, reject: reject, description: description)
+
+      @watches = if watches.is_a?(Watches::Watches)
+                   watches
+                 else
+                   Watches::Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
+                     Watches::Watch.new(
+                       osm_filters_tags: value['osm_filters_tags'],
+                       label: value['label'],
+                       osm_tags_extra: value['osm_tags_extra'],
+                     )
+                   })
+                 end
     end
 
     def apply(before, after, diff)
       match_keys = (
-        (before && Watches.match_osm_filters_tags(@watches, before['tags']) || []) +
-        Watches.match_osm_filters_tags(@watches, after['tags'])
+        (before && @watches.match(before['tags']) || []) +
+        @watches.match(after['tags'])
       ).intersection(diff.tags.keys).select{ |tag|
         # Exclude new tags with insignificant value
         !before || !(before['tags'].exclude?(tag) && after['tags'].include?(tag) && after['tags'][tag] == 'no')

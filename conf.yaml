@@ -1,5 +1,3 @@
-watches: config-watches.yaml
-
 validators:
   geom_new:
     instance: Validators::GeomNewObject
@@ -17,6 +15,7 @@ validators:
 
   tags_changes_significant:
     instance: Validators::TagsChanges
+    watches: config-watches.yaml
     reject: tags_changes_significant
     accept: tags_changes_non_significant
 

@@ -3,7 +3,6 @@
 
 require 'sorbet-runtime'
 require './time_machine/types'
-require './time_machine/watches'
 
 module Validators
   extend T::Sig
@@ -12,14 +11,13 @@ module Validators
     sig {
       params(
         id: String,
-        watches: T::Hash[String, Types::Watch],
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, watches:, action: nil, action_force: nil, description: nil)
-      super(id: id, watches: watches, action: action, action_force: action_force, description: description)
+    def initialize(id:, action: nil, action_force: nil, description: nil)
+      super(id: id, action: action, action_force: action_force, description: description)
     end
 
     def apply(before, _after, diff)

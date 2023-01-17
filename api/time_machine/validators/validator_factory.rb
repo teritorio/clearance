@@ -3,7 +3,6 @@
 
 require 'sorbet-runtime'
 require './time_machine/types'
-require './time_machine/watches'
 require './time_machine/validators/deleted'
 require './time_machine/validators/geom_changes'
 require './time_machine/validators/geom_new_object'
@@ -27,14 +26,13 @@ module Validators
   sig {
     params(
       validators_config: T::Hash[String, T::Hash[String, Object]],
-      watches: T::Hash[String, Types::Watch],
     ).returns(T::Array[ValidatorBase])
   }
-  def self.validators_factory(validators_config, watches)
+  def self.validators_factory(validators_config)
     validators_config.collect{ |id, config|
       class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
       args = config.except('instance').transform_keys(&:to_sym)
-      Object.const_get(class_name).new(id: id, watches: watches, **args)
+      Object.const_get(class_name).new(id: id, **args)
     }
   end
 end

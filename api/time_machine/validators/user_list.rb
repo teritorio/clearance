@@ -12,15 +12,14 @@ module Validators
     sig {
       params(
         id: String,
-        watches: T::Hash[String, Types::Watch],
         list: T::Array[String],
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, watches:, list:, action: nil, action_force: nil, description: nil)
-      super(id: id, watches: watches, action: action, action_force: action_force, description: description)
+    def initialize(id:, list:, action: nil, action_force: nil, description: nil)
+      super(id: id, action: action, action_force: action_force, description: description)
       @list = list
     end
 
