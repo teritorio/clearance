@@ -152,8 +152,8 @@ module ChangesDb
             change.username,
             change.action,
             change.validator_uid,
-            change.diff_attribs.empty? ? nil : change.diff_attribs.as_json,
-            change.diff_tags.empty? ? nil : change.diff_tags.as_json,
+            change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,
+            change.diff_tags.empty? ? nil : change.diff_tags.as_json.to_json,
         ])
       }
       puts "Logs #{i} changes"
