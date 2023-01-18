@@ -2,7 +2,6 @@
 # typed: strict
 
 require 'optparse'
-require './time_machine/watches'
 require './time_machine/time_machine'
 require './time_machine/validators/validator'
 require './time_machine/types'
@@ -41,7 +40,8 @@ else
   end
 
   if @options[:apply_unclibled_changes]
-    ChangesDb.apply_unclibled_changes(config.watches.to_sql)
+    watches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).watches
+    ChangesDb.apply_unclibled_changes(watches.to_sql)
   end
 
   if @options[:validate]

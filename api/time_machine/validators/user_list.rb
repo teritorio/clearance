@@ -3,7 +3,6 @@
 
 require 'sorbet-runtime'
 require './time_machine/types'
-require './time_machine/watches'
 
 module Validators
   extend T::Sig

@@ -2,7 +2,6 @@
 # typed: true
 
 require 'sorbet-runtime'
-require './time_machine/watches'
 
 module Types
   extend T::Sig

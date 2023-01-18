@@ -8,7 +8,6 @@ require './time_machine/validators/tags_changes'
 require './time_machine/validators/user_list'
 require './time_machine/time_machine'
 require './time_machine/types'
-require './time_machine/watches'
 require './time_machine/config'
 
 
@@ -102,8 +101,8 @@ class TestTagsChanges < Test::Unit::TestCase
 
   def test_simple
     id = 'foo'
-    watches = Watches::Watches.new({
-      florist: Watches::Watch.new(
+    watches = Validators::Watches.new({
+      florist: Validators::Watch.new(
         osm_filters_tags: [{ 'shop' => 'florist' }],
         osm_tags_extra: %w[phone fee],
       ),
