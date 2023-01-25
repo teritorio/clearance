@@ -1,7 +1,7 @@
 aire-de-covoiturages:
   label:
     fr: Aires de covoiturage
-  osm_filters_tags:
+  matches:
     - amenity: car_pooling
     - amenity: parking
       carpool: designated
@@ -25,7 +25,7 @@ aire-de-covoiturages:
 gares-sncf:
   label:
     fr: Gare SNCF
-  osm_filters_tags:
+  matches:
     - railway: halt
     - railway: station
       operator: SNCF
@@ -51,7 +51,7 @@ gares-sncf:
 parking-public:
   label:
     fr: Parking public
-  osm_filters_tags:
+  matches:
     - amenity: parking
       access: 'yes'
       parking!: street_side
@@ -68,7 +68,7 @@ parking-public:
 parking-velo:
   label:
     fr: Parking vélo
-  osm_filters_tags:
+  matches:
     - amenity: bicycle_parking
   osm_tags_extra:
     - operator
@@ -89,7 +89,7 @@ parking-velo:
 boucherie-charcuterie-osm:
   label:
     fr: Boucheries / Charcuteries
-  osm_filters_tags:
+  matches:
     - shop: butcher
   osm_tags_extra:
     - address
@@ -113,7 +113,7 @@ boucherie-charcuterie-osm:
 boulangerie-patisserie-osm:
   label:
     fr: Boulangeries / Pâtisseries
-  osm_filters_tags:
+  matches:
     - shop: bakery
     - shop: pastry
   osm_tags_extra:
@@ -129,7 +129,7 @@ boulangerie-patisserie-osm:
 epicerie-osm:
   label:
     fr: Épiceries
-  osm_filters_tags:
+  matches:
     - shop: convenience
   osm_tags_extra:
     - address
@@ -157,7 +157,7 @@ epicerie-osm:
 points-deau:
   label:
     fr: Point d’eau
-  osm_filters_tags:
+  matches:
     - amenity: drinking_water
       access: 'yes'
   osm_tags_extra:
@@ -174,7 +174,7 @@ points-deau:
 toilettes-publiques:
   label:
     fr: Toilettes Publiques
-  osm_filters_tags:
+  matches:
     - amenity: toilets
       access: 'yes'
   osm_tags_extra:
@@ -203,7 +203,7 @@ toilettes-publiques:
 points-de-vue:
   label:
     fr: Points de vue
-  osm_filters_tags:
+  matches:
     - tourism: viewpoint
   osm_tags_extra:
     - name
@@ -216,7 +216,7 @@ points-de-vue:
 points-de-tri:
   label:
     fr: Points de tri
-  osm_filters_tags:
+  matches:
     - amenity: recycling
       recycling_type: container
   osm_tags_extra:
@@ -242,7 +242,7 @@ points-de-tri:
 offices-de-tourisme-osm:
   label:
     fr: Office du tourisme
-  osm_filters_tags:
+  matches:
     - information: office
       access!: customers
   osm_tags_extra:
@@ -271,7 +271,7 @@ offices-de-tourisme-osm:
 mairies:
   label:
     fr: Mairies
-  osm_filters_tags:
+  matches:
     - amenity: townhall
   osm_tags_extra:
     - address
@@ -294,7 +294,7 @@ mairies:
 aire-de-recharge-e:
   label:
     fr: Aires de recharge E
-  osm_filters_tags:
+  matches:
     - amenity: charging_station
   osm_tags_extra:
     - operator
@@ -318,7 +318,7 @@ aire-de-recharge-e:
 aires-de-pique-nique:
   label:
     fr: Aire de pique-nique
-  osm_filters_tags:
+  matches:
     - tourism: picnic_site
   osm_tags_extra:
     - name
@@ -336,7 +336,7 @@ aires-de-pique-nique:
 reparateurs-de-velo:
   label:
     fr: Réparateurs de vélo
-  osm_filters_tags:
+  matches:
     - shop: bicycle
       service:bicycle:repair: 'yes'
   osm_tags_extra:
@@ -368,7 +368,7 @@ reparateurs-de-velo:
 loueurs-de-velo-osm:
   label:
     fr: Loueurs de vélo
-  osm_filters_tags:
+  matches:
     - shop: bicycle
       service:bicycle:rental: 'yes'
     - shop: sports
@@ -390,7 +390,7 @@ loueurs-de-velo-osm:
 gares-routieres:
   label:
     fr: Gares routières
-  osm_filters_tags:
+  matches:
     - amenity: bus_station
       public_transport: station
   osm_tags_extra:
@@ -410,7 +410,7 @@ gares-routieres:
 arrets-de-bus-saisonniers-plages:
   label:
     fr: Arrêt de bus saisoniers (plages)
-  osm_filters_tags:
+  matches:
     - highway: bus_stop
       seasonnal: summer
   osm_tags_extra:
@@ -429,7 +429,7 @@ arrets-de-bus-saisonniers-plages:
 vente-a-la-ferme:
   label:
     fr: Magasins à la ferme
-  osm_filters_tags:
+  matches:
     - shop: farm
   osm_tags_extra:
     - address
@@ -463,7 +463,7 @@ vente-a-la-ferme:
 hopitaux:
   label:
     fr: Hôpital
-  osm_filters_tags:
+  matches:
     - amenity: hospital
       emergency: 'yes'
   osm_tags_extra:
@@ -485,7 +485,7 @@ hopitaux:
 dab:
   label:
     fr: DAB
-  osm_filters_tags:
+  matches:
     - amenity: atm
   osm_tags_extra:
     - description
@@ -496,7 +496,7 @@ dab:
 pharmacies:
   label:
     fr: Pharmacies
-  osm_filters_tags:
+  matches:
     - amenity: pharmacy
   osm_tags_extra:
     - address
@@ -518,7 +518,7 @@ pharmacies:
 postes-de-secours:
   label:
     fr: Poste de plage
-  osm_filters_tags:
+  matches:
     - emergency: water_rescue_station
   osm_tags_extra:
     - description
@@ -533,7 +533,7 @@ postes-de-secours:
 station-de-gonflage-velo:
   label:
     fr: Station de gonflage vélo
-  osm_filters_tags:
+  matches:
     - service:bicycle:pump: 'yes'
   osm_tags_extra:
     - opening_hours
@@ -544,7 +544,7 @@ station-de-gonflage-velo:
 defibrillateurs:
   label:
     fr: Défibrillateurs
-  osm_filters_tags:
+  matches:
     - emergency: defibrillator
   osm_tags_extra:
     - operator
@@ -561,7 +561,7 @@ defibrillateurs:
 parcs-et-jardins-avec-visites-osm:
   label:
     fr: Parcs
-  osm_filters_tags:
+  matches:
     - leisure: park
   osm_tags_extra:
     - operator
@@ -572,7 +572,7 @@ parcs-et-jardins-avec-visites-osm:
 golfs-osm:
   label:
     fr: Golf
-  osm_filters_tags:
+  matches:
     - sport: golf
   osm_tags_extra:
     - address
@@ -590,7 +590,7 @@ golfs-osm:
 plages-interieures-littoral-osm:
   label:
     fr: Plages
-  osm_filters_tags:
+  matches:
     - natural: beach
   osm_tags_extra:
     - operator
@@ -604,7 +604,7 @@ plages-interieures-littoral-osm:
 centres-aquatiques-osm:
   label:
     fr: Piscine
-  osm_filters_tags:
+  matches:
     - leisure: swimming_pool
       access: 'yes'
     - leisure: sports_centre
@@ -630,7 +630,7 @@ centres-aquatiques-osm:
 aires-de-camping-car-osm:
   label:
     fr: Aires de camping-cars
-  osm_filters_tags:
+  matches:
     - tourism: caravan_site
   osm_tags_extra:
     - capacity
@@ -644,7 +644,7 @@ aires-de-camping-car-osm:
 campings:
   label:
     fr: Campings
-  osm_filters_tags:
+  matches:
     - tourism: camp_site
   osm_tags_extra:
     - wheelchair
@@ -660,7 +660,7 @@ campings:
 maisons-de-sante:
   label:
     fr: Maison de santé
-  osm_filters_tags:
+  matches:
     - healthcare: centre
       type:FR:FINESS: '603'
   osm_tags_extra:
@@ -674,7 +674,7 @@ maisons-de-sante:
 cliniques:
   label:
     fr: Clinique
-  osm_filters_tags:
+  matches:
     - amenity: hospital
       type:FR:FINESS: '365'
   osm_tags_extra:
@@ -682,7 +682,7 @@ cliniques:
 medecins-thermaux:
   label:
     fr: Médecins
-  osm_filters_tags:
+  matches:
     - amenity: doctors
       healthcare:speciality~general: null
       description~thermal: null
@@ -701,7 +701,7 @@ medecins-thermaux:
 zones-de-baignades-surveillees-osm:
   label:
     fr: Zone de baignade surveillée
-  osm_filters_tags:
+  matches:
     - leisure: swimming_area
       supervised: 'yes'
   osm_tags_extra:
@@ -717,7 +717,7 @@ zones-de-baignades-surveillees-osm:
 port-de-peche:
   label:
     fr: Port de pêche
-  osm_filters_tags:
+  matches:
     - seamark:type: harbour
       seamark:harbour:category: fishing
   osm_tags_extra:
@@ -729,7 +729,7 @@ port-de-peche:
 port-de-plaisance-osm:
   label:
     fr: Port de plaisance
-  osm_filters_tags:
+  matches:
     - leisure: marina
       access!: customers
   osm_tags_extra:
@@ -740,7 +740,7 @@ port-de-plaisance-osm:
 aires-de-vidange-de-camping-car:
   label:
     fr: Aire de vidange de camping-car
-  osm_filters_tags:
+  matches:
     - amenity: sanitary_dump_station
   osm_tags_extra:
     - wheelchair
@@ -756,7 +756,7 @@ aires-de-vidange-de-camping-car:
 point-wifi:
   label:
     fr: Accès wifi
-  osm_filters_tags:
+  matches:
     - internet_access: wlan
       internet_access:fee: 'no'
   osm_tags_extra:
@@ -772,7 +772,7 @@ point-wifi:
 lavoirs-osm:
   label:
     fr: Lavoir
-  osm_filters_tags:
+  matches:
     - amenity: lavoir
   osm_tags_extra:
     - opening_hours
@@ -788,7 +788,7 @@ lavoirs-osm:
 musees-nationaux-osm:
   label:
     fr: Musée national
-  osm_filters_tags:
+  matches:
     - tourism: museum
       ~^ref:FR:museofile*$~^.: null
   osm_tags_extra:
@@ -807,7 +807,7 @@ musees-nationaux-osm:
 autres-musees-osm:
   label:
     fr: Autres musées
-  osm_filters_tags:
+  matches:
     - tourism: museum
       ref:FR:museofile!~.: null
   osm_tags_extra:
@@ -825,7 +825,7 @@ autres-musees-osm:
 marches-a-lannee:
   label:
     fr: Marché à l'année
-  osm_filters_tags:
+  matches:
     - amenity: marketplace
       produce!: fish
   osm_tags_extra:
@@ -839,7 +839,7 @@ marches-a-lannee:
 marches-aux-poissons:
   label:
     fr: Marché aux poissons
-  osm_filters_tags:
+  matches:
     - amenity: marketplace
       produce: fish
   osm_tags_extra:
@@ -848,7 +848,7 @@ marches-aux-poissons:
 villages-vacances-osm:
   label:
     fr: Village vacances
-  osm_filters_tags:
+  matches:
     - leisure: resort
   osm_tags_extra:
     - wheelchair
@@ -865,7 +865,7 @@ villages-vacances-osm:
 sites-de-visite:
   label:
     fr: CDT40
-  osm_filters_tags:
+  matches:
     - name: Comité Départemental du Tourisme des Landes
   osm_tags_extra:
     - phone
@@ -892,7 +892,7 @@ sites-de-visite:
 cinemas:
   label:
     fr: Cinémas
-  osm_filters_tags:
+  matches:
     - amenity: cinema
   osm_tags_extra:
     - operator
@@ -904,7 +904,7 @@ cinemas:
 poissonneries:
   label:
     fr: Poissoneries
-  osm_filters_tags:
+  matches:
     - shop: seafood
   osm_tags_extra:
     - wheelchair
@@ -917,7 +917,7 @@ poissonneries:
 decheteries:
   label:
     fr: Déchèteries
-  osm_filters_tags:
+  matches:
     - amenity: recycling
       recycling_type: centre
   osm_tags_extra:
@@ -943,7 +943,7 @@ decheteries:
 hotels-osm:
   label:
     fr: Hôtels
-  osm_filters_tags:
+  matches:
     - tourism: hotel
   osm_tags_extra:
     - wheelchair
@@ -959,7 +959,7 @@ hotels-osm:
 restaurant-osm:
   label:
     fr: Restaurant
-  osm_filters_tags:
+  matches:
     - amenity: restaurant
   osm_tags_extra:
     - ref:FR:CRTA
@@ -968,7 +968,7 @@ restaurant-osm:
 fermes-vivrieres:
   label:
     fr: Fermes vivrières
-  osm_filters_tags:
+  matches:
     - landuse: farmyard
       product!: wine
   osm_tags_extra:
@@ -983,7 +983,7 @@ fermes-vivrieres:
 postbox:
   label:
     fr: postbox
-  osm_filters_tags:
+  matches:
     - amenity: post_box
       collection_times: null
   osm_tags_extra:
@@ -999,7 +999,7 @@ postbox:
 espaces-de-coworking:
   label:
     fr: Espace de coworking
-  osm_filters_tags:
+  matches:
     - amenity: coworking_space
   osm_tags_extra:
     - opening_hours
@@ -1016,13 +1016,13 @@ espaces-de-coworking:
 facebook:
   label:
     fr: Facebook
-  osm_filters_tags:
+  matches:
     - facebook: null
   osm_tags_extra: []
 fusion-facebook:
   label:
     fr: Facebook fusion
-  osm_filters_tags:
+  matches:
     - facebook: null
     - contact:facebook: null
   osm_tags_extra: []

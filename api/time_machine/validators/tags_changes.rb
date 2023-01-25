@@ -2,21 +2,21 @@
 # typed: true
 
 require 'sorbet-runtime'
-require './time_machine/osm_tags_filters'
+require './time_machine/osm_tags_matches'
 
 module Validators
   extend T::Sig
 
-  class Watch < OsmTagsFilters::OsmTagsFilter
+  class Watch < OsmTagsMatchs::OsmTagsMatchSet
     sig {
       params(
-        osm_filters_tags: T::Array[OsmTagsFilters::OsmFiltersTags],
+        matches: T::Array[OsmTagsMatchs::OsmTagsMatch],
         label: T.nilable(Types::MultilingualString),
         osm_tags_extra: T.nilable(T::Array[String]),
       ).void
     }
-    def initialize(osm_filters_tags:, label: nil, osm_tags_extra: nil)
-      super(osm_filters_tags)
+    def initialize(matches:, label: nil, osm_tags_extra: nil)
+      super(matches)
       @label = label
       @osm_tags_extra = osm_tags_extra
     end
@@ -33,7 +33,7 @@ module Validators
     end
   end
 
-  class Watches < OsmTagsFilters::OsmTagsFilters
+  class Watches < OsmTagsMatchs::OsmTagsMatchs
   end
 
   class TagsChanges < ValidatorDual
@@ -56,10 +56,10 @@ module Validators
                  else
                    Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
                      Watch.new(
-                       osm_filters_tags: value['osm_filters_tags'],
-                       label: value['label'],
-                       osm_tags_extra: value['osm_tags_extra'],
-                     )
+                      matches: value['matches'],
+                      label: value['label'],
+                      osm_tags_extra: value['osm_tags_extra'],
+                    )
                    })
                  end
     end

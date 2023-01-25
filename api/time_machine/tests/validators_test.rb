@@ -103,7 +103,7 @@ class TestTagsChanges < Test::Unit::TestCase
     id = 'foo'
     watches = Validators::Watches.new({
       florist: Validators::Watch.new(
-        osm_filters_tags: [{ 'shop' => 'florist' }],
+        matches: [OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => 'florist' })],
         osm_tags_extra: %w[phone fee],
       ),
     })
