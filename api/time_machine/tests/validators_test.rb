@@ -160,3 +160,63 @@ class TestTagsChanges < Test::Unit::TestCase
     )
   end
 end
+
+class TestTagsNonSignificantAdd < Test::Unit::TestCase
+  extend T::Sig
+
+  def test_simple
+    id = 'foo'
+    config = [
+      Validators::TagsNonSignificantChangeConfig.new(
+        matches: [OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => 'florist' })],
+        values: OsmTagsMatchs::OsmTagsMatch.new({ 'phone' => nil }),
+      ),
+    ]
+    validator = Validators::TagsNonSignificantAdd.new(id: id, config: config, action: 'accept')
+    validation_action_accept = [Types::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'accept',
+    )]
+
+    after = {
+      'lat' => 0.0,
+      'lon' => 0.0,
+      'nodes' => nil,
+      'deleted' => false,
+      'members' => nil,
+      'version' => 1,
+      'changeset_id' => 1,
+      'uid' => 1,
+      'username' => 'bob',
+      'created' => 'today',
+      'tags' => {
+        'shop' => 'florist',
+        'phone' => '+48',
+        'foo' => 'bar',
+      },
+      'change_distance' => 0,
+    }
+
+    diff = TimeMachine.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
+    assert_equal(
+      TimeMachine::DiffActions.new(
+        attribs: { 'lat' => [], 'lon' => [] },
+        tags: { 'shop' => [], 'phone' => validation_action_accept, 'foo' => [] }
+      ).inspect,
+      diff.inspect
+    )
+
+    # No change
+    diff = TimeMachine.diff_osm_object(after, after)
+    validator.apply(after, after, diff)
+    assert_equal(
+      TimeMachine::DiffActions.new(
+        attribs: {},
+        tags: {}
+      ).inspect,
+      diff.inspect
+    )
+  end
+end

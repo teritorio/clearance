@@ -26,6 +26,7 @@ services:
       - ./api/:/srv/app/
       - ./conf.yaml:/srv/app/conf.yaml
       - ./config-watches.yaml:/srv/app/config-watches.yaml
+      - ./config-tags_non_significant_add.yaml:/srv/app/config-tags_non_significant_add.yaml
       - ./pbf:/pbf
     depends_on:
       - postgres

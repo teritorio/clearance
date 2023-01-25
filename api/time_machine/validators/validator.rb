@@ -23,7 +23,7 @@ module Validators
     end
 
     sig {
-      params(
+      overridable.params(
         _before: T.nilable(ChangesDb::OSMChangeProperties),
         _after: ChangesDb::OSMChangeProperties,
         _diff: TimeMachine::DiffActions,

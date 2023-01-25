@@ -39,12 +39,23 @@ module OsmTagsMatchs
 
     sig {
       params(
+        key: String,
+        value: String,
+      ).returns(T::Boolean)
+    }
+    def match_key_value(key, value)
+      match = @tags_match[key]
+      !match.nil? && match_value(match, value)
+    end
+
+    sig {
+      params(
         object_tags: T::Hash[String, String],
       ).returns(T::Array[String])
     }
     def match(object_tags)
       @tags_match.keys.intersection(object_tags.keys).select{ |key|
-        match_value(T.must(@tags_match[key]), T.must(object_tags[key]))
+        match_key_value(key, T.must(object_tags[key]))
       }
     end
 
@@ -74,7 +85,7 @@ module OsmTagsMatchs
 
     sig {
       params(
-        tags_set: T::Array[OsmTagsMatch],
+        tags_set: T.nilable(T::Array[OsmTagsMatch]),
       ).void
     }
     def initialize(tags_set)
@@ -87,14 +98,22 @@ module OsmTagsMatchs
       ).returns(T::Array[String])
     }
     def match(tags)
-      @tags_set.collect{ |tags_to_match|
-        tags_to_match.match(tags)
-      }.flatten
+      if @tags_set.nil?
+        tags.keys
+      else
+        @tags_set.collect{ |tags_to_match|
+          tags_to_match.match(tags)
+        }.flatten
+      end
     end
 
     sig { returns(String) }
     def to_sql
-      @tags_set.collect(&:to_sql).join(' OR ')
+      if @tags_set.nil?
+        'TRUE'
+      else
+        @tags_set.collect(&:to_sql).join(' OR ')
+      end
     end
   end
 

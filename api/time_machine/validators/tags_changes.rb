@@ -56,7 +56,7 @@ module Validators
                  else
                    Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
                      Watch.new(
-                      matches: value['matches'],
+                      matches: value['matches']&.collect{ |m| OsmTagsMatchs::OsmTagsMatch.new(m) },
                       label: value['label'],
                       osm_tags_extra: value['osm_tags_extra'],
                     )
@@ -68,10 +68,7 @@ module Validators
       match_keys = (
         (before && @watches.match(before['tags']) || []) +
         @watches.match(after['tags'])
-      ).intersection(diff.tags.keys).select{ |tag|
-        # Exclude new tags with insignificant value
-        !before || !(before['tags'].exclude?(tag) && after['tags'].include?(tag) && after['tags'][tag] == 'no')
-      }
+      ).intersection(diff.tags.keys)
       match_keys.each{ |key|
         assign_action_reject(diff.tags[key])
       }

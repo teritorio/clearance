@@ -1,0 +1,6 @@
+- values:
+    .*: no
+- matches:
+    - amenity: pharmacy
+  values:
+    healthcare: pharmacy

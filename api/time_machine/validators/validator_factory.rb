@@ -7,6 +7,7 @@ require './time_machine/validators/deleted'
 require './time_machine/validators/geom_changes'
 require './time_machine/validators/geom_new_object'
 require './time_machine/validators/tags_changes'
+require './time_machine/validators/tags_non_significant_add'
 require './time_machine/validators/user_list'
 require './time_machine/validators/validator'
 

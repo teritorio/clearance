@@ -19,6 +19,11 @@ validators:
     reject: tags_changes_significant
     accept: tags_changes_non_significant
 
+  tags_non_significant_add:
+    instance: Validators::TagsNonSignificantAdd
+    action_force: acept
+    config: config-tags_non_significant_add.yaml
+
   user_white_list:
     instance: Validators::UserList
     description: Changes by white listed user
