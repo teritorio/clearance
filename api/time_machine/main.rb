@@ -13,6 +13,9 @@ OptionParser.new { |opts|
   opts.on('-h', '--help', 'Help') do
     @options[:help] = true
   end
+  opts.on('-cCONFIG', '--config=CONFIG', 'YAML Config file to use.') do |config|
+    @options[:config] = config
+  end
   opts.on('-p', '--changes-prune', 'Changes prune.') do
     @options[:changes_prune] = true
   end
@@ -33,7 +36,8 @@ OptionParser.new { |opts|
 if @options[:help]
   puts 'RTFC'
 else
-  config = Config.load
+  Dir.chdir(File.dirname(@options[:config]))
+  config = Config.load(@options[:config])
 
   if @options[:changes_prune]
     ChangesDb.changes_prune

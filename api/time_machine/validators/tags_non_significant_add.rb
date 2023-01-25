@@ -50,7 +50,6 @@ module Validators
                       else
                         config_yaml = YAML.unsafe_load_file(config)
                         config_yaml.collect{ |item|
-                          puts item.inspect
                           TagsNonSignificantChangeConfig.new(
                             matches: item['matches']&.collect{ |m| OsmTagsMatchs::OsmTagsMatch.new(m) },
                             values: OsmTagsMatchs::OsmTagsMatch.new(item['values']),

@@ -11,7 +11,8 @@ docker-compose --env-file .tools.env build
 
 ## Configure
 
-Adjust config.yaml
+Create at least one project inside `projects` from template directory.
+Adjust `config.yaml`
 
 ## Start
 ```
@@ -24,23 +25,9 @@ docker-compose exec -u postgres postgres psql
 ```
 
 ## Init
-```
-wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde-latest.osm.pbf -P pbf/import
-wget http://download.openstreetmap.fr/extracts/europe/france/aquitaine/gironde.state.txt -P pbf/import
-```
 
 ```
-docker-compose --env-file .tools.env run --rm ope ope /pbf/import/gironde-latest.osm.pbf /pbf/import/osm_base=o
-
-docker-compose exec -u postgres postgres psql -c "\copy osm_base from '/pbf/import/osm_base.pgcopy'"
-```
-
-```
-mkdir -p pbf/import/replication
-osmosis --read-replication-interval-init workingDirectory=pbf/import/replication
-cp pbf/import/gironde.state.txt pbf/import/replication/state.txt
-echo "baseUrl=https://download.openstreetmap.fr/replication/europe/france/aquitaine/gironde/minute/
-maxInterval=86400" > pbf/import/replication/configuration.txt
+./setup andorra-poi europe/andorra
 ```
 
 ## Update

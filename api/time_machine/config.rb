@@ -19,10 +19,12 @@ module Config
   end
 
   sig {
-    returns(Config)
+    params(
+      path: String
+    ).returns(Config)
   }
-  def self.load
-    config_yaml = YAML.unsafe_load_file(T.must(ENV.fetch('CONFIG', nil)))
+  def self.load(path)
+    config_yaml = YAML.unsafe_load_file(path)
     config = MainConfig.from_hash(config_yaml)
     validators = Validators.validators_factory(config.validators)
 
