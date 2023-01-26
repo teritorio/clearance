@@ -24,6 +24,10 @@ module Db
     def self.conn(project, &block)
       conn0 = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
       conn0.type_map_for_results = PG::BasicTypeMapForResults.new(conn0)
+
+      # Avoid SQL injection
+      raise 'Invalid project name' if !(project =~ /[-A-Za-z0-9_]+/)
+
       conn0.exec("SET search_path = #{project},public")
       block.call(conn0)
     end
