@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -a
+set -e
 
 PROJECT=$1
 EXTRACT=${2:-europe/france/aquitaine/gironde}
