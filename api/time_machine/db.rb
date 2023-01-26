@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require 'pg'
@@ -95,7 +95,7 @@ module Db
 
   sig {
     params(
-      xml: Nokogiri::XML::Builder,
+      xml: T.untyped, # Nokogiri::XML::Builder,
       tags: OSMTags,
     ).void
   }
@@ -123,14 +123,14 @@ module Db
         }
       when 'w'
         xml.way(**as_osm_xml_attribs(object)) {
-          object.nodes.each{ |node_id|
+          object.nodes&.each{ |node_id|
             xml.nd(ref: node_id)
           }
           as_osm_xml_tags(xml, object.tags)
         }
       when 'r'
         xml.relation(**as_osm_xml_attribs(object)) {
-          object.members.each{ |member|
+          object.members&.each{ |member|
             xml.member(
               type: { 'n' => 'node', 'w' => 'way', 'r' => 'relation' }[member.type],
               ref: member.ref,
@@ -201,8 +201,8 @@ module Db
           version
       "
       conn.exec(sql) { |result|
-        action = nil
-        action_old = nil
+        action = ''
+        action_old = ''
         result.each{ |row|
           object = ObjectChanges.from_hash(row)
           action = if object.version == 1
@@ -213,7 +213,7 @@ module Db
                      'modify'
                    end
 
-          if !action_old.nil? && action != action_old
+          if action_old != '' && action != action_old
             f.write("  </#{action_old}>\n")
           end
           if action_old != action
@@ -224,7 +224,7 @@ module Db
           f.write(as_osm_xml(object))
           f.write("\n")
         }
-        f.write("  </#{action}>\n") if !action.nil?
+        f.write("  </#{action}>\n") if action != ''
       }
 
       f.write('</osmChange>')
@@ -242,11 +242,13 @@ module Db
   def self.export_update(conn, update_path)
     current_state_file = "#{update_path}/state.txt"
 
-    sequence_number = if File.exist?(current_state_file)
-                        File.readlines(current_state_file).find{ |line| line.start_with?('sequenceNumber=') }.split('=')[1].to_i
-                      else
-                        -1
-                      end
+    sequence_number = -1
+    if File.exist?(current_state_file)
+      s = File.readlines(current_state_file).find{ |line| line.start_with?('sequenceNumber=') }
+      if s
+        sequence_number = s.split('=')[1].to_i
+      end
+    end
 
     sequence_number += 1
 

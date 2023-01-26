@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require './time_machine/types'
@@ -31,6 +31,9 @@ module Validators
     }
     def apply(_before, _after, _diff); end
 
+    sig {
+      returns(T::Hash[T.untyped, T.untyped])
+    }
     def to_h
       instance_variables.select{ |v| [:@watches].exclude?(v) }.to_h { |v|
         [v.to_s.delete('@'), instance_variable_get(v)]
@@ -51,11 +54,11 @@ module Validators
     def initialize(id:, description: nil, action: nil, action_force: nil)
       super(id: id)
       @action_force = T.let(!action_force.nil?, T::Boolean)
-      @action = Types::Action.new(
+      @action = T.let(Types::Action.new(
         validator_id: id,
         description: description,
         action: action || action_force || 'reject'
-      )
+      ), Types::Action)
     end
 
     sig {
@@ -83,16 +86,16 @@ module Validators
     }
     def initialize(id:, accept:, reject:, description: nil)
       super(id: id)
-      @action_accept = Types::Action.new(
+      @action_accept = T.let(Types::Action.new(
         validator_id: accept,
         description: description,
         action: 'accept'
-      )
-      @action_reject = Types::Action.new(
+      ), Types::Action)
+      @action_reject = T.let(Types::Action.new(
         validator_id: reject,
         description: description,
         action: 'reject'
-      )
+      ), Types::Action)
     end
 
     sig {
@@ -118,6 +121,13 @@ module Validators
 
   # Dummy Validator
   class All < Validator
+    sig {
+      override.params(
+        _before: T.nilable(ChangesDb::OSMChangeProperties),
+        _after: ChangesDb::OSMChangeProperties,
+        diff: TimeMachine::DiffActions,
+      ).void
+    }
     def apply(_before, _after, diff)
       (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)

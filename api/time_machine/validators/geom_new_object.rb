@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require './time_machine/types'
@@ -20,9 +20,16 @@ module Validators
       super(id: id, action: action, action_force: action_force, description: description)
     end
 
+    sig {
+      override.params(
+        before: T.nilable(ChangesDb::OSMChangeProperties),
+        _after: ChangesDb::OSMChangeProperties,
+        diff: TimeMachine::DiffActions,
+      ).void
+    }
     def apply(before, _after, diff)
       %w[lon lat nodes members].each{ |attrib|
-        assign_action(diff.attrib[attrib]) if !before && diff.attrib[attrib]
+        assign_action(T.must(diff.attribs[attrib])) if !before && !diff.attribs[attrib].nil?
       }
     end
   end

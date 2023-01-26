@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require './time_machine/changes_db'
@@ -11,14 +11,22 @@ module TimeMachine
   extend T::Sig
 
   class DiffActions < T::Struct
+    extend T::Sig
+
     const :attribs, Types::HashActions
     const :tags, Types::HashActions
 
+    sig {
+      returns(T::Boolean)
+    }
     def fully_accepted?
       (attribs.empty? || attribs.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } }) &&
         (tags.empty? || tags.values.all?{ |actions| !actions.empty? && actions.all?{ |action| action.action == 'accept' } })
     end
 
+    sig {
+      returns(T::Boolean)
+    }
     def partialy_rejected?
       attribs.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } } ||
         tags.values.any?{ |actions| actions.any?{ |action| action.action == 'reject' } }

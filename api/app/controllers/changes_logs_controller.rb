@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: false
+# typed: true
 
 class ChangesLogsController < ApplicationController
   def index

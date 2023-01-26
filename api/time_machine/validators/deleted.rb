@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require './time_machine/types'
@@ -10,6 +10,13 @@ module Validators
   extend T::Sig
 
   class Deleted < Validator
+    sig {
+      override.params(
+        _before: T.nilable(ChangesDb::OSMChangeProperties),
+        after: ChangesDb::OSMChangeProperties,
+        diff: TimeMachine::DiffActions,
+      ).void
+    }
     def apply(_before, after, diff)
       return if !after['deleted']
 

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 
@@ -18,14 +18,22 @@ module Types
   ActionType = String
 
   class Action < T::Struct
+    extend T::Sig
+
     const :validator_id, String
     const :description, T.nilable(String)
     const :action, ActionType
 
+    sig {
+      returns(String)
+    }
     def inspect
       "<#{@validator_id}:#{@action}>"
     end
 
+    sig {
+      returns(T::Array[T.untyped])
+    }
     def as_json
       [@validator_id, @action].as_json
     end

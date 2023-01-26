@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require './time_machine/osm_tags_matches'
@@ -37,6 +37,7 @@ module Validators
   end
 
   class TagsChanges < ValidatorDual
+    sig { returns(Watches) }
     attr_reader :watches
 
     sig {
@@ -51,29 +52,38 @@ module Validators
     def initialize(id:, watches:, accept:, reject:, description: nil)
       super(id: id, accept: accept, reject: reject, description: description)
 
-      @watches = if watches.is_a?(Watches)
-                   watches
-                 else
-                   Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
-                     Watch.new(
-                      matches: value['matches']&.collect{ |m| OsmTagsMatchs::OsmTagsMatch.new(m) },
-                      label: value['label'],
-                      osm_tags_extra: value['osm_tags_extra'],
-                    )
-                   })
-                 end
+      w = if watches.is_a?(Watches)
+            watches
+          else
+            Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
+              Watch.new(
+               matches: value['matches']&.collect{ |m| OsmTagsMatchs::OsmTagsMatch.new(m) },
+               label: value['label'],
+               osm_tags_extra: value['osm_tags_extra'],
+             )
+            })
+          end
+
+      @watches = T.let(w, Watches)
     end
 
+    sig {
+      override.params(
+        before: T.nilable(ChangesDb::OSMChangeProperties),
+        after: ChangesDb::OSMChangeProperties,
+        diff: TimeMachine::DiffActions,
+      ).void
+    }
     def apply(before, after, diff)
       match_keys = (
         (before && @watches.match(before['tags']) || []) +
         @watches.match(after['tags'])
       ).intersection(diff.tags.keys)
       match_keys.each{ |key|
-        assign_action_reject(diff.tags[key])
+        assign_action_reject(T.must(diff.tags[key])) if diff.tags.include?(key)
       }
       (diff.tags.keys - match_keys).each{ |key|
-        assign_action_accept(diff.tags[key])
+        assign_action_accept(T.must(diff.tags[key])) if diff.tags.include?(key)
       }
     end
   end

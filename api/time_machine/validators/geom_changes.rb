@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 require 'sorbet-runtime'
 require './time_machine/types'
@@ -22,6 +22,13 @@ module Validators
       @dist = dist
     end
 
+    sig {
+      override.params(
+        before: T.nilable(ChangesDb::OSMChangeProperties),
+        after: ChangesDb::OSMChangeProperties,
+        diff: TimeMachine::DiffActions,
+      ).void
+    }
     def apply(before, after, diff)
       # TODO, impl for ways (and relations)
       return if !before || !diff.attribs['change_distance']
@@ -29,9 +36,9 @@ module Validators
       dist = after['change_distance']
       return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
-      assign_action(diff.attribs['lon']) if diff.attribs['lon']
-      assign_action(diff.attribs['lat']) if diff.attribs['lat']
-      assign_action(diff.attribs['change_distance'])
+      assign_action(T.must(diff.attribs['lon'])) if !diff.attribs['lon'].nil?
+      assign_action(T.must(diff.attribs['lat'])) if !diff.attribs['lat'].nil?
+      assign_action(T.must(diff.attribs['change_distance'])) if !diff.attribs['change_distance'].nil?
     end
   end
 end
