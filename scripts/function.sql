@@ -1,6 +1,6 @@
-CREATE SCHEMA IF NOT EXISTS postgisftw;
+SET search_path TO :schema,public;
 
-CREATE OR REPLACE FUNCTION postgisftw.changes_logs() RETURNS TABLE(
+CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     objtype character(1),
     id bigint,
     base json,
@@ -62,5 +62,5 @@ CREATE OR REPLACE FUNCTION postgisftw.changes_logs() RETURNS TABLE(
     ;
 $$ LANGUAGE SQL PARALLEL SAFE;
 
-COMMENT ON FUNCTION postgisftw.changes_logs IS
+COMMENT ON FUNCTION changes_logs IS
     'Changes to be reviewed';

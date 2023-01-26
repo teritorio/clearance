@@ -26,7 +26,7 @@ module Config
   def self.load(path)
     config_yaml = YAML.unsafe_load_file(path)
     config = MainConfig.from_hash(config_yaml)
-    validators = Validators.validators_factory(config.validators)
+    validators = Validators::ValidatorFactory.validators_factory(config.validators)
 
     Config.new(
       validators: validators,

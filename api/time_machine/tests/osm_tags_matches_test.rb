@@ -10,19 +10,19 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
   extend T::Sig
 
   def test_match_value
-    assert_equal(['p'], OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'p' => nil })]).match({ 'p' => '+48' }))
+    assert_equal(['p'], OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'p' => nil })]).match({ 'p' => '+48' }))
 
-    assert_equal(['p'], OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'p' => '+48' })]).match({ 'p' => '+48' }))
-    assert_equal([], OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'p' => '+48' })]).match({ 'p' => '+4' }))
+    assert_equal(['p'], OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'p' => '+48' })]).match({ 'p' => '+48' }))
+    assert_equal([], OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'p' => '+48' })]).match({ 'p' => '+4' }))
 
-    assert_equal(['p'], OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'p' => /4/ })]).match({ 'p' => '+48' }))
-    assert_equal([], OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'p' => /5/ })]).match({ 'p' => '+48' }))
+    assert_equal(['p'], OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'p' => /4/ })]).match({ 'p' => '+48' }))
+    assert_equal([], OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'p' => /5/ })]).match({ 'p' => '+48' }))
   end
 
   def test_matches
-    matches = OsmTagsMatchs::OsmTagsMatchs.new({
-      amenity: OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'amenity' => /.*/ })]),
-      florist: OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => 'florist' })]),
+    matches = OsmTagsMatches::OsmTagsMatches.new({
+      amenity: OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'amenity' => /.*/ })]),
+      florist: OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'shop' => 'florist' })]),
     })
 
     assert_equal(['shop'], matches.match({ 'shop' => 'florist' }))
@@ -34,10 +34,10 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
   end
 
   def test_matches_to_sql
-    matches = OsmTagsMatchs::OsmTagsMatchs.new({
-      amenity: OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'amenity' => nil })]),
-      florist: OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => 'florist' })]),
-      pizza: OsmTagsMatchs::OsmTagsMatchSet.new([OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => /pizza.*/ })]),
+    matches = OsmTagsMatches::OsmTagsMatches.new({
+      amenity: OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'amenity' => nil })]),
+      florist: OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'shop' => 'florist' })]),
+      pizza: OsmTagsMatches::OsmTagsMatchSet.new([OsmTagsMatches::OsmTagsMatch.new({ 'shop' => /pizza.*/ })]),
     })
 
     sql = matches.to_sql

@@ -32,10 +32,12 @@ module Types
     end
 
     sig {
-      returns(T::Array[T.untyped])
+      params(
+        options: T.untyped,
+      ).returns(T::Array[T.untyped])
     }
-    def as_json
-      [@validator_id, @action].as_json
+    def as_json(options = T.unsafe(nil))
+      [@validator_id, @action].as_json(options)
     end
   end
 

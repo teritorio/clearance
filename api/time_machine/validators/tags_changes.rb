@@ -7,10 +7,10 @@ require './time_machine/osm_tags_matches'
 module Validators
   extend T::Sig
 
-  class Watch < OsmTagsMatchs::OsmTagsMatchSet
+  class Watch < OsmTagsMatches::OsmTagsMatchSet
     sig {
       params(
-        matches: T::Array[OsmTagsMatchs::OsmTagsMatch],
+        matches: T::Array[OsmTagsMatches::OsmTagsMatch],
         label: T.nilable(Types::MultilingualString),
         osm_tags_extra: T.nilable(T::Array[String]),
       ).void
@@ -33,7 +33,7 @@ module Validators
     end
   end
 
-  class Watches < OsmTagsMatchs::OsmTagsMatchs
+  class Watches < OsmTagsMatches::OsmTagsMatches
   end
 
   class TagsChanges < ValidatorDual
@@ -57,7 +57,7 @@ module Validators
           else
             Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
               Watch.new(
-               matches: value['matches']&.collect{ |m| OsmTagsMatchs::OsmTagsMatch.new(m) },
+               matches: value['matches']&.collect{ |m| OsmTagsMatches::OsmTagsMatch.new(m) },
                label: value['label'],
                osm_tags_extra: value['osm_tags_extra'],
              )

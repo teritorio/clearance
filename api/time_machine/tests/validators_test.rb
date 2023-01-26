@@ -103,7 +103,7 @@ class TestTagsChanges < Test::Unit::TestCase
     id = 'foo'
     watches = Validators::Watches.new({
       florist: Validators::Watch.new(
-        matches: [OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => 'florist' })],
+        matches: [OsmTagsMatches::OsmTagsMatch.new({ 'shop' => 'florist' })],
         osm_tags_extra: %w[phone fee],
       ),
     })
@@ -168,8 +168,8 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
     id = 'foo'
     config = [
       Validators::TagsNonSignificantChangeConfig.new(
-        matches: [OsmTagsMatchs::OsmTagsMatch.new({ 'shop' => 'florist' })],
-        values: OsmTagsMatchs::OsmTagsMatch.new({ 'phone' => nil }),
+        matches: [OsmTagsMatches::OsmTagsMatch.new({ 'shop' => 'florist' })],
+        values: OsmTagsMatches::OsmTagsMatch.new({ 'phone' => nil }),
       ),
     ]
     validator = Validators::TagsNonSignificantAdd.new(id: id, config: config, action: 'accept')

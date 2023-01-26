@@ -8,11 +8,11 @@ require './time_machine/types'
 module Validators
   extend T::Sig
 
-  class TagsNonSignificantChangeConfig < OsmTagsMatchs::OsmTagsMatchSet
+  class TagsNonSignificantChangeConfig < OsmTagsMatches::OsmTagsMatchSet
     sig {
       params(
-        matches: T.nilable(T::Array[OsmTagsMatchs::OsmTagsMatch]),
-        values: OsmTagsMatchs::OsmTagsMatch,
+        matches: T.nilable(T::Array[OsmTagsMatches::OsmTagsMatch]),
+        values: OsmTagsMatches::OsmTagsMatch,
       ).void
     }
     def initialize(matches:, values:)
@@ -51,8 +51,8 @@ module Validators
                         config_yaml = YAML.unsafe_load_file(config)
                         config_yaml.collect{ |item|
                           TagsNonSignificantChangeConfig.new(
-                            matches: item['matches']&.collect{ |m| OsmTagsMatchs::OsmTagsMatch.new(m) },
-                            values: OsmTagsMatchs::OsmTagsMatch.new(item['values']),
+                            matches: item['matches']&.collect{ |m| OsmTagsMatches::OsmTagsMatch.new(m) },
+                            values: OsmTagsMatches::OsmTagsMatch.new(item['values']),
                           )
                         }
                       end, T::Array[TagsNonSignificantChangeConfig])

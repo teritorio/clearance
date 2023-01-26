@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 
-module OsmTagsMatchs
+module OsmTagsMatches
   extend T::Sig
 
   OsmMatchKey = T.type_alias { String }
@@ -117,7 +117,7 @@ module OsmTagsMatchs
     end
   end
 
-  class OsmTagsMatchs
+  class OsmTagsMatches
     extend T::Sig
 
     sig {

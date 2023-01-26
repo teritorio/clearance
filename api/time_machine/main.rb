@@ -37,7 +37,6 @@ if @options[:help]
   puts 'RTFC'
 else
   project = @options[:project].split('/')[-1]
-  Dir.chdir(@options[:project])
   config = Config.load("#{@options[:project]}/config.yaml")
 
   if @options[:changes_prune]

@@ -1,15 +1,21 @@
 # frozen_string_literal: true
 # typed: true
 
+require './time_machine/db'
+
 class ChangesLogsController < ApplicationController
+  extend T::Sig
+
   def index
-    sql = 'SELECT * FROM postgisftw.changes_logs()'
-    Db::DbConn.conn{ |conn|
+    project = params['project'].to_s
+
+    sql = 'SELECT * FROM changes_logs()'
+    Db::DbConnRead.conn(project) { |conn|
       json = conn.exec(sql).map{ |row|
-        row['base'] = JSON.parse(row['base'])
-        row['change'] = JSON.parse(row['change'])
-        row['diff_tags'] = JSON.parse(row['diff_tags']) if row['diff_tags']
-        row['diff_attribs'] = JSON.parse(row['diff_attribs']) if row['diff_attribs']
+        row['base'] = row['base']
+        row['change'] =  row['change']
+        row['diff_tags'] = row['diff_tags']
+        row['diff_attribs'] = row['diff_attribs']
         row
       }
       render json: json
@@ -17,13 +23,18 @@ class ChangesLogsController < ApplicationController
   end
 
   def sets
-    changes = params['_json'].map{ |change|
+    project = params['project'].to_s
+
+    changes = ['_json'].map{ |change|
       Db::ObjectId.new(
         objtype: change['objtype'],
         id: change['id'],
         version: change['version'],
       )
     }
-    ChangesDb.accept_changes(changes)
+
+    Db::DbConnWrite.conn(project) { |conn|
+      ChangesDb.accept_changes(conn, changes)
+    }
   end
 end
