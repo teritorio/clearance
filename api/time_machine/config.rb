@@ -9,11 +9,13 @@ module Config
   extend T::Sig
 
   class MainConfig < T::Struct
+    const :description, T::Hash[String, String]
     const :validators, T::Hash[String, T::Hash[String, Object]]
     const :customers, Object
   end
 
   class Config < T::Struct
+    const :description, T::Hash[String, String]
     const :validators, T::Array[Validators::ValidatorBase]
     const :customers, Object
   end
@@ -29,6 +31,7 @@ module Config
     validators = Validators::ValidatorFactory.validators_factory(config.validators)
 
     Config.new(
+      description: config.description,
       validators: validators,
       customers: config.customers,
     )

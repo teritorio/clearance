@@ -7,6 +7,8 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "articles#index"
 
+  get '/api/0.1/projects', controller: 'projects', action: 'index'
+
   get '/api/0.1/:project/changes_logs', controller: 'changes_logs', action: 'index'
   post '/api/0.1/:project/changes_logs/accept', controller: 'changes_logs', action: 'sets'
 
