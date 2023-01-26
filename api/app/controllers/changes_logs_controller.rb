@@ -4,15 +4,16 @@
 class ChangesLogsController < ApplicationController
   def index
     sql = 'SELECT * FROM postgisftw.changes_logs()'
-    conn = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
-    json = conn.exec(sql).map{ |row|
-      row['base'] = JSON.parse(row['base'])
-      row['change'] = JSON.parse(row['change'])
-      row['diff_tags'] = JSON.parse(row['diff_tags']) if row['diff_tags']
-      row['diff_attribs'] = JSON.parse(row['diff_attribs']) if row['diff_attribs']
-      row
+    Db::DbConn.conn{ |conn|
+      json = conn.exec(sql).map{ |row|
+        row['base'] = JSON.parse(row['base'])
+        row['change'] = JSON.parse(row['change'])
+        row['diff_tags'] = JSON.parse(row['diff_tags']) if row['diff_tags']
+        row['diff_attribs'] = JSON.parse(row['diff_attribs']) if row['diff_attribs']
+        row
+      }
+      render json: json
     }
-    render json: json
   end
 
   def sets

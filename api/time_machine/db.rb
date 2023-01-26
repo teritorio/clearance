@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: false
+# typed: true
 
 require 'sorbet-runtime'
 require 'pg'
@@ -11,6 +11,39 @@ require 'fileutils'
 
 module Db
   extend T::Sig
+
+  class DbConnRead
+    extend T::Sig
+
+    sig {
+      params(
+        project: String,
+        block: T.proc.params(conn: PG::Connection).void,
+      ).void
+    }
+    def self.conn(project, &block)
+      conn0 = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
+      conn0.type_map_for_results = PG::BasicTypeMapForResults.new(conn0)
+      conn0.exec("SET search_path = #{project},public")
+      block.call(conn0)
+    end
+  end
+
+  class DbConnWrite < DbConnRead
+    extend T::Sig
+
+    sig {
+      params(
+        project: String,
+        block: T.proc.params(conn: PG::Connection).void,
+      ).void
+    }
+    def self.conn(project, &block)
+      super(project) { |conn0|
+        conn0.transaction(&block)
+      }
+    end
+  end
 
   OSMTags = T.type_alias { T::Hash[String, String] }
 
@@ -112,10 +145,11 @@ module Db
 
   sig {
     params(
+      conn: PG::Connection,
       osm_xml: String,
     ).void
   }
-  def self.export(osm_xml)
+  def self.export(conn, osm_xml)
     sql = "
     SELECT
       *
@@ -132,8 +166,6 @@ module Db
       f.write('<osm version="0.6" generator="a-priori-validation-for-osm">')
       f.write("\n")
 
-      conn = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
-      conn.type_map_for_results = PG::BasicTypeMapForResults.new(conn)
       conn.exec(sql) { |result|
         result.each{ |row|
           f.write(as_osm_xml(ObjectBase.from_hash(row)))
@@ -147,69 +179,67 @@ module Db
 
   sig {
     params(
+      conn: PG::Connection,
       osc_gz: String,
     ).void
   }
-  def self.export_changes(osc_gz)
-    conn0 = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
-    conn0.type_map_for_results = PG::BasicTypeMapForResults.new(conn0)
-    conn0.transaction{ |conn|
-      Zlib::GzipWriter.open(osc_gz) { |f|
-        f.write('<?xml version="1.0" encoding="UTF-8"?>')
-        f.write("\n")
-        f.write('<osmChange version="0.6" generator="a-priori-validation-for-osm">')
-        f.write("\n")
+  def self.export_changes(conn, osc_gz)
+    Zlib::GzipWriter.open(osc_gz) { |f|
+      f.write('<?xml version="1.0" encoding="UTF-8"?>')
+      f.write("\n")
+      f.write('<osmChange version="0.6" generator="a-priori-validation-for-osm">')
+      f.write("\n")
 
-        sql = "
-          SELECT
-            *
-          FROM
-            osm_changes_applyed
-          ORDER BY
-            objtype,
-            id,
-            version
-        "
-        conn.exec(sql) { |result|
-          action = nil
-          action_old = nil
-          result.each{ |row|
-            object = ObjectChanges.from_hash(row)
-            action = if object.version == 1
-                       'create'
-                     elsif object.deleted
-                       'delete'
-                     else
-                       'modify'
-                     end
+      sql = "
+        SELECT
+          *
+        FROM
+          osm_changes_applyed
+        ORDER BY
+          objtype,
+          id,
+          version
+      "
+      conn.exec(sql) { |result|
+        action = nil
+        action_old = nil
+        result.each{ |row|
+          object = ObjectChanges.from_hash(row)
+          action = if object.version == 1
+                     'create'
+                   elsif object.deleted
+                     'delete'
+                   else
+                     'modify'
+                   end
 
-            if !action_old.nil? && action != action_old
-              f.write("  </#{action_old}>\n")
-            end
-            if action_old != action
-              f.write("  <#{action}>\n")
-            end
-            action_old = action
+          if !action_old.nil? && action != action_old
+            f.write("  </#{action_old}>\n")
+          end
+          if action_old != action
+            f.write("  <#{action}>\n")
+          end
+          action_old = action
 
-            f.write(as_osm_xml(object))
-            f.write("\n")
-          }
-          f.write("  </#{action}>\n") if !action.nil?
+          f.write(as_osm_xml(object))
+          f.write("\n")
         }
-
-        f.write('</osmChange>')
+        f.write("  </#{action}>\n") if !action.nil?
       }
 
-      conn.exec('DELETE FROM osm_changes_applyed')
+      f.write('</osmChange>')
     }
+
+    conn.exec('DELETE FROM osm_changes_applyed')
   end
 
   sig {
     params(
+      conn: PG::Connection,
       update_path: String,
     ).void
   }
-  def self.export_update(update_path)
+  def self.export_update(conn, update_path)
     current_state_file = "#{update_path}/state.txt"
 
     sequence_number = if File.exist?(current_state_file)
@@ -229,7 +259,7 @@ module Db
     FileUtils.mkdir_p(path)
     osc_gz = "#{path}/#{sequence_path0}.osm.gz"
 
-    export_changes(osc_gz)
+    export_changes(conn, osc_gz)
 
     osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
     File.write(osc_gz_state, "#

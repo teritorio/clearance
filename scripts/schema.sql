@@ -1,5 +1,7 @@
-DROP TABLE IF EXISTS "osm_base" CASCADE;
-CREATE TABLE "osm_base" (
+CREATE SCHEMA IF NOT EXISTS :schema;
+
+DROP TABLE IF EXISTS :schema."osm_base" CASCADE;
+CREATE TABLE :schema."osm_base" (
     "objtype" CHAR(1) CHECK(objtype IN ('n', 'w', 'r')), -- %COL:osm_base:objtype%
     "id" BIGINT NOT NULL, -- %COL:osm_base:id%
     "version" INTEGER NOT NULL, -- %COL:osm_base:version%
@@ -13,10 +15,10 @@ CREATE TABLE "osm_base" (
     "nodes" BIGINT[], -- %COL:osm_base:nodes%
     "members" JSONB -- %COL:osm_base:members%
 );
-ALTER TABLE "osm_base" ADD PRIMARY KEY(id, objtype); -- %PK:osm_base%
+ALTER TABLE :schema."osm_base" ADD PRIMARY KEY(id, objtype); -- %PK:osm_base%
 
-DROP TABLE IF EXISTS "osm_changes" CASCADE;
-CREATE TABLE "osm_changes" (
+DROP TABLE IF EXISTS :schema."osm_changes" CASCADE;
+CREATE TABLE :schema."osm_changes" (
     "objtype" CHAR(1) CHECK(objtype IN ('n', 'w', 'r')), -- %COL:osm_changes:objtype%
     "id" BIGINT NOT NULL, -- %COL:osm_changes:id%
     "version" INTEGER NOT NULL, -- %COL:osm_changes:version%
@@ -31,10 +33,10 @@ CREATE TABLE "osm_changes" (
     "nodes" BIGINT[], -- %COL:osm_changes:nodes%
     "members" JSONB -- %COL:osm_changes:members%
 );
-ALTER TABLE "osm_changes" ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes%
+ALTER TABLE :schema."osm_changes" ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes%
 
-DROP TABLE IF EXISTS "validations_log" CASCADE;
-CREATE TABLE "validations_log" (
+DROP TABLE IF EXISTS :schema."validations_log" CASCADE;
+CREATE TABLE :schema."validations_log" (
     "objtype" CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
     "id" BIGINT NOT NULL,
     "version" INTEGER NOT NULL,
@@ -47,10 +49,10 @@ CREATE TABLE "validations_log" (
     "diff_attribs" JSONB,
     "diff_tags"  JSONB
 );
-ALTER TABLE "validations_log" ADD PRIMARY KEY(id, objtype, version);
+ALTER TABLE :schema."validations_log" ADD PRIMARY KEY(id, objtype, version);
 
-DROP TABLE IF EXISTS "osm_changes_applyed" CASCADE;
-CREATE TABLE "osm_changes_applyed" AS
-SELECT * FROM "osm_changes"
+DROP TABLE IF EXISTS :schema."osm_changes_applyed" CASCADE;
+CREATE TABLE :schema."osm_changes_applyed" AS
+SELECT * FROM :schema."osm_changes"
 WITH NO DATA;
-ALTER TABLE "osm_changes_applyed" ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes_applyed%
+ALTER TABLE :schema."osm_changes_applyed" ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes_applyed%

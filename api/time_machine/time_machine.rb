@@ -123,12 +123,13 @@ module TimeMachine
 
   sig {
     params(
-    validators: T::Array[Validators::ValidatorBase],
-  ).returns(T::Enumerable[[String, Integer, ValidationResult]])
+      conn: PG::Connection,
+      validators: T::Array[Validators::ValidatorBase],
+    ).returns(T::Enumerable[[String, Integer, ValidationResult]])
   }
-  def self.time_machine(validators)
+  def self.time_machine(conn, validators)
     Enumerator.new { |yielder|
-      ChangesDb.fetch_changes { |osm_change_object|
+      ChangesDb.fetch_changes(conn) { |osm_change_object|
         validation_results = object_validation(validators, osm_change_object['p'])
         validation_results.each{ |validation_result|
           yielder << [osm_change_object['objtype'], osm_change_object['id'], validation_result]
@@ -139,13 +140,14 @@ module TimeMachine
 
   sig {
     params(
+      conn: PG::Connection,
       validators: T::Array[Validators::ValidatorBase],
     ).void
   }
-  def self.validate(validators)
-    validations = time_machine(validators)
+  def self.validate(conn, validators)
+    validations = time_machine(conn, validators)
 
-    ChangesDb.apply_logs(validations.collect{ |objtype, id, validation|
+    ChangesDb.apply_logs(conn, validations.collect{ |objtype, id, validation|
       ChangesDb::ValidationLog.new(
         objtype: objtype,
         id: id,

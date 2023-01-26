@@ -21,7 +21,8 @@ echo "baseUrl=https://download.openstreetmap.fr/replication/${EXTRACT}/minute/
 maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
 
-PG_COPY=${IMPORT}/osm_base.pgcopy
+docker-compose exec -u postgres postgres psql -v schema=${PROJECT} -f /scripts/schema.sql
 
+PG_COPY=${IMPORT}/osm_base.pgcopy
 docker-compose --env-file .tools.env run --rm ope ope /${PBF} /${IMPORT}/osm_base=o
-docker-compose exec -u postgres postgres psql -c "\copy osm_base from '/${PG_COPY}'"
+docker-compose exec -u postgres postgres psql -c "\copy ${PROJECT}.osm_base from '/${PG_COPY}'"

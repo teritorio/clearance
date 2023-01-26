@@ -27,14 +27,14 @@ docker-compose exec -u postgres postgres psql
 ## Init
 
 ```
-./setup andorra-poi europe/andorra
+./scripts/setup andorra-poi europe/andorra
 ```
 
 ## Update
 
 Get Update, Import and Generate Validation report in database
 ```
-./update.sh
+./scripts/update.sh
 ```
 
 ## Export

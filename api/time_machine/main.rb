@@ -13,8 +13,8 @@ OptionParser.new { |opts|
   opts.on('-h', '--help', 'Help') do
     @options[:help] = true
   end
-  opts.on('-cCONFIG', '--config=CONFIG', 'YAML Config file to use.') do |config|
-    @options[:config] = config
+  opts.on('-pPROJECT', '--project=PROJECT', 'Project directory to use.') do |project|
+    @options[:project] = project
   end
   opts.on('-p', '--changes-prune', 'Changes prune.') do
     @options[:changes_prune] = true
@@ -36,25 +36,36 @@ OptionParser.new { |opts|
 if @options[:help]
   puts 'RTFC'
 else
-  Dir.chdir(File.dirname(@options[:config]))
-  config = Config.load(@options[:config])
+  project = @options[:project].split('/')[-1]
+  Dir.chdir(@options[:project])
+  config = Config.load("#{@options[:project]}/config.yaml")
 
   if @options[:changes_prune]
-    ChangesDb.changes_prune
+    Db::DbConnWrite.conn(project) { |conn|
+      ChangesDb.changes_prune(conn)
+    }
   end
 
   if @options[:apply_unclibled_changes]
     watches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).watches
-    ChangesDb.apply_unclibled_changes(watches.to_sql)
+    Db::DbConnWrite.conn(project){ |conn|
+      ChangesDb.apply_unclibled_changes(conn, watches.to_sql)
+    }
   end
 
   if @options[:validate]
-    TimeMachine.validate(config.validators)
+    Db::DbConnWrite.conn(project){ |conn|
+      TimeMachine.validate(conn, config.validators)
+    }
   end
 
   if @options[:export_osm]
-    Db.export(@options[:export_osm])
+    Db::DbConnRead.conn(project){ |conn|
+      Db.export(conn, @options[:export_osm])
+    }
   elsif @options[:export_osm_update]
-    Db.export_update(@options[:export_osm_update])
+    Db::DbConnWrite.conn(project){ |conn|
+      Db.export_update(conn, @options[:export_osm_update])
+    }
   end
 end
