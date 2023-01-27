@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'pg'
 require './time_machine/types'
+require './time_machine/state_file'
 require 'json'
 require 'nokogiri'
 require 'zlib'
@@ -246,14 +247,8 @@ module Db
   def self.export_update(conn, update_path)
     current_state_file = "#{update_path}/state.txt"
 
-    sequence_number = -1
-    if File.exist?(current_state_file)
-      s = File.readlines(current_state_file).find{ |line| line.start_with?('sequenceNumber=') }
-      if s
-        sequence_number = s.split('=')[1].to_i
-      end
-    end
-
+    state_file = StateFile::StateFile.from_file(current_state_file)
+    sequence_number = state_file&.sequence_number || -1
     sequence_number += 1
 
     sequence_path = format('%09d', sequence_number)
@@ -268,10 +263,10 @@ module Db
     export_changes(conn, osc_gz)
 
     osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
-    File.write(osc_gz_state, "#
-timestamp=2022-09-04T20:21:24Z
-sequenceNumber=#{sequence_number}
-")
+    StateFile::StateFile.new(
+      timestamp: '2022-09-04T20:21:24Z',
+      sequence_number: sequence_number
+    ).save_to(osc_gz_state)
     FileUtils.copy(osc_gz_state, current_state_file)
   end
 end
