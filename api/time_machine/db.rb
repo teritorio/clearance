@@ -186,9 +186,10 @@ module Db
     params(
       conn: PG::Connection,
       osc_gz: String,
-    ).void
+    ).returns(T::Boolean)
   }
   def self.export_changes(conn, osc_gz)
+    has_content = false
     Zlib::GzipWriter.open(osc_gz) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')
       f.write("\n")
@@ -209,6 +210,8 @@ module Db
         action = ''
         action_old = ''
         result.each{ |row|
+          has_content = true
+
           object = ObjectChanges.from_hash(row)
           action = if object.version == 1
                      'create'
@@ -235,16 +238,21 @@ module Db
       f.write('</osmChange>')
     }
 
-    conn.exec('DELETE FROM osm_changes_applyed')
+    if has_content
+      conn.exec('DELETE FROM osm_changes_applyed')
+    end
+
+    has_content
   end
 
   sig {
     params(
       conn: PG::Connection,
-      update_path: String,
+      project: String,
     ).void
   }
-  def self.export_update(conn, update_path)
+  def self.export_update(conn, project)
+    update_path = "/projects/#{project}/export/update"
     current_state_file = "#{update_path}/state.txt"
 
     state_file = StateFile::StateFile.from_file(current_state_file)
@@ -260,13 +268,18 @@ module Db
     FileUtils.mkdir_p(path)
     osc_gz = "#{path}/#{sequence_path0}.osm.gz"
 
-    export_changes(conn, osc_gz)
+    has_content = export_changes(conn, osc_gz)
 
-    osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
-    StateFile::StateFile.new(
-      timestamp: '2022-09-04T20:21:24Z',
-      sequence_number: sequence_number
-    ).save_to(osc_gz_state)
-    FileUtils.copy(osc_gz_state, current_state_file)
+    if has_content
+      osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
+      StateFile::StateFile.new(
+        timestamp: '2022-09-04T20:21:24Z',
+        sequence_number: sequence_number
+      ).save_to(osc_gz_state)
+      FileUtils.copy(osc_gz_state, current_state_file)
+    else
+      # Nothing exported, remove files
+      File.delete(osc_gz)
+    end
   end
 end

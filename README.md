@@ -39,8 +39,10 @@ Get Update, Import and Generate Validation report in database
 
 ## Export
 
-docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --export-osm /pbf/exports/export.osm.xml
-docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --export-osm-update /pbf/exports/update/
+```
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --export-osm
+docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --export-osm-update
+```
 
 ## Dev
 

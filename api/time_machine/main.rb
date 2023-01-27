@@ -25,11 +25,11 @@ OptionParser.new { |opts|
   opts.on('-v', '--validate', 'Ouput list of acceptable changes.') do
     @options[:validate] = true
   end
-  opts.on('-eDUMP', '--export-osm=DUMP', 'Export XML OSM dump.') do |dump|
-    @options[:export_osm] = dump
+  opts.on('-e', '--export-osm', 'Export XML OSM dump.') do
+    @options[:export_osm] = true
   end
-  opts.on('-cDUMP', '--export-osm-update=DUMP', 'Export XML OSM Update.') do |dump|
-    @options[:export_osm_update] = dump
+  opts.on('-c', '--export-osm-update', 'Export XML OSM Update.') do
+    @options[:export_osm_update] = true
   end
 }.parse!
 
@@ -60,11 +60,11 @@ else
 
   if @options[:export_osm]
     Db::DbConnRead.conn(project){ |conn|
-      Db.export(conn, @options[:export_osm])
+      Db.export(conn, "/projects/#{project}/exports/#{project}.osm.xml")
     }
   elsif @options[:export_osm_update]
     Db::DbConnWrite.conn(project){ |conn|
-      Db.export_update(conn, @options[:export_osm_update])
+      Db.export_update(conn, project)
     }
   end
 end
