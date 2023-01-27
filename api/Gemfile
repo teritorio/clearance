@@ -24,6 +24,7 @@ gem 'rack-cors'
 
 gem 'tzinfo-data'
 
+gem 'bzip2-ffi'
 gem 'json'
 gem 'nokogiri'
 gem 'optparse'

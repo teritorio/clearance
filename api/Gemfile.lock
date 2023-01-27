@@ -70,6 +70,8 @@ GEM
     bootsnap (1.15.0)
       msgpack (~> 1.2)
     builder (3.2.4)
+    bzip2-ffi (1.1.0)
+      ffi (~> 1.0)
     commander (4.6.0)
       highline (~> 2.0.0)
     concurrent-ruby (1.1.10)
@@ -80,6 +82,7 @@ GEM
       reline (>= 0.3.1)
     diff-lcs (1.5.0)
     erubi (1.12.0)
+    ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
     highline (2.0.3)
@@ -262,6 +265,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   bootsnap
+  bzip2-ffi
   debug
   json
   nokogiri

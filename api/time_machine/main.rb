@@ -60,7 +60,7 @@ else
 
   if @options[:export_osm]
     Db::DbConnRead.conn(project){ |conn|
-      Db.export(conn, "/projects/#{project}/exports/#{project}.osm.xml")
+      Db.export(conn, "/projects/#{project}/export/#{project}.osm.bz2")
     }
   elsif @options[:export_osm_update]
     Db::DbConnWrite.conn(project){ |conn|

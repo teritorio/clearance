@@ -9,6 +9,7 @@ require 'json'
 require 'nokogiri'
 require 'zlib'
 require 'fileutils'
+require 'bzip2/ffi'
 
 module Db
   extend T::Sig
@@ -92,7 +93,7 @@ module Db
       id: object.id,
       version: object.version,
       changeset: object.changeset_id,
-      timestamp: object.created,
+      timestamp: object.created.iso8601(0).gsub('+00:00', 'Z'),
       uid: object.uid,
       user: object.username,
     }
@@ -151,21 +152,21 @@ module Db
   sig {
     params(
       conn: PG::Connection,
-      osm_xml: String,
+      osm_bz2: String,
     ).void
   }
-  def self.export(conn, osm_xml)
+  def self.export(conn, osm_bz2)
     sql = "
     SELECT
       *
     FROM
       osm_base
     ORDER BY
-      objtype,
+      CASE objtype WHEN 'n' THEN 1 WHEN 'w' THEN 2 ELSE 3 END,
       id
     "
 
-    File.open(osm_xml, 'w') { |f|
+    Bzip2::FFI::Writer.open(osm_bz2) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')
       f.write("\n")
       f.write('<osm version="0.6" generator="a-priori-validation-for-osm">')
@@ -189,7 +190,7 @@ module Db
     ).returns(T::Boolean)
   }
   def self.export_changes(conn, osc_gz)
-    has_content = false
+    has_content = T.let(false, T::Boolean)
     Zlib::GzipWriter.open(osc_gz) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')
       f.write("\n")

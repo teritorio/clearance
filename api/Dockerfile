@@ -3,6 +3,7 @@ FROM ruby:3.0-alpine
 RUN apk add --no-cache --virtual \
         build-dependencies \
         build-base \
+        libbz2 \
         libpq-dev \
         postgresql-dev \
         ruby-dev \
