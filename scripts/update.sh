@@ -26,6 +26,9 @@ for PROJECT in $PROJECTS; do
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --changes-prune
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --validate
+
+        # Export diff
+        docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --export-osm-update
     else
         echo "${PROJECT} Update already locked"
     fi
