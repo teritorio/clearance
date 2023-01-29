@@ -37,6 +37,11 @@ Get Update, Import and Generate Validation report in database
 ./scripts/update.sh
 ```
 
+Run update script from crom:
+```
+*/1 * * * * cd a-priori-validation-for-osm && bash -c "./scripts/update.sh &>> log-`date --iso`"
+```
+
 ## Dev
 
 Setup
