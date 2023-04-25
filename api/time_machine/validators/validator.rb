@@ -65,12 +65,22 @@ module Validators
       params(
         actions: T::Array[Types::Action],
         value: T.nilable(Types::Action),
+        options: T.nilable(T::Hash[String, T.untyped]),
       ).void
     }
-    def assign_action(actions, value = nil)
+    def assign_action(actions, value: nil, options: nil)
       # Side effect in actions
       actions.clear if @action_force
-      actions << (value || @action)
+      if value
+        actions << value
+      else
+        action = @action
+        if options
+          action = @action.dup
+          action.options = options
+        end
+        actions << action
+      end
     end
   end
 
