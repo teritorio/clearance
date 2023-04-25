@@ -11,8 +11,10 @@ PBF=${IMPORT}/import.osm.pbf
 STATE=${IMPORT}/import.state.txt
 
 mkdir -p ${IMPORT}
-wget http://download.openstreetmap.fr/extracts/${EXTRACT}-latest.osm.pbf --no-clobber -O ${PBF}
-wget http://download.openstreetmap.fr/extracts/${EXTRACT}.state.txt --no-clobber -O ${STATE}
+if [ ! -e "${PBF}" ]; then
+    wget http://download.openstreetmap.fr/extracts/${EXTRACT}-latest.osm.pbf --no-clobber -O ${PBF}
+    rm -fr ${STATE} && wget http://download.openstreetmap.fr/extracts/${EXTRACT}.state.txt -O ${STATE}
+fi
 
 mkdir -p ${IMPORT}/replication
 osmosis --read-replication-interval-init workingDirectory=${IMPORT}/replication
@@ -29,4 +31,5 @@ docker-compose --env-file .tools.env run --rm ope ope /${PBF} /${IMPORT}/osm_bas
 docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -c "\copy ${PROJECT}.osm_base from '/${PG_COPY}'"
 
 # Export dump
+mkdir -p projects/${PROJECT}/export
 docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm
