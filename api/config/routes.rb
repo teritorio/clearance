@@ -2,10 +2,12 @@
 # typed: strict
 
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  # API
 
-  # Defines the root path route ("/")
-  # root "articles#index"
+  devise_for :users, controllers: { omniauth_callbacks: 'users/omniauth_callbacks' }
+  get '/api/0.1/users/me', controller: 'users', action: 'me'
+
+  # DATA
 
   get '/api/0.1/projects', controller: 'projects', action: 'index'
 

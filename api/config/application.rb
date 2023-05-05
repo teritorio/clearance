@@ -5,9 +5,9 @@ require_relative 'boot'
 
 require 'rails'
 # Pick the frameworks you want:
-# require 'active_model/railtie'
+require 'active_model/railtie'
 # require "active_job/railtie"
-# require "active_record/railtie"
+require 'active_record/railtie'
 # require "active_storage/engine"
 require 'action_controller/railtie'
 # require "action_mailer/railtie"
@@ -40,5 +40,15 @@ module Api
     config.api_only = true
 
     config.autoload_paths << "#{root}/time_machine"
+
+    # omniauth
+    config.session_store :cookie_store, key: '_interslice_session'
+    config.middleware.use ActionDispatch::Cookies # Required for all session management
+    config.middleware.use ActionDispatch::Session::CookieStore, config.session_options
+
+    # Allow frontend URL diff from backend
+    config.action_controller.forgery_protection_origin_check = false
+    # Disable CSRF to allow call API directly
+    config.action_controller.allow_forgery_protection = false
   end
 end

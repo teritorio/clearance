@@ -7,6 +7,8 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '~> 3.0.0'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+gem 'activemodel'
+gem 'activerecord'
 gem 'activesupport'
 gem 'rails', '~> 7.0.4'
 
@@ -25,8 +27,12 @@ gem 'rack-cors'
 gem 'tzinfo-data'
 
 gem 'bzip2-ffi'
+gem 'devise'
 gem 'json'
 gem 'nokogiri'
+gem 'omniauth'
+gem 'omniauth-osm-oauth2'
+gem 'omniauth-rails_csrf_protection'
 gem 'optparse'
 gem 'pg', '~> 1.1'
 gem 'sorbet-runtime'
