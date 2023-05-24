@@ -25,7 +25,7 @@ class ChangesLogsController < ApplicationController
   def sets
     project = params['project'].to_s
 
-    changes = ['_json'].map{ |change|
+    changes = params['_json'].map{ |change|
       Db::ObjectId.new(
         objtype: change['objtype'],
         id: change['id'],
