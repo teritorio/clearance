@@ -14,6 +14,12 @@ docker-compose --env-file .tools.env build
 Create at least one project inside `projects` from template directory.
 Adjust `config.yaml`
 
+
+Generate OSM tag watch list from remaote data source:
+``
+docker-compose run --rm api bundle exec rake config:fetch_tag_watches
+```
+
 ## Start
 ```
 docker-compose up -d postgres

@@ -28,6 +28,7 @@ gem 'tzinfo-data'
 
 gem 'bzip2-ffi'
 gem 'devise'
+gem 'http'
 gem 'json'
 gem 'nokogiri'
 gem 'omniauth'

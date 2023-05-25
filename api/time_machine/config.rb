@@ -11,13 +11,17 @@ module Config
   class MainConfig < T::Struct
     const :description, T::Hash[String, String]
     const :validators, T::Hash[String, T::Hash[String, Object]]
-    const :customers, Object
+    const :customers, T::Hash[String, T::Hash[String, Object]]
+  end
+
+  class Customer < T::Struct
+    const :tag_watches, T.nilable(String)
   end
 
   class Config < T::Struct
     const :description, T::Hash[String, String]
     const :validators, T::Array[Validators::ValidatorBase]
-    const :customers, Object
+    const :customers, T::Hash[String, Customer]
   end
 
   sig {
@@ -30,10 +34,15 @@ module Config
     config = MainConfig.from_hash(config_yaml)
     validators = Validators::ValidatorFactory.validators_factory(config.validators)
 
+    config.customers.transform_values{ |v|
+      puts v.inspect
+      Customer.new(v&.transform_keys(&:to_sym) || {})
+    }
+
     Config.new(
       description: config.description,
       validators: validators,
-      customers: config.customers,
+      customers: config.customers.transform_values{ |v| Customer.new(v&.transform_keys(&:to_sym) || {}) }
     )
   end
 end
