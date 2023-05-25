@@ -8,18 +8,16 @@ require './time_machine/validators/validator'
 module Validators
   extend T::Sig
 
-  class Watch < OsmTagsMatches::OsmTagsMatchSet
+  class Watch < OsmTagsMatches::OsmTagsMatch
     sig {
       params(
-        matches: T::Array[OsmTagsMatches::OsmTagsMatch],
-        label: T.nilable(Types::MultilingualString),
-        osm_tags_extra: T.nilable(T::Array[String]),
+        match: T::Hash[OsmTagsMatches::OsmMatchKey, T.any(OsmTagsMatches::OsmMatchValues, T::Array[OsmTagsMatches::OsmMatchValues])],
+        watch: T.nilable(T::Array[String]),
       ).void
     }
-    def initialize(matches:, label: nil, osm_tags_extra: nil)
-      super(matches)
-      @label = label
-      @osm_tags_extra = osm_tags_extra
+    def initialize(match:, watch: nil)
+      super(match)
+      @watch = watch
     end
 
     sig {
@@ -29,7 +27,7 @@ module Validators
     }
     def match(tags)
       main_keys = super(tags)
-      main_keys += (@osm_tags_extra&.intersection(tags.keys) || []) if !main_keys.empty?
+      main_keys += (@watch&.intersection(tags.keys) || []) if !main_keys.empty?
       main_keys
     end
   end
@@ -53,16 +51,15 @@ module Validators
     def initialize(id:, watches:, accept:, reject:, description: nil)
       super(id: id, accept: accept, reject: reject, description: description)
 
-      w = if watches.is_a?(Watches)
-            watches
-          else
-            Watches.new(YAML.unsafe_load_file(watches).transform_values{ |value|
+      w = if watches.is_a?(String)
+            Watches.new(YAML.unsafe_load_file(watches).collect{ |value|
               Watch.new(
-               matches: value['matches']&.collect{ |m| OsmTagsMatches::OsmTagsMatch.new(m) },
-               label: value['label'],
-               osm_tags_extra: value['osm_tags_extra'],
+               match: value['match'],
+               watch: value['watch'],
              )
             })
+          else
+            watches
           end
 
       @watches = T.let(w, Watches)

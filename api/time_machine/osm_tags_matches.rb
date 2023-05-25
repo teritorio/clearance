@@ -80,49 +80,12 @@ module OsmTagsMatches
     end
   end
 
-  class OsmTagsMatchSet
-    extend T::Sig
-
-    sig {
-      params(
-        tags_set: T.nilable(T::Array[OsmTagsMatch]),
-      ).void
-    }
-    def initialize(tags_set)
-      @tags_set = tags_set
-    end
-
-    sig {
-      params(
-        tags: T::Hash[String, String],
-      ).returns(T::Array[String])
-    }
-    def match(tags)
-      if @tags_set.nil?
-        tags.keys
-      else
-        @tags_set.collect{ |tags_to_match|
-          tags_to_match.match(tags)
-        }.flatten
-      end
-    end
-
-    sig { returns(String) }
-    def to_sql
-      if @tags_set.nil?
-        'TRUE'
-      else
-        @tags_set.collect(&:to_sql).join(' OR ')
-      end
-    end
-  end
-
   class OsmTagsMatches
     extend T::Sig
 
     sig {
       params(
-        matches: T::Hash[String, OsmTagsMatchSet],
+        matches: T::Array[OsmTagsMatch],
       ).void
     }
     def initialize(matches)
@@ -135,14 +98,14 @@ module OsmTagsMatches
       ).returns(T::Array[String])
     }
     def match(tags)
-      @matches.values.collect{ |watch|
+      @matches.collect{ |watch|
         watch.match(tags)
       }.flatten.uniq
     end
 
     sig { returns(String) }
     def to_sql
-      @matches.values.collect(&:to_sql).join(' OR ')
+      @matches.collect(&:to_sql).join(' OR ')
     end
   end
 end
