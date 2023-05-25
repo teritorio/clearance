@@ -5,6 +5,7 @@ require 'sorbet-runtime'
 require './time_machine/types'
 require 'active_support'
 require 'active_support/core_ext'
+require './time_machine/validators/validator'
 
 module Validators
   extend T::Sig

@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './time_machine/osm_tags_matches'
+require './time_machine/validators/validator'
 
 module Validators
   extend T::Sig
