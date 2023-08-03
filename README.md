@@ -33,7 +33,7 @@ docker-compose exec -u postgres postgres psql
 ## Init
 
 ```
-./scripts/setup andorra-poi europe/andorra
+./scripts/setup.sh andorra-poi europe/andorra
 ```
 
 ## Update
