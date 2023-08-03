@@ -7,6 +7,7 @@ module OsmTagsMatches
   extend T::Sig
 
   OsmMatchKey = T.type_alias { String }
+  OsmMatchOperator = T.type_alias { T.any(NilClass, String) }
   OsmMatchValues = T.type_alias { T.any(NilClass, String, Regexp) }
 
   class OsmTagsMatch
@@ -14,38 +15,20 @@ module OsmTagsMatches
 
     sig {
       params(
-        tags: T::Hash[OsmMatchKey, T.any(OsmMatchValues, T::Array[OsmMatchValues])],
+        tags: String,
       ).void
     }
     def initialize(tags)
-      a = tags.transform_values! { |value|
-        value.is_a?(Array) ? value : [value]
-      }
-      @tags_match = T.let(a, T::Hash[OsmMatchKey, T::Array[OsmMatchValues]])
-    end
+      throw 'Tags tags selector format' if tags.size <= 2
 
-    sig {
-      params(
-        match: T::Array[OsmMatchValues],
-        object_tags: String,
-      ).returns(T::Boolean)
-    }
-    def match_value(match, object_tags)
-      !!(match.include?(nil) ||
-        match.include?(object_tags) ||
-        match.find{ |f| f.is_a?(Regexp) && f.match(object_tags) }
-        )
-    end
-
-    sig {
-      params(
-        key: String,
-        value: String,
-      ).returns(T::Boolean)
-    }
-    def match_key_value(key, value)
-      match = @tags_match[key]
-      !match.nil? && match_value(match, value)
+      a = T.must(tags[1..-2]).split('][').collect{ |osm_tag|
+        k, o, v = osm_tag.split(/(=|~=|=~|!=|!~|~)/, 2).collect{ |s| unquote(s) }
+        if o&.include?('~') && !v.nil?
+          v = Regexp.new(v)
+        end
+        [T.must(k), [o, v]]
+      }.group_by(&:first).transform_values{ |v| v.collect(&:last) }
+      @tags_match = T.let(a, T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]])
     end
 
     sig {
@@ -54,29 +37,59 @@ module OsmTagsMatches
       ).returns(T::Array[String])
     }
     def match(object_tags)
-      @tags_match.keys.intersection(object_tags.keys).select{ |key|
-        match_key_value(key, T.must(object_tags[key]))
-      }
+      @tags_match.select{ |key, op_values|
+        value = object_tags[key]
+        !value.nil? && op_values.all?{ |op, values|
+          case op
+          when nil then true
+          when '=' then values == value
+          when '!=' then values != value
+          when '~' then T.cast(values, Regexp).match(value)
+          when '!~' then !T.cast(values, Regexp).match(value)
+          else throw "Not implemented operator #{op}"
+          end
+        }
+      }.keys
     end
 
     sig { returns(String) }
     def to_sql
-      p = @tags_match.collect { |key, values|
-        if values.include?(nil)
-          "tags?'#{key}'"
-        else
-          v = values.collect{ |value|
-            case value
-            when String
-              "tags->>'#{key}' = '#{value}'"
-            when Regexp
-              "tags->>'#{key}' ~ '#{value}'"
-            end
-          }
-          "tags?'#{key}' AND (#{v.join(' OR ')})"
-        end
+      p = @tags_match.collect { |key, op_values|
+        op_values.collect{ |op, value|
+          case op
+          when nil then "tags?'#{key}'"
+          when '=' then "(tags?'#{key}' AND tags->>'#{key}' = '#{value}')"
+          when '!=' then "(NOT tags?'#{key}' OR tags->>'#{key}' != '#{value}')"
+          when '~' then "(tags?'#{key}' AND tags->>'#{key}' ~ '#{value}')"
+          when '!~' then "(NOT tags?'#{key}' OR tags->>'#{key}' !~ '#{value}')"
+          else throw "Not implemented operator #{op}"
+          end
+        }
       }.join(' AND ')
       "(#{p})"
+    end
+
+
+    # Backport ruby 3.2
+    sig {
+      params(
+        self_: String,
+      ).returns(String)
+    }
+    def unquote(self_)
+      s = self_.dup
+
+      case self_[0, 1]
+      when "'", '"', '`'
+        s[0] = ''
+      end
+
+      case self_[-1, 1]
+      when "'", '"', '`'
+        s[-1] = ''
+      end
+
+      s
     end
   end
 

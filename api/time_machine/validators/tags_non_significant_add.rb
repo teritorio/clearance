@@ -12,7 +12,7 @@ module Validators
   class TagsNonSignificantChangeConfig < OsmTagsMatches::OsmTagsMatch
     sig {
       params(
-        match: T::Hash[OsmTagsMatches::OsmMatchKey, T.any(OsmTagsMatches::OsmMatchValues, T::Array[OsmTagsMatches::OsmMatchValues])],
+        match: String,
         values: OsmTagsMatches::OsmTagsMatch,
       ).void
     }

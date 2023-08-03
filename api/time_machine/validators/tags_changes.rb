@@ -11,8 +11,8 @@ module Validators
   class Watch < OsmTagsMatches::OsmTagsMatch
     sig {
       params(
-        match: T::Hash[OsmTagsMatches::OsmMatchKey, T.any(OsmTagsMatches::OsmMatchValues, T::Array[OsmTagsMatches::OsmMatchValues])],
-        watch: T.nilable(T::Array[String]),
+        match: String,
+        watch: T.nilable(T::Hash[String, T.nilable(String)]),
       ).void
     }
     def initialize(match:, watch: nil)
@@ -27,7 +27,7 @@ module Validators
     }
     def match(tags)
       main_keys = super(tags)
-      main_keys += (@watch&.intersection(tags.keys) || []) if !main_keys.empty?
+      main_keys += (@watch&.keys&.intersection(tags.keys) || []) if !main_keys.empty?
       main_keys
     end
   end
@@ -52,10 +52,10 @@ module Validators
       super(id: id, accept: accept, reject: reject, description: description)
 
       w = if watches.is_a?(String)
-            Watches.new(YAML.unsafe_load_file(watches).collect{ |value|
+            Watches.new(JSON.parse(File.read(watches)).collect{ |value|
               Watch.new(
-               match: value['match'],
-               watch: value['watch'],
+               match: value['select'],
+               watch: value['interest'],
              )
             })
           else
