@@ -92,3 +92,6 @@ Style/TrailingCommaInArrayLiteral:
 
 Style/ClassVars:
   Enabled: false
+
+Rails/NegateInclude:
+  Enabled: false

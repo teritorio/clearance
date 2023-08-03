@@ -13,7 +13,7 @@ class ChangesLogsController < ApplicationController
     Db::DbConnRead.conn(project) { |conn|
       json = conn.exec(sql).map{ |row|
         row['base'] = row['base']
-        row['change'] =  row['change']
+        row['change'] = row['change']
         row['diff_tags'] = row['diff_tags']
         row['diff_attribs'] = row['diff_attribs']
         row
