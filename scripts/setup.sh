@@ -16,6 +16,7 @@ if [ ! -e "${PBF}" ]; then
     rm -fr ${STATE} && wget http://download.openstreetmap.fr/extracts/${EXTRACT}.state.txt -O ${STATE}
 fi
 
+rm -fr ${IMPORT}/replication
 mkdir -p ${IMPORT}/replication
 osmosis --read-replication-interval-init workingDirectory=${IMPORT}/replication
 cp ${STATE} ${IMPORT}/replication/state.txt
