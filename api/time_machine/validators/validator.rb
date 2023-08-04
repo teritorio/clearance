@@ -111,21 +111,37 @@ module Validators
     sig {
       params(
         actions: T::Array[Types::Action],
+        options: T.nilable(T::Hash[String, T.untyped]),
       ).void
     }
-    def assign_action_accept(actions)
+    def assign_action_accept(actions, options: nil)
       # Side effect in actions
-      actions << @action_accept
+
+      action = @action_accept
+      if options
+        action = action.dup
+        action.options = options
+      end
+
+      actions << action
     end
 
     sig {
       params(
         actions: T::Array[Types::Action],
+        options: T.nilable(T::Hash[String, T.untyped]),
       ).void
     }
-    def assign_action_reject(actions)
+    def assign_action_reject(actions, options: nil)
       # Side effect in actions
-      actions << @action_reject
+
+      action = @action_reject
+      if options
+        action = action.dup
+        action.options = options
+      end
+
+      actions << action
     end
   end
 

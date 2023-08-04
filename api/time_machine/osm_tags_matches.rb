@@ -13,6 +13,9 @@ module OsmTagsMatches
   class OsmTagsMatch
     extend T::Sig
 
+    sig { returns(T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]]) }
+    attr_accessor :tags_match
+
     sig {
       params(
         tags: String,
@@ -34,12 +37,12 @@ module OsmTagsMatches
     sig {
       params(
         object_tags: T::Hash[String, String],
-      ).returns(T::Array[String])
+      ).returns(T::Array[[String, OsmTagsMatch]])
     }
     def match(object_tags)
-      @tags_match.select{ |key, op_values|
+      @tags_match.collect{ |key, op_values|
         value = object_tags[key]
-        !value.nil? && op_values.all?{ |op, values|
+        match = !value.nil? && op_values.all?{ |op, values|
           case op
           when nil then true
           when '=' then values == value
@@ -49,7 +52,8 @@ module OsmTagsMatches
           else throw "Not implemented operator #{op}"
           end
         }
-      }.keys
+        match ? [key, self] : nil
+      }.compact
     end
 
     sig { returns(String) }
@@ -108,12 +112,12 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[String])
+      ).returns(T::Array[[String, OsmTagsMatch]])
     }
     def match(tags)
       @matches.collect{ |watch|
         watch.match(tags)
-      }.flatten.uniq
+      }.flatten(1)
     end
 
     sig { returns(String) }

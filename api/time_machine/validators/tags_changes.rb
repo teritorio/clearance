@@ -23,11 +23,11 @@ module Validators
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[String])
+      ).returns(T::Array[[String, OsmTagsMatches::OsmTagsMatch]])
     }
     def match(tags)
       main_keys = super(tags)
-      main_keys += (@watch&.keys&.intersection(tags.keys) || []) if !main_keys.empty?
+      main_keys += (@watch&.keys&.intersection(tags.keys) || []).collect{ |key| [key, self] } if !main_keys.empty?
       main_keys
     end
   end
@@ -73,15 +73,19 @@ module Validators
       ).void
     }
     def apply(before, after, diff)
-      match_keys = (
+      watches = (
         (before && @watches.match(before['tags']) || []) +
         @watches.match(after['tags'])
-      ).intersection(diff.tags.keys)
-      match_keys.each{ |key|
-        assign_action_reject(T.must(diff.tags[key])) if diff.tags.include?(key)
+      ).group_by(&:first).select{ |key, _match|
+        diff.tags.key?(key)
       }
-      (diff.tags.keys - match_keys).each{ |key|
-        assign_action_accept(T.must(diff.tags[key])) if diff.tags.include?(key)
+
+      watches.each{ |key, matches|
+        assign_action_reject(T.must(diff.tags[key]), options: { 'match' => matches.collect{ |m| m[-1].tags_match } })
+      }
+
+      (diff.tags.keys - watches.keys).each{ |key, matches|
+        assign_action_accept(T.must(diff.tags[key]))
       }
     end
   end

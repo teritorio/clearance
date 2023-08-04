@@ -10,27 +10,26 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
   extend T::Sig
 
   def test_match_value
-    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p]').match({ 'p' => '+48' }))
+    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p]').match({ 'p' => '+48' }).collect(&:first))
 
-    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p=+48]').match({ 'p' => '+48' }))
-    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p=+48]').match({ 'p' => '+4' }))
+    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p=+48]').match({ 'p' => '+48' }).collect(&:first))
+    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p=+48]').match({ 'p' => '+4' }).collect(&:first))
 
-    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p~4]').match({ 'p' => '+48' }))
-    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p~5]').match({ 'p' => '+48' }))
+    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p~4]').match({ 'p' => '+48' }).collect(&:first))
+    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p~5]').match({ 'p' => '+48' }).collect(&:first))
   end
 
   def test_matches
-    matches = OsmTagsMatches::OsmTagsMatches.new([
-      OsmTagsMatches::OsmTagsMatch.new('[amenity~.*]'),
-      OsmTagsMatches::OsmTagsMatch.new('[shop=florist]'),
-    ])
+    amenity = OsmTagsMatches::OsmTagsMatch.new('[amenity~.*]')
+    florist = OsmTagsMatches::OsmTagsMatch.new('[shop=florist]')
+    matches = OsmTagsMatches::OsmTagsMatches.new([amenity, florist])
 
-    assert_equal(['shop'], matches.match({ 'shop' => 'florist' }))
+    assert_equal([['shop', florist]], matches.match({ 'shop' => 'florist' }))
     assert_equal([], matches.match({ 'shop' => 'fish' }))
-    assert_equal(['shop'], matches.match({ 'shop' => 'florist', 'phone' => '+48' }))
+    assert_equal([['shop', florist]], matches.match({ 'shop' => 'florist', 'phone' => '+48' }))
     assert_equal([], matches.match({ 'shop' => 'fish', 'phone' => '+48' }))
     assert_equal([], matches.match({ 'phone' => '+48' }))
-    assert_equal(['amenity'], matches.match({ 'amenity' => 'pole' }))
+    assert_equal([['amenity', amenity]], matches.match({ 'amenity' => 'pole' }))
   end
 
   def test_matches_to_sql
