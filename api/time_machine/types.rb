@@ -23,7 +23,7 @@ module Types
     const :validator_id, String
     const :description, T.nilable(String)
     const :action, ActionType
-    const :options, T.nilable(T::Hash[String, T.untyped])
+    prop :options, T.nilable(T::Hash[String, T.untyped])
 
     sig {
       returns(String)
