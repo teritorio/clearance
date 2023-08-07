@@ -41,9 +41,15 @@ WITH
                 ST_SetSRID(ST_MakePoint(lon, lat), 4326)::geography
             ), 0) AS change_distance
         FROM (
-                SELECT * FROM base_i
-                UNION
-                SELECT * FROM osm_changes
+                SELECT *, NULL::json AS changeset FROM base_i
+                UNION ALL
+                SELECT
+                    osm_changes.*,
+                    row_to_json(osm_changesets) AS changeset
+                FROM
+                    osm_changes
+                    LEFT JOIN osm_changesets ON
+                        osm_changesets.id = osm_changes.changeset_id
             ) AS t
         ORDER BY
             objtype,

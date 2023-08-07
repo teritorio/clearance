@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './time_machine/types'
+require './time_machine/changeset'
 require 'json'
 require './time_machine/db'
 
@@ -19,6 +20,7 @@ module ChangesDb
       'members' => T.nilable(T::Array[Integer]),
       'version' => Integer,
       'changeset_id' => Integer,
+      'changeset' => T.nilable(Changeset::Changeset),
       'uid' => Integer,
       'username' => String,
       'created' => String,

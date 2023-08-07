@@ -5,6 +5,7 @@ require 'sorbet-runtime'
 require 'pg'
 require './time_machine/types'
 require './time_machine/state_file'
+require './time_machine/changeset'
 require 'json'
 require 'nokogiri'
 require 'zlib'
@@ -69,6 +70,7 @@ module Db
 
   class ObjectBase < ObjectId
     const :changeset_id, Integer
+    const :changeset, T.nilable(Changeset::Changeset)
     const :created, Time
     const :uid, Integer
     const :username, T.nilable(String)

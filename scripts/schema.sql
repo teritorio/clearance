@@ -17,6 +17,24 @@ CREATE TABLE :schema."osm_base" (
 );
 ALTER TABLE :schema."osm_base" ADD PRIMARY KEY(id, objtype); -- %PK:osm_base%
 
+DROP TABLE IF EXISTS :schema."osm_changesets" CASCADE;
+CREATE TABLE :schema."osm_changesets" (
+    "id" BIGINT NOT NULL,
+    "created_at" TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL,
+    "closed_at" TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL,
+    "open" BOOLEAN NOT NULL,
+    "user" TEXT NOT NULL,
+    "uid" INTEGER NOT NULL,
+    "minlat" REAL NOT NULL,
+    "minlon" REAL NOT NULL,
+    "maxlat" REAL NOT NULL,
+    "maxlon" REAL NOT NULL,
+    "comments_count" INTEGER NOT NULL,
+    "changes_count" INTEGER NOT NULL,
+    "tags" JSONB NOT NULL
+);
+ALTER TABLE :schema."osm_changesets" ADD PRIMARY KEY(id);
+
 DROP TABLE IF EXISTS :schema."osm_changes" CASCADE;
 CREATE TABLE :schema."osm_changes" (
     "objtype" CHAR(1) CHECK(objtype IN ('n', 'w', 'r')), -- %COL:osm_changes:objtype%

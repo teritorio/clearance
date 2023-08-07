@@ -37,6 +37,7 @@ gem 'omniauth-rails_csrf_protection'
 gem 'optparse'
 gem 'pg', '~> 1.1'
 gem 'sorbet-runtime'
+gem 'webcache'
 
 group :development do
   gem 'rake'

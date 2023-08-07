@@ -22,13 +22,16 @@ OptionParser.new { |opts|
   opts.on('-u', '--apply-unclibled-changes', 'Apply unclibled changes.') do
     @options[:apply_unclibled_changes] = true
   end
+  opts.on('-c', '--fetch_changesets', 'Fetch and store changesets details.') do
+    @options[:fetch_changesets] = true
+  end
   opts.on('-v', '--validate', 'Ouput list of acceptable changes.') do
     @options[:validate] = true
   end
   opts.on('-e', '--export-osm', 'Export XML OSM dump.') do
     @options[:export_osm] = true
   end
-  opts.on('-c', '--export-osm-update', 'Export XML OSM Update.') do
+  opts.on('-E', '--export-osm-update', 'Export XML OSM Update.') do
     @options[:export_osm_update] = true
   end
 }.parse!
@@ -55,6 +58,12 @@ else
   if @options[:validate]
     Db::DbConnWrite.conn(project){ |conn|
       TimeMachine.validate(conn, config.validators)
+    }
+  end
+
+  if @options[:fetch_changesets]
+    Db::DbConnWrite.conn(project){ |conn|
+      Changeset.get_missing_changeset_ids(conn)
     }
   end
 
