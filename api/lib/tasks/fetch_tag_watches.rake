@@ -41,7 +41,7 @@ namespace :config do
     projects = ENV['project'] ? [ENV['project']] : Dir.glob('../projects/*/')
     projects.each{ |project|
       merged = merge_tag_watches("../projects/#{project}/config.yaml")
-      File.new("../projects/#{project}/config-watches.yaml", 'w').write(YAML.dump(merged))
+      File.write("../projects/#{project}/config-watches.yaml", YAML.dump(merged))
     }
   end
 end
