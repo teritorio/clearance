@@ -9,7 +9,6 @@ class User < ApplicationRecord
          :omniauthable, omniauth_providers: %i[osm_oauth2]
 
   def self.from_omniauth(auth)
-    puts auth.inspect
     user = find_or_initialize_by(provider: auth.provider, uid: auth.uid)
     user.email = 'none@example.com'
     # user.skip_confirmation!

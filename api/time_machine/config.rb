@@ -35,7 +35,6 @@ module Config
     validators = Validators::ValidatorFactory.validators_factory(config.validators)
 
     config.customers.transform_values{ |v|
-      puts v.inspect
       Customer.new(v&.transform_keys(&:to_sym) || {})
     }
 
