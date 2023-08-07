@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     id bigint,
     base json,
     change json,
+    changesets json,
     action text,
     diff_attribs json,
     diff_tags json
@@ -28,7 +29,6 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         json_build_object(
             'version', osm_changes.version,
             'changeset_id', osm_changes.changeset_id,
-            'changeset', row_to_json(osm_changesets),
             'created', osm_changes.created,
             'uid', osm_changes.uid,
             'username', osm_changes.username,
@@ -39,6 +39,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'deleted', osm_changes.deleted,
             'members', osm_changes.members
         ) AS change,
+        (SELECT json_agg(row_to_json(osm_changesets)) FROM osm_changesets WHERE osm_changesets.id = ANY(validations_log.changeset_ids)) AS changesets,
         validations_log.action,
         validations_log.diff_attribs,
         validations_log.diff_tags
@@ -51,8 +52,6 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             osm_changes.objtype = validations_log.objtype AND
             osm_changes.id = validations_log.id AND
             osm_changes.version = validations_log.version
-        LEFT JOIN osm_changesets ON
-            osm_changesets.id = osm_changes.changeset_id
     WHERE
         action IS NULL OR
         action = 'reject'

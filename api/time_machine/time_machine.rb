@@ -63,10 +63,7 @@ module TimeMachine
   class ValidationResult < T::Struct
     const :action, T.nilable(Types::ActionType)
     const :version, Integer
-    const :changeset_id, Integer
-    const :created, String
-    const :uid, Integer
-    const :username, T.nilable(String)
+    prop :changeset_ids, T::Array[Integer]
     const :diff, DiffActions
   end
 
@@ -88,6 +85,7 @@ module TimeMachine
 
     accepted_version = T.let(nil, T.nilable(ValidationResult))
     rejected_version = T.let(nil, T.nilable(ValidationResult))
+    rejected_changeset_ids = []
 
     fully_accepted = T.let(false, T::Boolean)
     afters.reverse.each_with_index{ |after, index|
@@ -102,10 +100,7 @@ module TimeMachine
         accepted_version = ValidationResult.new(
           action: 'accept',
           version: after['version'],
-          changeset_id: after['changeset_id'],
-          created: after['created'],
-          uid: after['uid'],
-          username: after['username'],
+          changeset_ids: T.must(afters.reverse[index..]&.collect{ |version| version['changeset_id'] }),
           diff: diff,
         )
         break
@@ -114,14 +109,17 @@ module TimeMachine
         rejected_version = ValidationResult.new(
           action: partialy_rejected ? 'reject' : nil,
           version: after['version'],
-          changeset_id: after['changeset_id'],
-          created: after['created'],
-          uid: after['uid'],
-          username: after['username'],
+          changeset_ids: [after['changeset_id']],
           diff: diff,
         )
+      else
+        rejected_changeset_ids << after['changeset_id']
       end
     }
+
+    if !rejected_version.nil?
+      rejected_version.changeset_ids += rejected_changeset_ids
+    end
 
     [accepted_version, rejected_version].compact
   end
@@ -157,10 +155,7 @@ module TimeMachine
         objtype: objtype,
         id: id,
         version: validation.version,
-        changeset_id: validation.changeset_id,
-        created: validation.created,
-        uid: validation.uid,
-        username: validation.username,
+        changeset_ids: validation.changeset_ids,
         action: validation.action,
         validator_uid: nil,
         diff_attribs: validation.diff.attribs,
