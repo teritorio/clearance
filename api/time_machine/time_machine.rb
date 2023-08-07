@@ -97,23 +97,19 @@ module TimeMachine
         validator.apply(before, after, diff)
       }
 
-      if !accepted_version
-        fully_accepted = diff.fully_accepted?
-        if fully_accepted
-          accepted_version = ValidationResult.new(
-            action: 'accept',
-            version: after['version'],
-            changeset_id: after['changeset_id'],
-            created: after['created'],
-            uid: after['uid'],
-            username: after['username'],
-            diff: diff,
-          )
-          break
-        end
-      end
-
-      if !fully_accepted && index == 0
+      fully_accepted = diff.fully_accepted?
+      if fully_accepted
+        accepted_version = ValidationResult.new(
+          action: 'accept',
+          version: after['version'],
+          changeset_id: after['changeset_id'],
+          created: after['created'],
+          uid: after['uid'],
+          username: after['username'],
+          diff: diff,
+        )
+        break
+      elsif index == 0
         partialy_rejected = diff.partialy_rejected?
         rejected_version = ValidationResult.new(
           action: partialy_rejected ? 'reject' : nil,
