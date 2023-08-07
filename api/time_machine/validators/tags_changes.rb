@@ -9,15 +9,20 @@ module Validators
   extend T::Sig
 
   class Watch < OsmTagsMatches::OsmTagsMatch
+    sig { returns(T.nilable(T::Array[String])) }
+    attr_accessor :sources
+
     sig {
       params(
         match: String,
         watch: T.nilable(T::Hash[String, T.nilable(String)]),
+        sources: T.nilable(T::Array[String])
       ).void
     }
-    def initialize(match:, watch: nil)
+    def initialize(match:, watch: nil, sources: nil)
       super(match)
       @watch = watch
+      @sources = sources
     end
 
     sig {
@@ -56,6 +61,7 @@ module Validators
               Watch.new(
                match: value['select'],
                watch: value['interest'],
+               sources: value['sources'],
              )
             })
           else
@@ -81,10 +87,10 @@ module Validators
       }
 
       watches.each{ |key, matches|
-        assign_action_reject(T.must(diff.tags[key]), options: { 'match' => matches.collect{ |m| m[-1].tags_match } })
+        assign_action_reject(T.must(diff.tags[key]), options: { 'sources' => matches.collect{ |m| m[-1].sources }.flatten })
       }
 
-      (diff.tags.keys - watches.keys).each{ |key, matches|
+      (diff.tags.keys - watches.keys).each{ |key, _matches|
         assign_action_accept(T.must(diff.tags[key]))
       }
     end

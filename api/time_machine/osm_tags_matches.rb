@@ -13,9 +13,6 @@ module OsmTagsMatches
   class OsmTagsMatch
     extend T::Sig
 
-    sig { returns(T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]]) }
-    attr_accessor :tags_match
-
     sig {
       params(
         tags: String,
