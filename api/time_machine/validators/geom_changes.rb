@@ -37,9 +37,8 @@ module Validators
       dist = after['change_distance']
       return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
-      assign_action(T.must(diff.attribs['lon'])) if !diff.attribs['lon'].nil?
-      assign_action(T.must(diff.attribs['lat'])) if !diff.attribs['lat'].nil?
-      assign_action(T.must(diff.attribs['change_distance']), options: { 'dist' => dist }) if !diff.attribs['change_distance'].nil?
+      assign_action(T.must(diff.attribs['lon']), options: { 'dist' => dist }) if !diff.attribs['lon'].nil?
+      assign_action(T.must(diff.attribs['lat']), options: { 'dist' => dist }) if !diff.attribs['lat'].nil?
     end
   end
 end
