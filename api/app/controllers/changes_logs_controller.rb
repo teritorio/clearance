@@ -6,6 +6,8 @@ require './time_machine/db'
 class ChangesLogsController < ApplicationController
   extend T::Sig
 
+  before_action :authenticate_user!, except: [:index]
+
   def index
     project = params['project'].to_s
 
