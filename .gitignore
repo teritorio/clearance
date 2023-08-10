@@ -1,3 +1,4 @@
 projects/*
+cache/*
 api/log*
 api/tmp/
