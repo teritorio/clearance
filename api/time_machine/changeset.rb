@@ -33,7 +33,7 @@ module Changeset
     ).returns(T.nilable(Changeset))
   }
   def self.fetch_id(id)
-    cache = WebCache.new(dir: '/projects/cache/changesets/', life: '1d')
+    cache = WebCache.new(dir: '/cache/changesets/', life: '1d')
     response = cache.get("https://www.openstreetmap.org/api/0.6/changeset/#{id}.json")
     return if !response.success?
 

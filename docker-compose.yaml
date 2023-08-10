@@ -24,6 +24,7 @@ services:
     volumes:
       - ./api/time_machine/sql:/sql
       - ./api/:/srv/app/
+      - ./cache:/cache
       - ./projects:/projects
     depends_on:
       - postgres
