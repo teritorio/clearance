@@ -18,6 +18,9 @@ services:
     environment:
       - RAILS_ENV=${RAILS_ENV:-production}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-Toe8eihai5ieShai}
+      - OSM_OAUTH2_ID=${OSM_OAUTH2_ID}
+      - OSM_OAUTH2_SECRET=${OSM_OAUTH2_SECRET}
+      - OSM_OAUTH2_REDIRECT=${OSM_OAUTH2_REDIRECT}
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
     ports:
       - 9000:9000

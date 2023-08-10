@@ -283,7 +283,7 @@ Devise.setup do |config|
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
 
   # osm.org
-  config.omniauth :osm_oauth2, 'qOaQtVE3NOnfgjir_-Lsz_HteOQwi3JF82GPAohhetg', '_ZYs4Tuvj3K3Z1yM20dwqfU0m1uZNoGYTEBi5sVZ21Y', scope: 'read_prefs'
+  config.omniauth :osm_oauth2, ENV['OSM_OAUTH2_ID'], ENV['OSM_OAUTH2_SECRET'], scope: 'read_prefs'
 
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or
