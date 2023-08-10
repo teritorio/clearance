@@ -39,7 +39,19 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'deleted', osm_changes.deleted,
             'members', osm_changes.members
         ) AS change,
-        (SELECT json_agg(row_to_json(osm_changesets)) FROM osm_changesets WHERE osm_changesets.id = ANY(validations_log.changeset_ids)) AS changesets,
+        (
+            SELECT json_agg(j) FROM (
+                SELECT
+                    row_to_json(osm_changesets) AS j
+                FROM
+                    osm_changesets
+                WHERE
+                    osm_changesets.id = osm_base.changeset_id OR
+                    osm_changesets.id = ANY(validations_log.changeset_ids)
+                ORDER BY
+                    osm_changesets.created_at
+            ) AS t
+        ) AS changesets,
         validations_log.action,
         validations_log.diff_attribs,
         validations_log.diff_tags

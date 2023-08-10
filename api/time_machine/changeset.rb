@@ -55,6 +55,20 @@ module Changeset
 
     sql = "
     SELECT
+      DISTINCT osm_base.changeset_id AS id
+    FROM
+      osm_base
+      JOIN osm_changes ON
+        osm_changes.objtype = osm_base.objtype AND
+        osm_changes.id = osm_base.id
+        LEFT JOIN osm_changesets ON
+          osm_changesets.id = osm_base.changeset_id
+    WHERE
+      osm_changesets.id IS NULL
+
+    UNION
+
+    SELECT
       DISTINCT changeset_id AS id
     FROM
       osm_changes
