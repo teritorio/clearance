@@ -36,6 +36,10 @@ docker-compose exec -u postgres postgres psql
 ./scripts/setup.sh andorra-poi europe/andorra
 ```
 
+```
+docker-compose run --rm api bundle exec rails db:migrate
+```
+
 ## Update
 
 Get Update, Import and Generate Validation report in database
