@@ -4,6 +4,7 @@ AllCops:
   Exclude:
     - '*/bin/*'
     - '**/Rakefile.rb'
+    - '*/db/schema.rb'
 
 require:
  - rubocop-rake
