@@ -15,4 +15,8 @@ Rails.application.routes.draw do
   post '/api/0.1/:project/changes_logs/accept', controller: 'changes_logs', action: 'sets'
 
   get '/api/0.1/:project/validators/', to: 'validators#index'
+
+  # Overpass like API
+
+  get '/api/0.1/:project/overpasslike', to: 'overpasslike#interpreter'
 end

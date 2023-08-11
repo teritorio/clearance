@@ -40,7 +40,7 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
       OsmTagsMatches::OsmTagsMatch.new('[shop~pizza.*]'),
     ])
 
-    sql = matches.to_sql
+    sql = matches.to_sql(->(s) { "'#{s}'" })
     assert_equal("(tags?'amenity') OR ((tags?'shop' AND tags->>'shop' = 'florist')) OR ((tags?'shop' AND tags->>'shop' ~ '(?-mix:pizza.*)'))", sql)
   end
 end

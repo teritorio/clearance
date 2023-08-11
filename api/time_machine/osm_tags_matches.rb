@@ -53,16 +53,22 @@ module OsmTagsMatches
       }.compact
     end
 
-    sig { returns(String) }
-    def to_sql
+    sig {
+      params(
+        escape_literal: T.proc.params(s: String).returns(String),
+      ).returns(String)
+    }
+    def to_sql(escape_literal)
       p = @tags_match.collect { |key, op_values|
+        key = escape_literal.call(key.to_s)
         op_values.collect{ |op, value|
+          value = escape_literal.call(value.to_s) if !value.nil?
           case op
-          when nil then "tags?'#{key}'"
-          when '=' then "(tags?'#{key}' AND tags->>'#{key}' = '#{value}')"
-          when '!=' then "(NOT tags?'#{key}' OR tags->>'#{key}' != '#{value}')"
-          when '~' then "(tags?'#{key}' AND tags->>'#{key}' ~ '#{value}')"
-          when '!~' then "(NOT tags?'#{key}' OR tags->>'#{key}' !~ '#{value}')"
+          when nil then "tags?#{key}"
+          when '=' then "(tags?#{key} AND tags->>#{key} = #{value})"
+          when '!=' then "(NOT tags?#{key} OR tags->>#{key} != #{value})"
+          when '~' then "(tags?#{key} AND tags->>#{key} ~ #{value})"
+          when '!~' then "(NOT tags?#{key} OR tags->>#{key} !~ #{value})"
           else throw "Not implemented operator #{op}"
           end
         }
@@ -117,9 +123,13 @@ module OsmTagsMatches
       }.flatten(1)
     end
 
-    sig { returns(String) }
-    def to_sql
-      @matches.collect(&:to_sql).join(' OR ')
+    sig {
+      params(
+        escape_literal: T.proc.params(s: String).returns(String),
+      ).returns(String)
+    }
+    def to_sql(escape_literal)
+      @matches.collect{ |match| match.to_sql(escape_literal) }.join(' OR ')
     end
   end
 end

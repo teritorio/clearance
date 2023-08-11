@@ -51,7 +51,7 @@ else
   if @options[:apply_unclibled_changes]
     watches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).watches
     Db::DbConnWrite.conn(project){ |conn|
-      ChangesDb.apply_unclibled_changes(conn, watches.to_sql)
+      ChangesDb.apply_unclibled_changes(conn, watches.to_sql(->(s) { conn.method(s) }))
     }
   end
 
