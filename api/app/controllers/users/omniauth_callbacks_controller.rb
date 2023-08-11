@@ -13,7 +13,7 @@ module Users
       if @user.persisted?
         # sign_in_and_redirect @user, event: :authentication # this will throw if @user is not activated
         sign_in(@user, @user, event: :authentication)
-        redirect_to ENV['OSM_OAUTH2_REDIRECT']
+        redirect_to ENV.fetch('OSM_OAUTH2_REDIRECT', nil)
       else
         session['devise.osm_data'] = request.env['omniauth.auth']
         redirect_to new_user_registration_url
