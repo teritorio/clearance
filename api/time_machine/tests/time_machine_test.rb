@@ -96,6 +96,7 @@ class TestTimeMachine < Test::Unit::TestCase
       action: nil,
       version: @@fixture_node_a['version'],
       changeset_ids: [@@fixture_node_a['changeset_id']],
+      created: @@fixture_node_a['created'],
       diff: TimeMachine::DiffActions.new(
         attribs: { 'lat' => [], 'lon' => [] },
         tags: { 'foo' => [] },
@@ -108,6 +109,7 @@ class TestTimeMachine < Test::Unit::TestCase
       action: 'accept',
       version: @@fixture_node_a['version'],
       changeset_ids: [@@fixture_node_a['changeset_id']],
+      created: @@fixture_node_a['created'],
       diff: TimeMachine::DiffActions.new(
         attribs: {},
         tags: {},
@@ -133,6 +135,7 @@ class TestTimeMachine < Test::Unit::TestCase
         action: action || 'reject',
         version: @@fixture_node_b['version'],
         changeset_ids: [@@fixture_node_b['changeset_id']],
+        created: @@fixture_node_b['created'],
         diff: TimeMachine::DiffActions.new(
           attribs: { 'lat' => validated, 'lon' => validated },
           tags: { 'foo' => validated, 'bar' => validated },

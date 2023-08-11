@@ -21,6 +21,7 @@ module ChangesDb
       'version' => Integer,
       'changeset_id' => Integer,
       'changeset' => T.nilable(Changeset::Changeset),
+      'created' => String,
       'tags' => T::Hash[String, String],
       'change_distance' => T.any(Float, Integer),
     }
@@ -103,6 +104,7 @@ module ChangesDb
 
   class ValidationLog < Db::ObjectId
     const :changeset_ids, T::Array[Integer]
+    const :created, String
     const :action, T.nilable(Types::ActionType)
     const :validator_uid, T.nilable(Integer)
     const :diff_attribs, Types::HashActions
@@ -137,7 +139,7 @@ module ChangesDb
         (
           $1, $2, $3,
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($4::json) AS t(i)),
-          $5, $6, $7, $8
+          $5, $6, $7, $8, $9
         )
     ")
     i = 0
@@ -148,6 +150,7 @@ module ChangesDb
           change.id,
           change.version,
           change.changeset_ids.to_json,
+          change.created,
           change.action,
           change.validator_uid,
           change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,

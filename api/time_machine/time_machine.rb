@@ -64,6 +64,7 @@ module TimeMachine
     const :action, T.nilable(Types::ActionType)
     const :version, Integer
     prop :changeset_ids, T::Array[Integer]
+    const :created, String
     const :diff, DiffActions
   end
 
@@ -101,6 +102,7 @@ module TimeMachine
           action: 'accept',
           version: after['version'],
           changeset_ids: T.must(afters.reverse[index..]&.collect{ |version| version['changeset_id'] }),
+          created: after['created'],
           diff: diff,
         )
         break
@@ -110,6 +112,7 @@ module TimeMachine
           action: partialy_rejected ? 'reject' : nil,
           version: after['version'],
           changeset_ids: [after['changeset_id']],
+          created: after['created'],
           diff: diff,
         )
       else
@@ -156,6 +159,7 @@ module TimeMachine
         id: id,
         version: validation.version,
         changeset_ids: validation.changeset_ids,
+        created: validation.created,
         action: validation.action,
         validator_uid: nil,
         diff_attribs: validation.diff.attribs,
