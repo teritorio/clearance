@@ -12,18 +12,20 @@ module Config
     const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Hash[String, T::Hash[String, Object]]
-    const :customers, T::Hash[String, T::Hash[String, Object]]
+    const :user_groups, T::Hash[String, T::Hash[String, Object]]
   end
 
-  class Customer < T::Struct
-    const :tag_watches, T.nilable(String)
+  class UserGroupConfig < T::Struct
+    const :title, T::Hash[String, String]
+    const :polygon, T.nilable(String)
+    const :users, T::Array[String]
   end
 
   class Config < T::Struct
     const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Array[Validators::ValidatorBase]
-    const :customers, T::Hash[String, Customer]
+    const :user_groups, T::Hash[String, UserGroupConfig]
   end
 
   sig {
@@ -36,15 +38,15 @@ module Config
     config = MainConfig.from_hash(config_yaml)
     validators = Validators::ValidatorFactory.validators_factory(config.validators)
 
-    config.customers.transform_values{ |v|
-      Customer.new(v&.transform_keys(&:to_sym) || {})
+    config.user_groups.transform_values{ |v|
+      UserGroupConfig.new(v&.transform_keys(&:to_sym) || {})
     }
 
     Config.new(
       title: config.title,
       description: config.description,
       validators: validators,
-      customers: config.customers.transform_values{ |v| Customer.new(v&.transform_keys(&:to_sym) || {}) }
+      user_groups: config.user_groups.transform_values{ |v| UserGroupConfig.new(v&.transform_keys(&:to_sym) || {}) }
     )
   end
 end
