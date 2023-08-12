@@ -9,6 +9,7 @@ module Config
   extend T::Sig
 
   class MainConfig < T::Struct
+    const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Hash[String, T::Hash[String, Object]]
     const :customers, T::Hash[String, T::Hash[String, Object]]
@@ -19,6 +20,7 @@ module Config
   end
 
   class Config < T::Struct
+    const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Array[Validators::ValidatorBase]
     const :customers, T::Hash[String, Customer]
@@ -39,6 +41,7 @@ module Config
     }
 
     Config.new(
+      title: config.title,
       description: config.description,
       validators: validators,
       customers: config.customers.transform_values{ |v| Customer.new(v&.transform_keys(&:to_sym) || {}) }

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 # typed: true
 
+require './time_machine/db'
+require './time_machine/changes_db'
 
 class ProjectsController < ApplicationController
   def index
@@ -9,10 +11,21 @@ class ProjectsController < ApplicationController
       date_start = StateFile::StateFile.from_file("#{project}/import/import.state.txt")
       date_last_update = StateFile::StateFile.from_file("#{project}/import/replication/state.txt")
       puts date_start.inspect, date_last_update.inspect
-      [project.split('/')[-1], {
+
+      project = T.must(project.split('/')[-1])
+
+      count = T.let(0, Integer)
+      Db::DbConnRead.conn(project) { |conn|
+        count = ChangesDb.count(conn)
+      }
+
+      [project, {
+        title: c.title,
         description: c.description,
         date_start: date_start&.timestamp,
         date_last_update: date_last_update&.timestamp,
+        to_be_validated: count,
+
       }]
     }
     render json: projects
