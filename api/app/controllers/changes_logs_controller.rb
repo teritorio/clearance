@@ -27,6 +27,20 @@ class ChangesLogsController < ApplicationController
   def sets
     project = params['project'].to_s
 
+    config = Config.load("/projects/#{project}/config.yaml")
+    if config.nil?
+      render(status: :not_found)
+      return
+    end
+
+    user_in_project = config.user_groups.any?{ |_key, user_group|
+      user_group.users.include?(current_user.osm_name)
+    }
+    if !user_in_project
+      render(status: :unauthorized)
+      return
+    end
+
     changes = params['_json'].map{ |change|
       Db::ObjectId.new(
         objtype: change['objtype'],
