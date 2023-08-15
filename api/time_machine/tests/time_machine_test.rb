@@ -121,7 +121,7 @@ class TestTimeMachine < Test::Unit::TestCase
   def test_object_validation_many
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
-      accept_validator = Validators::All.new(id: id, action: action)
+      accept_validator = Validators::All.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)
       validation = TimeMachine.object_validation(
         [accept_validator],
         [@@fixture_node_a, @@fixture_node_b],

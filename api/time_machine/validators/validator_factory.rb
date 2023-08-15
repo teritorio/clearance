@@ -28,12 +28,14 @@ module Validators
     sig {
       params(
         validators_config: T::Hash[String, T::Hash[String, Object]],
+        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
       ).returns(T::Array[ValidatorBase])
     }
-    def self.validators_factory(validators_config)
+    def self.validators_factory(validators_config, osm_tags_matches)
       validators_config.collect{ |id, config|
         class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
         args = config.except('instance').transform_keys(&:to_sym)
+        args[:osm_tags_matches] = osm_tags_matches
         Object.const_get(class_name).new(id: id, **args)
       }
     end

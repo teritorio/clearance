@@ -13,32 +13,40 @@ module OsmTagsMatches
   class OsmTagsMatch
     extend T::Sig
 
+    sig { returns(T.nilable(T::Array[String])) }
+    attr_accessor :sources
+
     sig {
       params(
-        tags: String,
+        selector: String,
+        selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
+        sources: T.nilable(T::Array[String])
       ).void
     }
-    def initialize(tags)
-      throw 'Tags tags selector format' if tags.size <= 2
+    def initialize(selector, selector_extra: nil, sources: nil)
+      throw 'Tags tags selector format' if selector.size <= 2
 
-      a = T.must(tags[1..-2]).split('][').collect{ |osm_tag|
+      a = T.must(selector[1..-2]).split('][').collect{ |osm_tag|
         k, o, v = osm_tag.split(/(=|~=|=~|!=|!~|~)/, 2).collect{ |s| unquote(s) }
         if o&.include?('~') && !v.nil?
           v = Regexp.new(v)
         end
         [T.must(k), [o, v]]
       }.group_by(&:first).transform_values{ |v| v.collect(&:last) }
-      @tags_match = T.let(a, T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]])
+      @selector_match = T.let(a, T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]])
+
+      @selector_extra = selector_extra
+      @sources = sources
     end
 
     sig {
       params(
-        object_tags: T::Hash[String, String],
+        tags: T::Hash[String, String],
       ).returns(T::Array[[String, OsmTagsMatch]])
     }
-    def match(object_tags)
-      @tags_match.collect{ |key, op_values|
-        value = object_tags[key]
+    def match(tags)
+      @selector_match.collect{ |key, op_values|
+        value = tags[key]
         match = !value.nil? && op_values.all?{ |op, values|
           case op
           when nil then true
@@ -55,11 +63,22 @@ module OsmTagsMatches
 
     sig {
       params(
+        tags: T::Hash[String, String],
+      ).returns(T::Array[[String, OsmTagsMatch]])
+    }
+    def match_with_extra(tags)
+      main_keys = match(tags)
+      main_keys += (@selector_extra&.keys&.intersection(tags.keys) || []).collect{ |key| [key, self] } if !main_keys.empty?
+      main_keys
+    end
+
+    sig {
+      params(
         escape_literal: T.proc.params(s: String).returns(String),
       ).returns(String)
     }
     def to_sql(escape_literal)
-      p = @tags_match.collect { |key, op_values|
+      p = @selector_match.collect { |key, op_values|
         key = escape_literal.call(key.to_s)
         op_values.collect{ |op, value|
           value = escape_literal.call(value.to_s) if !value.nil?
@@ -75,7 +94,6 @@ module OsmTagsMatches
       }.join(' AND ')
       "(#{p})"
     end
-
 
     # Backport ruby 3.2
     sig {

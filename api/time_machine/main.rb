@@ -49,9 +49,9 @@ else
   end
 
   if @options[:apply_unclibled_changes]
-    watches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).watches
+    osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
     Db::DbConnWrite.conn(project){ |conn|
-      ChangesDb.apply_unclibled_changes(conn, watches.to_sql(->(s) { conn.method(s) }))
+      ChangesDb.apply_unclibled_changes(conn, osm_tags_matches.to_sql(->(s) { conn.method(s) }))
     }
   end
 

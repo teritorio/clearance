@@ -18,7 +18,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::Validator.new(id: id, action: action)
+    validator = Validators::Validator.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)
 
     actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)
@@ -32,7 +32,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validators::Validator.new(id: id, action_force: action)
+    validator = Validators::Validator.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action_force: action)
 
     actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)
@@ -51,7 +51,7 @@ class TestUserList < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::UserList.new(id: id, action: action, list: ['bob'])
+    validator = Validators::UserList.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action, list: ['bob'])
     validation_action = [Types::Action.new(
       validator_id: id,
       description: nil,
@@ -103,13 +103,13 @@ class TestTagsChanges < Test::Unit::TestCase
 
   def test_simple
     id = 'foo'
-    watches = Validators::Watches.new([
-      Validators::Watch.new(
-        match: '[shop=florist]',
-        watch: { 'phone' => nil, 'fee' => nil },
+    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new([
+      OsmTagsMatches::OsmTagsMatch.new(
+        '[shop=florist]',
+        selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
   ])
-    validator = Validators::TagsChanges.new(id: id, watches: watches, accept: 'action_accept', reject: 'action_reject')
+    validator = Validators::TagsChanges.new(id: id, osm_tags_matches: osm_tags_matches, accept: 'action_accept', reject: 'action_reject')
     validation_action_accept = [Types::Action.new(
       validator_id: 'action_accept',
       description: nil,

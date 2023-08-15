@@ -14,11 +14,13 @@ module Validators
     sig {
       params(
         id: String,
+        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, description: nil)
+    def initialize(id:, osm_tags_matches:, description: nil)
       @id = id
+      @osm_tags_matches = osm_tags_matches
       @description = description
     end
 
@@ -35,7 +37,7 @@ module Validators
       returns(T::Hash[T.untyped, T.untyped])
     }
     def to_h
-      instance_variables.select{ |v| [:@watches].exclude?(v) }.to_h { |v|
+      instance_variables.select{ |v| [:@osm_tags_matches].exclude?(v) }.to_h { |v|
         [v.to_s.delete('@'), instance_variable_get(v)]
       }
     end
@@ -46,13 +48,14 @@ module Validators
     sig {
       params(
         id: String,
+        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
         description: T.nilable(String),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
       ).void
     }
-    def initialize(id:, description: nil, action: nil, action_force: nil)
-      super(id: id)
+    def initialize(id:, osm_tags_matches:, description: nil, action: nil, action_force: nil)
+      super(id: id, osm_tags_matches: osm_tags_matches)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = T.let(Types::Action.new(
         validator_id: id,
@@ -89,13 +92,14 @@ module Validators
     sig {
       params(
         id: String,
+        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
         accept: String,
         reject: String,
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, accept:, reject:, description: nil)
-      super(id: id)
+    def initialize(id:, osm_tags_matches:, accept:, reject:, description: nil)
+      super(id: id, osm_tags_matches: osm_tags_matches)
       @action_accept = T.let(Types::Action.new(
         validator_id: accept,
         description: description,

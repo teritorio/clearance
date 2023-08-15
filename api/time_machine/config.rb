@@ -25,6 +25,7 @@ module Config
     const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Array[Validators::ValidatorBase]
+    const :osm_tags_matches, OsmTagsMatches::OsmTagsMatches
     const :user_groups, T::Hash[String, UserGroupConfig]
   end
 
@@ -36,17 +37,43 @@ module Config
   def self.load(path)
     config_yaml = YAML.unsafe_load_file(path)
     config = MainConfig.from_hash(config_yaml)
-    validators = Validators::ValidatorFactory.validators_factory(config.validators)
 
-    config.user_groups.transform_values{ |v|
-      UserGroupConfig.new(v&.transform_keys(&:to_sym) || {})
+    osm_tags = T.let([], T::Array[T::Hash[T.untyped, T.untyped]])
+    user_groups = config.user_groups.to_h{ |group_id, v|
+      j = JSON.parse(File.read(v['osm_tags']))
+      osm_tags += j.collect{ |rule|
+        rule['sources'] = rule['sources'].collect{ |s| [group_id, s] }
+        rule
+      }
+
+      [group_id, UserGroupConfig.from_hash(v)]
     }
+
+    osm_tags = osm_tags.group_by{ |t| [t['select'], t['interest']] }.transform_values{ |group|
+      group0 = T.must(group[0]) # Just to keep sorbet happy
+      {
+        'select' => group0['select'],
+        'interest' => group0['interest'],
+        'sources' => group.pluck('sources').flatten(1).group_by(&:last).transform_values{ |j| j.collect(&:first).join(', ') }.collect{ |source, group_ids| "#{group_ids}: #{source}" }
+      }
+    }.values
+
+    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new(osm_tags.collect{ |value|
+      OsmTagsMatches::OsmTagsMatch.new(
+        value['select'],
+        selector_extra: value['interest'],
+        sources: value['sources'],
+      )
+    })
+
+    validators = Validators::ValidatorFactory.validators_factory(config.validators, osm_tags_matches)
 
     Config.new(
       title: config.title,
       description: config.description,
       validators: validators,
-      user_groups: config.user_groups.transform_values{ |v| UserGroupConfig.new(v&.transform_keys(&:to_sym) || {}) }
+      osm_tags_matches: osm_tags_matches,
+      user_groups: user_groups
     )
   end
 end
