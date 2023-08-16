@@ -9,7 +9,7 @@ require './time_machine/validators/tags_changes'
 require './time_machine/validators/user_list'
 require './time_machine/time_machine'
 require './time_machine/types'
-require './time_machine/config'
+require './time_machine/configuration'
 
 
 class TestValidator < Test::Unit::TestCase

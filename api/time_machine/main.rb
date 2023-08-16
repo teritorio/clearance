@@ -5,7 +5,7 @@ require 'optparse'
 require './time_machine/time_machine'
 require './time_machine/validators/validator'
 require './time_machine/types'
-require './time_machine/config'
+require './time_machine/configuration'
 require './time_machine/db'
 
 @options = T.let({}, T::Hash[Symbol, T.untyped])
@@ -40,7 +40,7 @@ if @options[:help]
   puts 'RTFC'
 else
   project = @options[:project].split('/')[-1]
-  config = Config.load("#{@options[:project]}/config.yaml")
+  config = Configuration.load("#{@options[:project]}/config.yaml")
 
   if @options[:changes_prune]
     Db::DbConnWrite.conn(project) { |conn|

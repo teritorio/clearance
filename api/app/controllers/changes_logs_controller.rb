@@ -27,7 +27,7 @@ class ChangesLogsController < ApplicationController
   def sets
     project = params['project'].to_s
 
-    config = Config.load("/projects/#{project}/config.yaml")
+    config = Configuration.load("/projects/#{project}/config.yaml")
     if config.nil?
       render(status: :not_found)
       return

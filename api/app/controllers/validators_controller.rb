@@ -6,7 +6,7 @@ class ValidatorsController < ApplicationController
   def index
     project = params['project'].to_s
 
-    json = Config.load("/projects/#{project}/config.yaml").validators.to_h{ |validator|
+    json = Configuration.load("/projects/#{project}/config.yaml").validators.to_h{ |validator|
       h = validator.to_h
       [h['id'], h.except('id')]
     }

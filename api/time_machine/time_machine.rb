@@ -70,7 +70,7 @@ module TimeMachine
 
   sig {
     params(
-      config: Config::Config,
+      config: Configuration::Config,
       changes: T::Array[ChangesDb::OSMChangeProperties]
     ).returns(T::Array[ValidationResult])
   }
@@ -130,7 +130,7 @@ module TimeMachine
   sig {
     params(
       conn: PG::Connection,
-      config: Config::Config,
+      config: Configuration::Config,
     ).returns(T::Enumerable[[String, Integer, ValidationResult]])
   }
   def self.time_machine(conn, config)
@@ -147,7 +147,7 @@ module TimeMachine
   sig {
     params(
       conn: PG::Connection,
-      config: Config::Config,
+      config: Configuration::Config,
     ).void
   }
   def self.validate(conn, config)

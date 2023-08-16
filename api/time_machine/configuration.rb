@@ -6,7 +6,7 @@ require 'yaml'
 require './time_machine/validators/validator_factory'
 require 'open-uri'
 
-module Config
+module Configuration
   extend T::Sig
 
   class MainConfig < T::Struct

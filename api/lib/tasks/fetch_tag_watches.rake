@@ -5,7 +5,7 @@ require 'rake'
 require 'json'
 require 'yaml'
 # require 'http'
-require './time_machine/config'
+require './time_machine/configuration'
 
 def fetch_json(url)
   puts "Fetch... #{url}"
@@ -18,7 +18,7 @@ def fetch_json(url)
 end
 
 def merge_tag_watches(path)
-  config = Config.load(path)
+  config = Configuration.load(path)
   config.customers.collect{ |_id, customer|
     customer.tag_watches
   }.collect{ |url|

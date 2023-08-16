@@ -66,13 +66,13 @@ class TestTimeMachine < Test::Unit::TestCase
   }, ChangesDb::OSMChangeProperties)
 
   def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), user_groups: {})
-    Config::Config.new(
-      title: title,
-      description: description,
-      validators: validators,
-      osm_tags_matches: osm_tags_matches,
-      user_groups: user_groups,
-    )
+    Configuration::Config.new(
+        title: title,
+        description: description,
+        validators: validators,
+        osm_tags_matches: osm_tags_matches,
+        user_groups: user_groups,
+      )
   end
 
   def test_diff_osm_object_same

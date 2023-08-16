@@ -7,7 +7,7 @@ require './time_machine/changes_db'
 class ProjectsController < ApplicationController
   def index
     projects = Dir.glob('/projects/*/').to_h{ |project|
-      c = Config.load("#{project}/config.yaml")
+      c = Configuration.load("#{project}/config.yaml")
       date_start = StateFile::StateFile.from_file("#{project}/import/import.state.txt")
       date_last_update = StateFile::StateFile.from_file("#{project}/import/replication/state.txt")
       puts date_start.inspect, date_last_update.inspect
