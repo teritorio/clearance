@@ -34,7 +34,7 @@ class ChangesLogsController < ApplicationController
     end
 
     user_in_project = config.user_groups.any?{ |_key, user_group|
-      user_group.users.include?(current_user.osm_name)
+      user_group.users.include?(current_user_osm_name)
     }
     if !user_in_project
       render(status: :unauthorized)
