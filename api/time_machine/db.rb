@@ -171,7 +171,7 @@ module Db
     Bzip2::FFI::Writer.open(osm_bz2) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')
       f.write("\n")
-      f.write('<osm version="0.6" generator="a-priori-validation-for-osm">')
+      f.write('<osm version="0.6" generator="clearance">')
       f.write("\n")
 
       conn.exec(sql) { |result|
@@ -196,7 +196,7 @@ module Db
     Zlib::GzipWriter.open(osc_gz) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')
       f.write("\n")
-      f.write('<osmChange version="0.6" generator="a-priori-validation-for-osm">')
+      f.write('<osmChange version="0.6" generator="clearance">')
       f.write("\n")
 
       sql = "
