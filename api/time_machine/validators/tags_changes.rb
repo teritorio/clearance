@@ -41,7 +41,7 @@ module Validators
       }
 
       matcheses.each{ |key, matches|
-        assign_action_reject(T.must(diff.tags[key]), options: { 'sources' => matches.collect{ |m| m[-1].sources }.flatten })
+        assign_action_reject(T.must(diff.tags[key]), options: { 'sources' => matches.collect{ |m| m[-1].sources }.flatten.compact.presence }.compact.presence)
       }
 
       (diff.tags.keys - matcheses.keys).each{ |key, _matches|

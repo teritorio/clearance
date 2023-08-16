@@ -37,14 +37,15 @@ module Validators
     sig {
       params(
         id: String,
+        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
         config: T.any(String, T::Array[TagsNonSignificantChangeConfig]),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, config:, action: nil, action_force: nil, description: nil)
-      super(id: id, action: action, action_force: action_force, description: description)
+    def initialize(id:, osm_tags_matches:, config:, action: nil, action_force: nil, description: nil)
+      super(id: id, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
 
       @config = T.let(if config.is_a?(Array)
                         config
@@ -70,9 +71,9 @@ module Validators
       # If key/values does not exists before, but exists afters, ignore it.
       # If key/values des exists before, but does not exists afters, ignore it.
       @config.each{ |c|
-        a = c.match(after['tags'])
+        a = T.let(c.match(after['tags']).collect(&:first), T::Array[String])
         if !before.nil?
-          a += c.match(before['tags'])
+          a += c.match(before['tags']).collect(&:first)
         end
 
         diff.tags.each { |key, action|

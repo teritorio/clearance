@@ -20,12 +20,10 @@ class TestTimeMachine < Test::Unit::TestCase
     'version' => 1,
     'changeset' => nil,
     'changeset_id' => 1,
-    'uid' => 1,
-    'username' => 'bob',
     'created' => 'today',
-    'tags' => {
+    'tags' => T.let({
       'foo' => 'bar',
-    },
+    }, T::Hash[String, String]),
     'change_distance' => 0,
   }, ChangesDb::OSMChangeProperties)
 
@@ -38,8 +36,6 @@ class TestTimeMachine < Test::Unit::TestCase
     'version' => 2,
     'changeset' => nil,
     'changeset_id' => 2,
-    'uid' => 2,
-    'username' => 'mom',
     'created' => 'today',
     'tags' => {
       'bar' => 'foo',
@@ -56,8 +52,6 @@ class TestTimeMachine < Test::Unit::TestCase
     'version' => 1,
     'changeset' => nil,
     'changeset_id' => 1,
-    'uid' => 1,
-    'username' => 'bob',
     'created' => 'today',
     'tags' => {
       'foo' => 'bar',
@@ -84,7 +78,7 @@ class TestTimeMachine < Test::Unit::TestCase
     diff = TimeMachine.diff_osm_object(nil, @@fixture_node_a)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [] },
+        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
@@ -93,7 +87,7 @@ class TestTimeMachine < Test::Unit::TestCase
     diff = TimeMachine.diff_osm_object(nil, @@fixture_way_a)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'nodes' => [] },
+        attribs: { 'nodes' => [], 'change_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
@@ -108,7 +102,7 @@ class TestTimeMachine < Test::Unit::TestCase
       changeset_ids: [@@fixture_node_a['changeset_id']],
       created: @@fixture_node_a['created'],
       diff: TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [] },
+        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
         tags: { 'foo' => [] },
       ),
     )]
@@ -132,7 +126,7 @@ class TestTimeMachine < Test::Unit::TestCase
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
       validation = TimeMachine.object_validation(
-        config(validators: Validators::All.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)),
+        config(validators: [Validators::All.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)]),
         [@@fixture_node_a, @@fixture_node_b],
       )
 

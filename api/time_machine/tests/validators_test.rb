@@ -67,8 +67,6 @@ class TestUserList < Test::Unit::TestCase
       'version' => 1,
       'changeset_id' => 1,
       'changeset' => nil,
-      'uid' => 1,
-      'username' => 'bob',
       'created' => 'today',
       'tags' => {
         'foo' => 'bar',
@@ -80,7 +78,7 @@ class TestUserList < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => validation_action, 'lon' => validation_action },
+        attribs: { 'change_distance' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
@@ -130,8 +128,6 @@ class TestTagsChanges < Test::Unit::TestCase
       'version' => 1,
       'changeset_id' => 1,
       'changeset' => nil,
-      'uid' => 1,
-      'username' => 'bob',
       'created' => 'today',
       'tags' => {
         'shop' => 'florist',
@@ -145,7 +141,7 @@ class TestTagsChanges < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [] },
+        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
         tags: { 'shop' => validation_action_reject, 'phone' => validation_action_reject, 'foo' => validation_action_accept }
       ).inspect,
       diff.inspect
@@ -175,7 +171,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
         values: OsmTagsMatches::OsmTagsMatch.new('[phone]'),
       ),
     ]
-    validator = Validators::TagsNonSignificantAdd.new(id: id, config: config, action: 'accept')
+    validator = Validators::TagsNonSignificantAdd.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), config: config, action: 'accept')
     validation_action_accept = [Types::Action.new(
       validator_id: id,
       description: nil,
@@ -191,8 +187,6 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
       'version' => 1,
       'changeset_id' => 1,
       'changeset' => nil,
-      'uid' => 1,
-      'username' => 'bob',
       'created' => 'today',
       'tags' => {
         'shop' => 'florist',
@@ -206,7 +200,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [] },
+        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
         tags: { 'shop' => [], 'phone' => validation_action_accept, 'foo' => [] }
       ).inspect,
       diff.inspect
