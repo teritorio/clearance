@@ -16,7 +16,9 @@ class ProjectsController < ApplicationController
 
       count = T.let(0, Integer)
       Db::DbConnRead.conn(project) { |conn|
-        count = ChangesDb.count(conn)
+        conn.exec('SELECT count(*) AS count FROM validations_log') { |result|
+          count = result[0]['count'] || 0
+        }
       }
 
       [project, {

@@ -38,17 +38,6 @@ module ChangesDb
   sig {
     params(
       conn: PG::Connection,
-    ).returns(Integer)
-  }
-  def self.count(conn)
-    conn.exec('SELECT count(*) AS count FROM osm_changes') { |result|
-      return result[0]['count'] || 0
-    }
-  end
-
-  sig {
-    params(
-      conn: PG::Connection,
       block: T.proc.params(arg0: OSMChangeObject).void
     ).void
   }
