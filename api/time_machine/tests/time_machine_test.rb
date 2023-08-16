@@ -65,6 +65,16 @@ class TestTimeMachine < Test::Unit::TestCase
     'change_distance' => 0,
   }, ChangesDb::OSMChangeProperties)
 
+  def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), user_groups: {})
+    accept_validator = Config::Config.new(
+      title: title,
+      description: description,
+      validators: validators,
+      osm_tags_matches: osm_tags_matches,
+      user_groups: user_groups,
+    )
+  end
+
   def test_diff_osm_object_same
     diff = TimeMachine.diff_osm_object(@@fixture_node_a, @@fixture_node_a)
     assert_equal(TimeMachine::DiffActions.new(attribs: {}, tags: {}).inspect, diff.inspect)
@@ -91,7 +101,7 @@ class TestTimeMachine < Test::Unit::TestCase
   end
 
   def test_object_validation_empty
-    validation = TimeMachine.object_validation([], [@@fixture_node_a])
+    validation = TimeMachine.object_validation(config, [@@fixture_node_a])
     validation_result = [TimeMachine::ValidationResult.new(
       action: nil,
       version: @@fixture_node_a['version'],
@@ -104,7 +114,7 @@ class TestTimeMachine < Test::Unit::TestCase
     )]
     assert_equal(validation_result.inspect, validation.inspect)
 
-    validation = TimeMachine.object_validation([], [@@fixture_node_a, @@fixture_node_a])
+    validation = TimeMachine.object_validation(config, [@@fixture_node_a, @@fixture_node_a])
     validation_result = [TimeMachine::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
@@ -121,9 +131,8 @@ class TestTimeMachine < Test::Unit::TestCase
   def test_object_validation_many
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
-      accept_validator = Validators::All.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)
       validation = TimeMachine.object_validation(
-        [accept_validator],
+        config(validators: Validators::All.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)),
         [@@fixture_node_a, @@fixture_node_b],
       )
 

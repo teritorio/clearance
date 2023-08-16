@@ -70,11 +70,11 @@ module TimeMachine
 
   sig {
     params(
-      validators: T::Array[Validators::ValidatorBase],
+      config: Config::Config,
       changes: T::Array[ChangesDb::OSMChangeProperties]
     ).returns(T::Array[ValidationResult])
   }
-  def self.object_validation(validators, changes)
+  def self.object_validation(config, changes)
     before = T.let(nil, T.nilable(ChangesDb::OSMChangeProperties))
     afters = T.let([], T::Array[ChangesDb::OSMChangeProperties])
     if changes.size == 1
@@ -92,7 +92,7 @@ module TimeMachine
     afters.reverse.each_with_index{ |after, index|
       diff = diff_osm_object(before, after)
 
-      validators.each{ |validator|
+      config.validators.each{ |validator|
         validator.apply(before, after, diff)
       }
 
@@ -130,13 +130,13 @@ module TimeMachine
   sig {
     params(
       conn: PG::Connection,
-      validators: T::Array[Validators::ValidatorBase],
+      config: Config::Config,
     ).returns(T::Enumerable[[String, Integer, ValidationResult]])
   }
-  def self.time_machine(conn, validators)
+  def self.time_machine(conn, config)
     Enumerator.new { |yielder|
       ChangesDb.fetch_changes(conn) { |osm_change_object|
-        validation_results = object_validation(validators, osm_change_object['p'])
+        validation_results = object_validation(config, osm_change_object['p'])
         validation_results.each{ |validation_result|
           yielder << [osm_change_object['objtype'], osm_change_object['id'], validation_result]
         }
@@ -147,11 +147,11 @@ module TimeMachine
   sig {
     params(
       conn: PG::Connection,
-      validators: T::Array[Validators::ValidatorBase],
+      config: Config::Config,
     ).void
   }
-  def self.validate(conn, validators)
-    validations = time_machine(conn, validators)
+  def self.validate(conn, config)
+    validations = time_machine(conn, config)
 
     ChangesDb.apply_logs(conn, validations.collect{ |objtype, id, validation|
       ChangesDb::ValidationLog.new(

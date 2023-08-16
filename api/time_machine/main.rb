@@ -57,7 +57,7 @@ else
 
   if @options[:validate]
     Db::DbConnWrite.conn(project){ |conn|
-      TimeMachine.validate(conn, config.validators)
+      TimeMachine.validate(conn, config)
     }
   end
 
