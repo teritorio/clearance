@@ -1,5 +1,6 @@
 SET search_path TO :schema,public;
 
+DROP FUNCTION changes_logs();
 CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     objtype character(1),
     id bigint,
