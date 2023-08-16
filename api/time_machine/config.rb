@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'yaml'
 require './time_machine/validators/validator_factory'
+require 'open-uri'
 
 module Config
   extend T::Sig
@@ -40,7 +41,7 @@ module Config
 
     osm_tags = T.let([], T::Array[T::Hash[T.untyped, T.untyped]])
     user_groups = config.user_groups.to_h{ |group_id, v|
-      j = JSON.parse(File.read(v['osm_tags']))
+      j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|
         rule['sources'] = rule['sources'].collect{ |s| [group_id, s] }
         rule
