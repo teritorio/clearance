@@ -60,6 +60,7 @@ CREATE TABLE :schema."validations_log" (
     "version" INTEGER NOT NULL,
     "changeset_ids" INTEGER[] NOT NULL,
     "created" TIMESTAMP (0) WITHOUT TIME ZONE,
+    "matches" TEXT[] NOT NULL,
     "action" TEXT,
     "validator_uid" INTEGER,
     "diff_attribs" JSONB,

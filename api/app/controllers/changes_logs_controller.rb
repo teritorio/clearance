@@ -16,6 +16,7 @@ class ChangesLogsController < ApplicationController
       json = conn.exec(sql).map{ |row|
         row['base'] = row['base']
         row['change'] = row['change']
+        row['matches'] = row['matches']
         row['diff_tags'] = row['diff_tags']
         row['diff_attribs'] = row['diff_attribs']
         row

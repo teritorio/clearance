@@ -131,14 +131,20 @@ module TimeMachine
     params(
       conn: PG::Connection,
       config: Configuration::Config,
-    ).returns(T::Enumerable[[String, Integer, ValidationResult]])
+    ).returns(T::Enumerable[[String, Integer, T::Array[String], ValidationResult]])
   }
   def self.time_machine(conn, config)
     Enumerator.new { |yielder|
       ChangesDb.fetch_changes(conn) { |osm_change_object|
+        matches = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq.collect{ |object|
+          config.osm_tags_matches.match(object['tags'])
+        }.flatten(1).collect{|y| T.must(y[-1].sources) }.flatten(1).uniq
+
+        puts matches.inspect
+
         validation_results = object_validation(config, osm_change_object['p'])
         validation_results.each{ |validation_result|
-          yielder << [osm_change_object['objtype'], osm_change_object['id'], validation_result]
+          yielder << [osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
         }
       }
     }
@@ -153,13 +159,14 @@ module TimeMachine
   def self.validate(conn, config)
     validations = time_machine(conn, config)
 
-    ChangesDb.apply_logs(conn, validations.collect{ |objtype, id, validation|
+    ChangesDb.apply_logs(conn, validations.collect{ |objtype, id, matches, validation|
       ChangesDb::ValidationLog.new(
         objtype: objtype,
         id: id,
         version: validation.version,
         changeset_ids: validation.changeset_ids,
         created: validation.created,
+        matches: matches,
         action: validation.action,
         validator_uid: nil,
         diff_attribs: validation.diff.attribs,

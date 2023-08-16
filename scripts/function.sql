@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     base json,
     change json,
     changesets json,
+    matches text[],
     action text,
     diff_attribs json,
     diff_tags json
@@ -52,6 +53,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                     osm_changesets.created_at
             ) AS t
         ) AS changesets,
+        validations_log.matches,
         validations_log.action,
         validations_log.diff_attribs,
         validations_log.diff_tags

@@ -143,6 +143,17 @@ module OsmTagsMatches
 
     sig {
       params(
+        tags: T::Hash[String, String],
+      ).returns(T::Array[[String, OsmTagsMatch]])
+    }
+    def match_with_extra(tags)
+      @matches.collect{ |watch|
+        watch.match_with_extra(tags)
+      }.flatten(1)
+    end
+
+    sig {
+      params(
         escape_literal: T.proc.params(s: String).returns(String),
       ).returns(String)
     }
