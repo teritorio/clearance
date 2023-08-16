@@ -138,9 +138,7 @@ module TimeMachine
       ChangesDb.fetch_changes(conn) { |osm_change_object|
         matches = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
-        }.flatten(1).collect{|y| T.must(y[-1].sources) }.flatten(1).uniq
-
-        puts matches.inspect
+        }.flatten(1).collect{ |y| T.must(y[-1].sources) }.flatten(1).uniq
 
         validation_results = object_validation(config, osm_change_object['p'])
         validation_results.each{ |validation_result|
