@@ -5,7 +5,9 @@
 # https://github.com/heartcombo/devise/issues/5140
 # Add to patch a zietwerk loading error due to not using ActionMailer with devise
 if Rails.autoloaders.zeitwerk_enabled?
-  class Devise::Mailer; end
+  module Devise
+    class Mailer; end # rubocop:disable Lint/EmptyClass
+  end
 end
 
 

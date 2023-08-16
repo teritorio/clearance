@@ -12,8 +12,8 @@ module Config
   class MainConfig < T::Struct
     const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
-    const :validators, T::Hash[String, T::Hash[String, Object]]
-    const :user_groups, T::Hash[String, T::Hash[String, Object]]
+    const :validators, T::Hash[String, T::Hash[String, T.untyped]]
+    const :user_groups, T::Hash[String, T::Hash[String, T.untyped]]
   end
 
   class UserGroupConfig < T::Struct
@@ -32,13 +32,13 @@ module Config
 
   sig {
     params(
-      path: String
-    ).returns(Config)
+      config: MainConfig
+    ).returns([
+      T::Hash[String, UserGroupConfig],
+      OsmTagsMatches::OsmTagsMatches
+    ])
   }
-  def self.load(path)
-    config_yaml = YAML.unsafe_load_file(path)
-    config = MainConfig.from_hash(config_yaml)
-
+  def self.load_user_groups(config)
     osm_tags = T.let([], T::Array[T::Hash[T.untyped, T.untyped]])
     user_groups = config.user_groups.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
@@ -67,6 +67,19 @@ module Config
       )
     })
 
+    [user_groups, osm_tags_matches]
+  end
+
+  sig {
+    params(
+      path: String
+    ).returns(Config)
+  }
+  def self.load(path)
+    config_yaml = YAML.unsafe_load_file(path)
+    config = MainConfig.from_hash(config_yaml)
+
+    user_groups, osm_tags_matches = load_user_groups(config)
     validators = Validators::ValidatorFactory.validators_factory(config.validators, osm_tags_matches)
 
     Config.new(

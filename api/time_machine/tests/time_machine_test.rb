@@ -66,7 +66,7 @@ class TestTimeMachine < Test::Unit::TestCase
   }, ChangesDb::OSMChangeProperties)
 
   def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), user_groups: {})
-    accept_validator = Config::Config.new(
+    Config::Config.new(
       title: title,
       description: description,
       validators: validators,
