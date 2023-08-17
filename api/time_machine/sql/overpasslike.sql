@@ -10,12 +10,14 @@ SELECT
   'n' AS objtype,
   id,
   version,
+  created AS timestamp,
   tags,
   lat,
   lon
 FROM
   osm_base
 WHERE
+  objtype = 'n' AND
   (:osm_filter_tags)
 
 UNION ALL
@@ -24,6 +26,7 @@ SELECT
   'w' AS objtype,
   ways.id,
   ways.version,
+  ways.created AS timestamp,
   ways.tags,
   AVG(nodes.lat) AS lat,
   AVG(nodes.lon) AS lon
@@ -35,6 +38,7 @@ FROM
 GROUP BY
   ways.id,
   ways.version,
+  ways.created,
   ways.tags
 
 UNION ALL
@@ -43,6 +47,7 @@ SELECT
   'r' AS objtype,
   relations.id,
   relations.version,
+  relations.created AS timestamp,
   relations.tags,
   avg(coalesce(node_members.lat)) AS lat,
   avg(coalesce(node_members.lon)) AS lon
@@ -68,5 +73,9 @@ FROM
 GROUP BY
   relations.id,
   relations.version,
+  relations.created,
   relations.tags
+HAVING
+  avg(coalesce(node_members.lat)) IS NOT NULL AND
+  avg(coalesce(node_members.lon)) IS NOT NULL
 ;

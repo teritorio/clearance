@@ -17,6 +17,7 @@ CREATE TABLE osm_base (
     members JSONB -- %COL:osm_base:members%
 );
 ALTER TABLE osm_base ADD PRIMARY KEY(id, objtype); -- %PK:osm_base%
+CREATE INDEX osm_base_idx_tags ON osm_base USING gin(tags);
 
 DROP TABLE IF EXISTS osm_changesets CASCADE;
 CREATE TABLE osm_changesets (
