@@ -20,6 +20,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'version' => 1,
     'changeset' => nil,
     'changeset_id' => 1,
+    'username' => 'bob',
     'created' => 'today',
     'tags' => T.let({
       'foo' => 'bar',
@@ -36,6 +37,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'version' => 2,
     'changeset' => nil,
     'changeset_id' => 2,
+    'username' => 'bob',
     'created' => 'today',
     'tags' => {
       'bar' => 'foo',
@@ -52,6 +54,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'version' => 1,
     'changeset' => nil,
     'changeset_id' => 1,
+    'username' => 'bob',
     'created' => 'today',
     'tags' => {
       'foo' => 'bar',

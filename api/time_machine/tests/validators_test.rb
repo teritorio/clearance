@@ -51,7 +51,10 @@ class TestUserList < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::UserList.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action, list: ['bob'])
+    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new([
+      OsmTagsMatches::OsmTagsMatch.new('[foo=bar]'),
+    ])
+    validator = Validators::UserList.new(id: id, osm_tags_matches: osm_tags_matches, action: action, list: ['bob'])
     validation_action = [Types::Action.new(
       validator_id: id,
       description: nil,
@@ -67,9 +70,10 @@ class TestUserList < Test::Unit::TestCase
       'version' => 1,
       'changeset_id' => 1,
       'changeset' => nil,
+      'username' => 'bob',
       'created' => 'today',
       'tags' => {
-        'foo' => 'bar',
+        'foo' => 'barbar',
       },
       'change_distance' => 0,
     }
@@ -78,7 +82,7 @@ class TestUserList < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'change_distance' => validation_action },
+        attribs: { 'lat' => validation_action, 'lon' => validation_action, 'change_distance' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
@@ -106,7 +110,7 @@ class TestTagsChanges < Test::Unit::TestCase
         '[shop=florist]',
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
-  ])
+    ])
     validator = Validators::TagsChanges.new(id: id, osm_tags_matches: osm_tags_matches, accept: 'action_accept', reject: 'action_reject')
     validation_action_accept = [Types::Action.new(
       validator_id: 'action_accept',
@@ -128,6 +132,7 @@ class TestTagsChanges < Test::Unit::TestCase
       'version' => 1,
       'changeset_id' => 1,
       'changeset' => nil,
+      'username' => 'bob',
       'created' => 'today',
       'tags' => {
         'shop' => 'florist',
@@ -187,6 +192,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
       'version' => 1,
       'changeset_id' => 1,
       'changeset' => nil,
+      'username' => 'bob',
       'created' => 'today',
       'tags' => {
         'shop' => 'florist',

@@ -59,7 +59,7 @@ WITH
 SELECT
     objtype,
     id,
-    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'username')::jsonb AS p
+    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid')::jsonb AS p
 FROM
     state
 GROUP BY

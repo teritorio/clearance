@@ -21,6 +21,7 @@ module ChangesDb
       'version' => Integer,
       'changeset_id' => Integer,
       'changeset' => T.nilable(Changeset::Changeset),
+      'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
       'change_distance' => T.any(Float, Integer),
