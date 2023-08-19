@@ -153,7 +153,7 @@ BEGIN
   a AS (
     SELECT
       ways.id,
-      ST_AsText(ST_MakeLine(nodes.geom ORDER BY way_nodes.index)) AS geom
+      ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
     FROM
       ways
       JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
