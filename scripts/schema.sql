@@ -115,8 +115,8 @@ ALTER TABLE osm_base_ways ADD PRIMARY KEY(id);
 CREATE INDEX osm_base_ways_idx_tags ON osm_base_ways USING gin(tags);
 
 
-DROP TRIGGER node_changes_ids_trigger ON node_changes_flag;
-DROP TRIGGER node_changes_trigger ON osm_base;
+DROP TRIGGER IF EXISTS node_changes_ids_trigger ON node_changes_flag;
+DROP TRIGGER IF EXISTS node_changes_trigger ON osm_base;
 
 CREATE TABLE IF NOT EXISTS node_changes_ids(
   id BIGINT NOT NULL
