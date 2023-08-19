@@ -23,9 +23,13 @@ for PROJECT in $PROJECTS; do
         rm -f ${IMPORT}/diff.osc.xml.bz2 ${IMPORT}/osm_changes.pgcopy
 
         # Validation report
+        echo == changes-prune ==
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --changes-prune
+        echo == apply_unclibled_changes ==
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes
+        echo == fetch_changesets ==
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --fetch_changesets
+        echo == validate ==
         docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/${PROJECT} --validate
 
         # Export diff
