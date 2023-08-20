@@ -13,7 +13,7 @@ module Configuration
     const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Hash[String, T::Hash[String, T.untyped]]
-    const :user_groups, T::Hash[String, T::Hash[String, T.untyped]]
+    const :user_groups, T.nilable(T::Hash[String, T::Hash[String, T.untyped]])
   end
 
   class UserGroupConfig < T::Struct
@@ -40,7 +40,7 @@ module Configuration
   }
   def self.load_user_groups(config)
     osm_tags = T.let([], T::Array[T::Hash[T.untyped, T.untyped]])
-    user_groups = config.user_groups.to_h{ |group_id, v|
+    user_groups = config.user_groups&.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|
         rule['sources'] = rule['sources'].collect{ |s| [group_id, s] }
@@ -48,7 +48,7 @@ module Configuration
       }
 
       [group_id, UserGroupConfig.from_hash(v)]
-    }
+    } || {}
 
     osm_tags = osm_tags.group_by{ |t| [t['select'], t['interest']] }.transform_values{ |group|
       group0 = T.must(group[0]) # Just to keep sorbet happy

@@ -142,7 +142,7 @@ module ChangesDb
           $1, $2, $3,
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($4::json) AS t(i)),
           $5,
-          (SELECT array_agg(i)::text[] FROM json_array_elements_text($6::json) AS t(i)),
+          (SELECT coalesce(array_agg(i)::text[], ARRAY[]::text[]) FROM json_array_elements_text($6::json) AS t(i)),
           $7, $8, $9, $10
         )
     ")

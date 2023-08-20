@@ -158,7 +158,11 @@ module OsmTagsMatches
       ).returns(String)
     }
     def to_sql(escape_literal)
-      @matches.collect{ |match| match.to_sql(escape_literal) }.join(' OR ')
+      if @matches.blank?
+        'true'
+      else
+        @matches.collect{ |match| match.to_sql(escape_literal) }.join(' OR ')
+      end
     end
   end
 end
