@@ -25,12 +25,14 @@ maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
 
 docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema.sql
-docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/function.sql
 
 PG_COPY=${IMPORT}/osm_base.pgcopy
 docker-compose --env-file .tools.env run --rm ope ope /${PBF} /${IMPORT}/osm_base=o
 docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -c "\copy ${PROJECT}.osm_base from '/${PG_COPY}'"
 
-# Export dump
-mkdir -p projects/${PROJECT}/export
-docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm
+docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema_geom.sql
+docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/function.sql
+
+# # Export dump
+# mkdir -p projects/${PROJECT}/export
+# docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm

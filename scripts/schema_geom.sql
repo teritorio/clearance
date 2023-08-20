@@ -1,3 +1,5 @@
+SET search_path TO :schema,public;
+
 ALTER TABLE osm_base ADD COLUMN geom geometry(Geometry, 4326);
 
 CREATE INDEX osm_base_idx_geom ON osm_base USING gist(geom);

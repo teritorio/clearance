@@ -5,6 +5,7 @@ set -e
 PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects)}
 
 for PROJECT in $PROJECTS; do
+    echo $PROJECT
     IMPORT=${PROJECT}/import
     CONFIG=${PROJECT}/conf.yaml
 
