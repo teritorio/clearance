@@ -53,7 +53,7 @@ CREATE TABLE osm_changes (
     nodes BIGINT[], -- %COL:osm_changes:nodes%
     members JSONB -- %COL:osm_changes:members%
 );
-ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes%
+ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype, version, deleted); -- %PK:osm_changes%
 
 DROP TABLE IF EXISTS validations_log CASCADE;
 CREATE TABLE validations_log (
@@ -74,4 +74,4 @@ DROP TABLE IF EXISTS osm_changes_applyed CASCADE;
 CREATE TABLE osm_changes_applyed AS
 SELECT * FROM osm_changes
 WITH NO DATA;
-ALTER TABLE osm_changes_applyed ADD PRIMARY KEY(id, objtype, version); -- %PK:osm_changes_applyed%
+ALTER TABLE osm_changes_applyed ADD PRIMARY KEY(id, objtype, version, deleted); -- %PK:osm_changes_applyed%
