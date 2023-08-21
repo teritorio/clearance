@@ -6,6 +6,7 @@ CREATE INDEX osm_base_idx_nodes ON osm_base USING gin(nodes) WHERE objtype = 'w'
 
 
 -- Trigger to update geom
+DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
 DROP TRIGGER IF EXISTS osm_base_nodes_trigger ON osm_base;
 DROP TRIGGER IF EXISTS osm_base_trigger_insert ON osm_base;
 DROP TRIGGER IF EXISTS osm_base_trigger_update ON osm_base;
