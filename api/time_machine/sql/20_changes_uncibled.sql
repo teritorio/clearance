@@ -1,16 +1,24 @@
-CREATE TEMP TABLE base_update AS
-SELECT
-    objtype,
-    id,
-    version
-FROM
-    osm_base
-WHERE
-    NOT (:osm_filter_tags)
-;
-
 CREATE TEMP TABLE changes_update AS
-WITH changes AS (
+WITH
+clip AS (
+    SELECT
+        ST_Union(ST_GeomFromGeoJSON(geom)) AS geom
+    FROM
+        json_array_elements_text(:polygon::json) AS t(geom)
+),
+base_update AS (
+    SELECT
+        objtype,
+        id,
+        version
+    FROM
+        osm_base,
+        clip
+    WHERE
+        NOT (:osm_filter_tags) OR
+        (:polygon IS NOT NULL AND NOT ST_Intersects(clip.geom, osm_base.geom))
+),
+changes AS (
     SELECT
         *
     FROM
@@ -30,5 +38,3 @@ ORDER BY
     changes.id,
     changes.version DESC
 ;
-
-DROP TABLE base_update;

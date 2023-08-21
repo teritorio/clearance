@@ -6,6 +6,7 @@ require './time_machine/types'
 require './time_machine/changeset'
 require 'json'
 require './time_machine/db'
+require 'webcache'
 
 
 module ChangesDb
@@ -58,14 +59,41 @@ module ChangesDb
     puts r.inspect
   end
 
+  cache = WebCache.new(life: '3d')
+
+  sig {
+    params(
+      url: String,
+    ).returns(T::Hash[String, T.untyped])
+  }
+  def self.fetch_json(url)
+    puts "Fetch... #{url}"
+    cache = WebCache.new(dir: '/cache/polygons/', life: '1d')
+    response = cache.get(url)
+    raise [url, response].inspect if !response.success?
+
+    JSON.parse(response.content)
+  end
+
   sig {
     params(
       conn: PG::Connection,
-      sql_osm_filter_tags: String
+      sql_osm_filter_tags: String,
+      geojson_polygon_urls: T.nilable(T::Array[T.nilable(String)]),
     ).void
   }
-  def self.apply_unclibled_changes(conn, sql_osm_filter_tags)
-    r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read.gsub(':osm_filter_tags', sql_osm_filter_tags))
+  def self.apply_unclibled_changes(conn, sql_osm_filter_tags, geojson_polygon_urls = nil)
+    geojson_polygons = (
+      if geojson_polygon_urls.nil? || geojson_polygon_urls.include?(nil)
+        nil
+      else
+        geojson_polygon_urls.map{ |url| fetch_json(T.must(url)) }
+      end
+    )
+
+    r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read
+      .gsub(':osm_filter_tags', sql_osm_filter_tags)
+      .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json)))
     puts r.inspect
     r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
     puts r.inspect
