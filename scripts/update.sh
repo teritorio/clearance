@@ -16,6 +16,7 @@ for PROJECT in $PROJECTS; do
 
     if flock -n -x 8; then
         # Get Update
+        [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && \
         osmosis --read-replication-interval workingDirectory=${IMPORT}/replication --write-xml-change ${IMPORT}/diff.osc.xml.bz2
         # Convert
         docker-compose --env-file .tools.env run --rm ope ope -H /${IMPORT}/diff.osc.xml.bz2 /${IMPORT}/osm_changes=o

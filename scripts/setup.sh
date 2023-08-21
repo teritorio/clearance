@@ -31,7 +31,7 @@ BASE_URL=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm
 echo "baseUrl=${BASE_URL}
 maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
-
+docker-compose up -d postgres && sleep 5
 docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema.sql
 
 PG_COPY=${IMPORT}/osm_base.pgcopy
