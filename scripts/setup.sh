@@ -3,24 +3,32 @@
 set -e
 
 PROJECT=$1
-EXTRACT=${2:-europe/france/aquitaine/gironde}
+EXTRACT=${2:-http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf}
+
+echo $EXTRACT
+EXTRACT_STATE=${EXTRACT/.osm.pbf/.state.txt}
+EXTRACT_STATE=${EXTRACT_STATE/-latest/}
 
 IMPORT=projects/${PROJECT}/import
 
 PBF=${IMPORT}/import.osm.pbf
-STATE=${IMPORT}/import.state.txt
 
 mkdir -p ${IMPORT}
 if [ ! -e "${PBF}" ]; then
-    wget http://download.openstreetmap.fr/extracts/${EXTRACT}-latest.osm.pbf --no-clobber -O ${PBF}
-    rm -fr ${STATE} && wget http://download.openstreetmap.fr/extracts/${EXTRACT}.state.txt -O ${STATE}
+    wget ${EXTRACT} --no-clobber -O ${PBF}
 fi
 
 rm -fr ${IMPORT}/replication
 mkdir -p ${IMPORT}/replication
 osmosis --read-replication-interval-init workingDirectory=${IMPORT}/replication
-cp ${STATE} ${IMPORT}/replication/state.txt
-echo "baseUrl=https://download.openstreetmap.fr/replication/${EXTRACT}/minute/
+
+SEQUENCE_NUMBER=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_sequence_number'))")
+TIMESTAMP=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_timestamp'))")
+echo "sequenceNumber=${SEQUENCE_NUMBER}
+timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
+
+BASE_URL=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_base_url'))")
+echo "baseUrl=${BASE_URL}
 maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
 
@@ -36,3 +44,5 @@ docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PR
 # # Export dump
 # mkdir -p projects/${PROJECT}/export
 # docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm
+
+touch ${IMPORT}/lock

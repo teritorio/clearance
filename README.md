@@ -27,7 +27,7 @@ docker-compose exec -u postgres postgres psql
 ## Init
 
 ```
-./scripts/setup.sh andorra-poi europe/andorra
+./scripts/setup.sh monaco-poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
 ```
 
 ```
