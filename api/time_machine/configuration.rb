@@ -43,7 +43,7 @@ module Configuration
     user_groups = config.user_groups&.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|
-        rule['sources'] = rule['sources'].collect{ |s| [group_id, s] }
+        rule['sources'] = rule['sources']&.collect{ |s| [group_id, s] } || []
         rule
       }
 
