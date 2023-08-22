@@ -26,7 +26,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'lat', osm_base.lat,
             'nodes', osm_base.nodes,
             'deleted', false,
-            'members', osm_base.members
+            'members', osm_base.members,
+            'geom', ST_AsGeoJSON(osm_base.geom)::json
         ) AS base,
         json_build_object(
             'version', osm_changes.version,
@@ -39,7 +40,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'lat', osm_changes.lat,
             'nodes', osm_changes.nodes,
             'deleted', osm_changes.deleted,
-            'members', osm_changes.members
+            'members', osm_changes.members,
+            'geom', ST_AsGeoJSON(osm_changes.geom)::json
         ) AS change,
         (
             SELECT json_agg(j) FROM (
@@ -63,7 +65,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         JOIN osm_base ON
             osm_base.objtype = validations_log.objtype AND
             osm_base.id = validations_log.id
-        JOIN osm_changes ON
+        JOIN osm_changes_geom AS osm_changes ON
             osm_changes.objtype = validations_log.objtype AND
             osm_changes.id = validations_log.id AND
             osm_changes.version = validations_log.version
