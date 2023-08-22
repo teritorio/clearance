@@ -54,7 +54,8 @@ WITH
         ORDER BY
             objtype,
             id,
-            version
+            version,
+            deleted DESC
     )
 SELECT
     objtype,

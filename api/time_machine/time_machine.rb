@@ -63,6 +63,7 @@ module TimeMachine
   class ValidationResult < T::Struct
     const :action, T.nilable(Types::ActionType)
     const :version, Integer
+    const :deleted, T::Boolean
     prop :changeset_ids, T::Array[Integer]
     const :created, String
     const :diff, DiffActions
@@ -101,6 +102,7 @@ module TimeMachine
         accepted_version = ValidationResult.new(
           action: 'accept',
           version: after['version'],
+          deleted: after['deleted'],
           changeset_ids: T.must(afters.reverse[index..]&.collect{ |version| version['changeset_id'] }),
           created: after['created'],
           diff: diff,
@@ -111,6 +113,7 @@ module TimeMachine
         rejected_version = ValidationResult.new(
           action: partialy_rejected ? 'reject' : nil,
           version: after['version'],
+          deleted: after['deleted'],
           changeset_ids: [after['changeset_id']],
           created: after['created'],
           diff: diff,
@@ -162,6 +165,7 @@ module TimeMachine
         objtype: objtype,
         id: id,
         version: validation.version,
+        deleted: validation.deleted,
         changeset_ids: validation.changeset_ids,
         created: validation.created,
         matches: matches,

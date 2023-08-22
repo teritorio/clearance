@@ -60,6 +60,7 @@ CREATE TABLE validations_log (
     objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
     id BIGINT NOT NULL,
     version INTEGER NOT NULL,
+    deleted BOOLEAN NOT NULL,
     changeset_ids INTEGER[] NOT NULL,
     created TIMESTAMP (0) WITHOUT TIME ZONE,
     matches TEXT[] NOT NULL,
@@ -68,7 +69,7 @@ CREATE TABLE validations_log (
     diff_attribs JSONB,
     diff_tags  JSONB
 );
-ALTER TABLE validations_log ADD PRIMARY KEY(id, objtype, version);
+ALTER TABLE validations_log ADD PRIMARY KEY(id, objtype, version, deleted);
 
 DROP TABLE IF EXISTS osm_changes_applyed CASCADE;
 CREATE TABLE osm_changes_applyed AS

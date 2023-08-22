@@ -102,6 +102,7 @@ class TestTimeMachine < Test::Unit::TestCase
     validation_result = [TimeMachine::ValidationResult.new(
       action: nil,
       version: @@fixture_node_a['version'],
+      deleted: @@fixture_node_a['deleted'],
       changeset_ids: [@@fixture_node_a['changeset_id']],
       created: @@fixture_node_a['created'],
       diff: TimeMachine::DiffActions.new(
@@ -115,6 +116,7 @@ class TestTimeMachine < Test::Unit::TestCase
     validation_result = [TimeMachine::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
+      deleted: @@fixture_node_a['deleted'],
       changeset_ids: [@@fixture_node_a['changeset_id']],
       created: @@fixture_node_a['created'],
       diff: TimeMachine::DiffActions.new(
@@ -140,6 +142,7 @@ class TestTimeMachine < Test::Unit::TestCase
       validation_result = [TimeMachine::ValidationResult.new(
         action: action || 'reject',
         version: @@fixture_node_b['version'],
+        deleted: @@fixture_node_b['deleted'],
         changeset_ids: [@@fixture_node_b['changeset_id']],
         created: @@fixture_node_b['created'],
         diff: TimeMachine::DiffActions.new(

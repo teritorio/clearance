@@ -36,5 +36,6 @@ FROM
 ORDER BY
     changes.objtype,
     changes.id,
-    changes.version DESC
+    changes.version DESC,
+    changes.deleted DESC
 ;

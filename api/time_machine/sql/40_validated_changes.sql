@@ -6,5 +6,6 @@ FROM
     JOIN osm_changes AS changes ON
         changes.objtype = update.objtype AND
         changes.id = update.id AND
-        changes.version = update.version
+        changes.version = update.version AND
+        changes.deleted = update.deleted
 ;

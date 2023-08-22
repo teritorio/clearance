@@ -43,10 +43,11 @@ class ChangesLogsController < ApplicationController
     end
 
     changes = params['_json'].map{ |change|
-      Db::ObjectId.new(
+      Db::ObjectChangeId.new(
         objtype: change['objtype'],
         id: change['id'],
         version: change['version'],
+        deleted: change['deleted'],
       )
     }
 

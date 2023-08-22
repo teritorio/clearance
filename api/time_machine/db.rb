@@ -81,6 +81,10 @@ module Db
     const :members, T.nilable(T::Array[OSMRelationMember])
   end
 
+  class ObjectChangeId < ObjectId
+    const :deleted, T::Boolean
+  end
+
   class ObjectChanges < ObjectBase
     const :deleted, T::Boolean
   end

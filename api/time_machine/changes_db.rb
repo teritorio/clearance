@@ -102,7 +102,7 @@ module ChangesDb
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Db::ObjectId]
+      changes: T::Enumerable[Db::ObjectChangeId]
     ).void
   }
   def self.apply_changes(conn, changes)
@@ -110,17 +110,18 @@ module ChangesDb
       CREATE TEMP TABLE changes_update (
         objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
         id BIGINT NOT NULL,
-        version INTEGER NOT NULL
+        version INTEGER NOT NULL,
+        deleted BOOLEAN NOT NULL
       )
     "
     r = conn.exec(sql_create_table)
     puts r.inspect
 
-    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3)')
+    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4)')
     i = 0
     changes.each{ |change|
       i += 1
-      conn.exec_prepared('changes_update_insert', [change.objtype, change.id, change.version])
+      conn.exec_prepared('changes_update_insert', [change.objtype, change.id, change.version, change.deleted])
     }
     puts "Apply on #{i} changes"
 
@@ -131,7 +132,7 @@ module ChangesDb
     puts r.inspect
   end
 
-  class ValidationLog < Db::ObjectId
+  class ValidationLog < Db::ObjectChangeId
     const :changeset_ids, T::Array[Integer]
     const :created, String
     const :matches, T::Array[String]
@@ -167,11 +168,11 @@ module ChangesDb
         validations_log
       VALUES
         (
-          $1, $2, $3,
-          (SELECT array_agg(i)::integer[] FROM json_array_elements_text($4::json) AS t(i)),
-          $5,
-          (SELECT coalesce(array_agg(i)::text[], ARRAY[]::text[]) FROM json_array_elements_text($6::json) AS t(i)),
-          $7, $8, $9, $10
+          $1, $2, $3, $4,
+          (SELECT array_agg(i)::integer[] FROM json_array_elements_text($5::json) AS t(i)),
+          $6,
+          (SELECT coalesce(array_agg(i)::text[], ARRAY[]::text[]) FROM json_array_elements_text($7::json) AS t(i)),
+          $8, $9, $10, $11
         )
     ")
     i = 0
@@ -181,6 +182,7 @@ module ChangesDb
           change.objtype,
           change.id,
           change.version,
+          change.deleted,
           change.changeset_ids.to_json,
           change.created,
           change.matches.to_json,
@@ -196,7 +198,7 @@ module ChangesDb
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Db::ObjectId]
+      changes: T::Enumerable[Db::ObjectChangeId]
     ).void
   }
   def self.accept_changes(conn, changes)
