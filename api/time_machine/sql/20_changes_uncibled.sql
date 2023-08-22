@@ -20,11 +20,13 @@ base_update AS (
 ),
 changes AS (
     SELECT
-        *
+        osm_changes_geom.*
     FROM
-        osm_changes
+        osm_changes_geom,
+        clip
     WHERE
-        NOT (:osm_filter_tags)
+        NOT (:osm_filter_tags) OR
+        (:polygon IS NOT NULL AND NOT ST_Intersects(clip.geom, osm_changes_geom.geom))
 )
 SELECT DISTINCT ON (changes.objtype, changes.id)
     changes.*
