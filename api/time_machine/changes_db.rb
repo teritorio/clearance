@@ -58,8 +58,6 @@ module ChangesDb
     puts r.inspect
   end
 
-  cache = WebCache.new(life: '3d')
-
   sig {
     params(
       url: String,
