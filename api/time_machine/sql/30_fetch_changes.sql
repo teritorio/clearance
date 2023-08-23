@@ -23,7 +23,8 @@ WITH
             base.lon,
             base.lat,
             base.nodes,
-            base.members
+            base.members,
+            base.geom
         FROM
             osm_base AS base
             JOIN change_uniq ON
@@ -33,12 +34,9 @@ WITH
     state AS (
         SELECT
             *,
-            coalesce(ST_Distance(
-                ST_SetSRID(ST_MakePoint(
-                    (first_value(lon) OVER (PARTITION BY objtype, id ORDER BY version))::real,
-                    (first_value(lat) OVER (PARTITION BY objtype, id ORDER BY version))::real
-                ), 4326)::geography,
-                ST_SetSRID(ST_MakePoint(lon, lat), 4326)::geography
+            coalesce(ST_HausdorffDistance(
+                ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY version)), 2154),
+                ST_Transform(geom, 2154)
             ), 0) AS change_distance
         FROM (
                 SELECT *, NULL::json AS changeset FROM base_i
@@ -47,7 +45,7 @@ WITH
                     osm_changes.*,
                     row_to_json(osm_changesets) AS changeset
                 FROM
-                    osm_changes
+                    osm_changes_geom AS osm_changes
                     LEFT JOIN osm_changesets ON
                         osm_changesets.id = osm_changes.changeset_id
             ) AS t
@@ -60,7 +58,7 @@ WITH
 SELECT
     objtype,
     id,
-    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid')::jsonb AS p
+    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'geom' - 'nodes')::jsonb AS p
 FROM
     state
 GROUP BY

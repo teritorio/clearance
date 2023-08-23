@@ -49,7 +49,8 @@ module TimeMachine
     # - changeset
     # - uid
     # - username
-    %w[lat lon nodes deleted members change_distance].each { |attrib|
+    # - nodes
+    %w[lat lon deleted members change_distance].each { |attrib|
       diff_attribs[attrib] = [] if (!before && after[attrib]) || before && before[attrib] != after[attrib]
     }
 

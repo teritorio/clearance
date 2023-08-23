@@ -14,7 +14,6 @@ class TestTimeMachine < Test::Unit::TestCase
   @@fixture_node_a = T.let({
     'lat' => 0.0,
     'lon' => 0.0,
-    'nodes' => nil,
     'deleted' => false,
     'members' => nil,
     'version' => 1,
@@ -31,7 +30,6 @@ class TestTimeMachine < Test::Unit::TestCase
   @@fixture_node_b = T.let({
     'lat' => 1.0,
     'lon' => 1.0,
-    'nodes' => nil,
     'deleted' => false,
     'members' => nil,
     'version' => 2,
@@ -48,7 +46,6 @@ class TestTimeMachine < Test::Unit::TestCase
   @@fixture_way_a = T.let({
     'lat' => nil,
     'lon' => nil,
-    'nodes' => [1, 2],
     'deleted' => false,
     'members' => nil,
     'version' => 1,
@@ -90,7 +87,7 @@ class TestTimeMachine < Test::Unit::TestCase
     diff = TimeMachine.diff_osm_object(nil, @@fixture_way_a)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'nodes' => [], 'change_distance' => [] },
+        attribs: { 'change_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect

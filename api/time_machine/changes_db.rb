@@ -16,7 +16,6 @@ module ChangesDb
     {
       'lat' => T.nilable(Float),
       'lon' => T.nilable(Float),
-      'nodes' => T.nilable(T::Array[Integer]),
       'deleted' => T::Boolean,
       'members' => T.nilable(T::Array[Integer]),
       'version' => Integer,

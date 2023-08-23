@@ -64,7 +64,6 @@ class TestUserList < Test::Unit::TestCase
     after = {
       'lat' => 0.0,
       'lon' => 0.0,
-      'nodes' => nil,
       'deleted' => false,
       'members' => nil,
       'version' => 1,
@@ -126,7 +125,6 @@ class TestTagsChanges < Test::Unit::TestCase
     after = {
       'lat' => 0.0,
       'lon' => 0.0,
-      'nodes' => nil,
       'deleted' => false,
       'members' => nil,
       'version' => 1,
@@ -186,7 +184,6 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
     after = {
       'lat' => 0.0,
       'lon' => 0.0,
-      'nodes' => nil,
       'deleted' => false,
       'members' => nil,
       'version' => 1,

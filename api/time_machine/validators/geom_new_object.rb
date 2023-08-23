@@ -30,7 +30,7 @@ module Validators
       ).void
     }
     def apply(before, _after, diff)
-      %w[lon lat nodes members].each{ |attrib|
+      %w[lon lat members].each{ |attrib|
         assign_action(T.must(diff.attribs[attrib])) if !before && !diff.attribs[attrib].nil?
       }
     end
