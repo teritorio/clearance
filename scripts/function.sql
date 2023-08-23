@@ -24,7 +24,6 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'tags', osm_base.tags,
             'lon', osm_base.lon,
             'lat', osm_base.lat,
-            'nodes', osm_base.nodes,
             'deleted', false,
             'members', osm_base.members,
             'geom', ST_AsGeoJSON(osm_base.geom)::json
@@ -38,7 +37,6 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'tags', osm_changes.tags,
             'lon', osm_changes.lon,
             'lat', osm_changes.lat,
-            'nodes', osm_changes.nodes,
             'deleted', osm_changes.deleted,
             'members', osm_changes.members,
             'geom', ST_AsGeoJSON(osm_changes.geom)::json
