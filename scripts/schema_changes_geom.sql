@@ -1,7 +1,6 @@
 SET search_path TO :schema,public;
 
-CREATE OR REPLACE VIEW osm_changes_geom AS
-
+CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
   SELECT
     objtype,
     id,
@@ -21,9 +20,9 @@ CREATE OR REPLACE VIEW osm_changes_geom AS
     osm_changes
   WHERE
     objtype = 'n'
+;
 
-UNION ALL
-
+CREATE OR REPLACE VIEW osm_changes_geom_ways AS
   SELECT
     osm_changes.objtype,
     osm_changes.id,
@@ -69,6 +68,61 @@ UNION ALL
     osm_changes.lat,
     osm_changes.nodes,
     osm_changes.members
+;
 
--- TODO relations
+CREATE OR REPLACE VIEW osm_changes_geom_relations AS
+  SELECT
+    osm_changes.objtype,
+    osm_changes.id,
+    osm_changes.version,
+    osm_changes.deleted,
+    osm_changes.changeset_id,
+    osm_changes.created,
+    osm_changes.uid,
+    osm_changes.username,
+    osm_changes.tags,
+    osm_changes.lon,
+    osm_changes.lat,
+    osm_changes.nodes,
+    osm_changes.members,
+    ST_LineMerge(ST_Collect(
+        coalesce(
+            ways_change.geom,
+            ways.geom
+        )
+    )) AS geom
+  FROM
+    osm_changes
+    JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON
+      type = 'w'
+    JOIN osm_base AS ways ON
+      ways.objtype = 'w' AND
+      ways.id = relations_members.ref
+    LEFT JOIN osm_changes_geom_ways AS ways_change ON
+      ways_change.objtype = 'w' AND
+      ways_change.id = relations_members.ref
+  WHERE
+    osm_changes.objtype = 'r'
+  GROUP BY
+    osm_changes.objtype,
+    osm_changes.id,
+    osm_changes.version,
+    osm_changes.deleted,
+    osm_changes.changeset_id,
+    osm_changes.created,
+    osm_changes.uid,
+    osm_changes.username,
+    osm_changes.tags,
+    osm_changes.lon,
+    osm_changes.lat,
+    osm_changes.nodes,
+    osm_changes.members
+;
+
+CREATE OR REPLACE VIEW osm_changes_geom AS
+SELECT * FROM osm_changes_geom_nodes
+UNION ALL
+SELECT * FROM osm_changes_geom_ways
+UNION ALL
+SELECT * FROM osm_changes_geom_relations
 ;
