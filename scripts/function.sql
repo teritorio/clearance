@@ -66,7 +66,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         JOIN osm_changes_geom AS osm_changes ON
             osm_changes.objtype = validations_log.objtype AND
             osm_changes.id = validations_log.id AND
-            osm_changes.version = validations_log.version
+            osm_changes.version = validations_log.version AND
+            osm_changes.deleted = validations_log.deleted
     WHERE
         action IS NULL OR
         action = 'reject'

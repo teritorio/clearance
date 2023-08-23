@@ -45,8 +45,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_ways AS
     ) AS geom
   FROM
     osm_changes
-    JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-    JOIN osm_base AS nodes ON
+    LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
+    LEFT JOIN osm_base AS nodes ON
       nodes.objtype = 'n' AND
       nodes.id = way_nodes.node_id
     LEFT JOIN osm_changes AS nodes_change ON
@@ -93,9 +93,9 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
     )) AS geom
   FROM
     osm_changes
-    JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON
+    LEFT JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON
       type = 'w'
-    JOIN osm_base AS ways ON
+    LEFT JOIN osm_base AS ways ON
       ways.objtype = 'w' AND
       ways.id = relations_members.ref
     LEFT JOIN osm_changes_geom_ways AS ways_change ON
