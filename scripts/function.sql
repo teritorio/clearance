@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     base json,
     change json,
     changesets json,
-    matches text[],
+    matches json,
     action text,
     diff_attribs json,
     diff_tags json

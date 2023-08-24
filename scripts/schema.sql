@@ -63,11 +63,11 @@ CREATE TABLE validations_log (
     deleted BOOLEAN NOT NULL,
     changeset_ids INTEGER[] NOT NULL,
     created TIMESTAMP (0) WITHOUT TIME ZONE,
-    matches TEXT[] NOT NULL,
+    matches JSONB NOT NULL,
     action TEXT,
     validator_uid INTEGER,
     diff_attribs JSONB,
-    diff_tags  JSONB
+    diff_tags JSONB
 );
 ALTER TABLE validations_log ADD PRIMARY KEY(id, objtype, version, deleted);
 

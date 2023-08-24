@@ -128,10 +128,16 @@ module ChangesDb
     puts r.inspect
   end
 
+  class ValidationLogMatch < T::InexactStruct
+    const :user_groups, T.nilable(T::Array[String])
+    const :sources, T.nilable(T::Array[String])
+    const :selector, String
+  end
+
   class ValidationLog < Db::ObjectChangeId
     const :changeset_ids, T::Array[Integer]
     const :created, String
-    const :matches, T::Array[String]
+    const :matches, T::Array[ValidationLogMatch]
     const :action, T.nilable(Types::ActionType)
     const :validator_uid, T.nilable(Integer)
     const :diff_attribs, Types::HashActions
@@ -166,9 +172,7 @@ module ChangesDb
         (
           $1, $2, $3, $4,
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($5::json) AS t(i)),
-          $6,
-          (SELECT coalesce(array_agg(i)::text[], ARRAY[]::text[]) FROM json_array_elements_text($7::json) AS t(i)),
-          $8, $9, $10, $11
+          $6, $7, $8, $9, $10, $11
         )
     ")
     i = 0

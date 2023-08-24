@@ -39,11 +39,11 @@ module Configuration
     ])
   }
   def self.load_user_groups(config)
-    osm_tags = T.let([], T::Array[T::Hash[T.untyped, T.untyped]])
+    osm_tags = T.let([], T::Array[T::Hash[String, T::Hash[Symbol, T.untyped]]])
     user_groups = config.user_groups&.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|
-        rule['sources'] = rule['sources']&.collect{ |s| [group_id, s] } || []
+        rule['group_id'] = group_id
         rule
       }
 
@@ -55,7 +55,8 @@ module Configuration
       {
         'select' => group0['select'],
         'interest' => group0['interest'],
-        'sources' => group.pluck('sources').flatten(1).group_by(&:last).transform_values{ |j| j.collect(&:first).join(', ') }.collect{ |source, group_ids| "#{group_ids}: #{source}" }
+        'sources' => group.pluck('sources').flatten.uniq,
+        'group_ids' => group.pluck('group_id').flatten,
       }
     }.values
 
@@ -64,6 +65,7 @@ module Configuration
         value['select'],
         selector_extra: value['interest'],
         sources: value['sources'],
+        user_groups: value['group_ids'],
       )
     })
 

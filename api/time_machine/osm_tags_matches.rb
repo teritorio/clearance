@@ -13,17 +13,24 @@ module OsmTagsMatches
   class OsmTagsMatch
     extend T::Sig
 
+    sig { returns(String) }
+    attr_accessor :selector
+
     sig { returns(T.nilable(T::Array[String])) }
     attr_accessor :sources
+
+    sig { returns(T.nilable(T::Array[String])) }
+    attr_accessor :user_groups
 
     sig {
       params(
         selector: String,
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
-        sources: T.nilable(T::Array[String])
+        sources: T.nilable(T::Array[String]),
+        user_groups: T.nilable(T::Array[String]),
       ).void
     }
-    def initialize(selector, selector_extra: nil, sources: nil)
+    def initialize(selector, selector_extra: nil, sources: nil, user_groups: nil)
       throw 'Tags tags selector format' if selector.size <= 2
 
       a = T.must(selector[1..-2]).split('][').collect{ |osm_tag|
@@ -35,14 +42,16 @@ module OsmTagsMatches
       }.group_by(&:first).transform_values{ |v| v.collect(&:last) }
       @selector_match = T.let(a, T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]])
 
+      @selector = selector
       @selector_extra = selector_extra
       @sources = sources
+      @user_groups = user_groups
     end
 
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[String, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
     }
     def match(tags)
       @selector_match.collect{ |key, op_values|
@@ -64,7 +73,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[String, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
     }
     def match_with_extra(tags)
       main_keys = match(tags)
@@ -133,7 +142,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[String, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
     }
     def match(tags)
       @matches.collect{ |watch|
@@ -144,7 +153,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[String, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
     }
     def match_with_extra(tags)
       @matches.collect{ |watch|

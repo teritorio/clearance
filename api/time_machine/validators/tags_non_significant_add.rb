@@ -24,7 +24,7 @@ module Validators
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[String, OsmTagsMatches::OsmTagsMatch]])
+      ).returns(T::Array[[OsmTagsMatches::OsmMatchKey, OsmTagsMatches::OsmTagsMatch]])
     }
     def match(tags)
       return [] unless super(tags)
