@@ -1,8 +1,10 @@
-# A Priori Validation for OSM Data
+# Clearance backend
 
-OpenStreetMap copy Synchronization with A Priori Validation.
+"Clearance" is a tool for producing OSM extracts and keeping them up to date while respecting quality rules. It is based on partial and local updates. Rejected data groups must be corrected in OSM or accepted manually. OSM changes to be revised are handled collaboratively by interest groups.
 
-Keep a copy a OpenStreetMap dat while validating update using rules and manual review when required.
+![](https://raw.githubusercontent.com/teritorio/clearance-frontend/master/public/Clearance-process.svg)
+
+Online demo : https://clearance-dev.teritorio.xyz
 
 ## Build
 ```
