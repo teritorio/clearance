@@ -32,14 +32,12 @@ module Validators
       ).void
     }
     def apply(before, after, diff)
-      # TODO, impl for ways (and relations)
-      return if !before || !diff.attribs['change_distance']
+      return if !before || !diff.attribs['geom_distance']
 
-      dist = after['change_distance']
+      dist = after['geom_distance']
       return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
-      assign_action(T.must(diff.attribs['lon']), options: { 'dist' => dist }) if !diff.attribs['lon'].nil?
-      assign_action(T.must(diff.attribs['lat']), options: { 'dist' => dist }) if !diff.attribs['lat'].nil?
+      assign_action(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
     end
   end
 end

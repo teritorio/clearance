@@ -12,8 +12,8 @@ class TestTimeMachine < Test::Unit::TestCase
   extend T::Sig
 
   @@fixture_node_a = T.let({
-    'lat' => 0.0,
-    'lon' => 0.0,
+    'geom' => nil,
+    'geom_distance' => 0,
     'deleted' => false,
     'members' => nil,
     'version' => 1,
@@ -24,12 +24,11 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => T.let({
       'foo' => 'bar',
     }, T::Hash[String, String]),
-    'change_distance' => 0,
   }, ChangesDb::OSMChangeProperties)
 
   @@fixture_node_b = T.let({
-    'lat' => 1.0,
-    'lon' => 1.0,
+    'geom' => 'Point(1 1)',
+    'geom_distance' => 1,
     'deleted' => false,
     'members' => nil,
     'version' => 2,
@@ -40,12 +39,11 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'bar' => 'foo',
     },
-    'change_distance' => 0,
   }, ChangesDb::OSMChangeProperties)
 
   @@fixture_way_a = T.let({
-    'lat' => nil,
-    'lon' => nil,
+    'geom' => nil,
+    'geom_distance' => 0,
     'deleted' => false,
     'members' => nil,
     'version' => 1,
@@ -56,7 +54,6 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'foo' => 'bar',
     },
-    'change_distance' => 0,
   }, ChangesDb::OSMChangeProperties)
 
   def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), user_groups: {})
@@ -78,7 +75,7 @@ class TestTimeMachine < Test::Unit::TestCase
     diff = TimeMachine.diff_osm_object(nil, @@fixture_node_a)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
+        attribs: { 'geom_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
@@ -87,7 +84,7 @@ class TestTimeMachine < Test::Unit::TestCase
     diff = TimeMachine.diff_osm_object(nil, @@fixture_way_a)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'change_distance' => [] },
+        attribs: { 'geom_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
@@ -103,7 +100,7 @@ class TestTimeMachine < Test::Unit::TestCase
       changeset_ids: [@@fixture_node_a['changeset_id']],
       created: @@fixture_node_a['created'],
       diff: TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
+        attribs: { 'geom' => [] },
         tags: { 'foo' => [] },
       ),
     )]
@@ -143,7 +140,7 @@ class TestTimeMachine < Test::Unit::TestCase
         changeset_ids: [@@fixture_node_b['changeset_id']],
         created: @@fixture_node_b['created'],
         diff: TimeMachine::DiffActions.new(
-          attribs: { 'lat' => validated, 'lon' => validated },
+          attribs: { 'geom' => validated },
           tags: { 'foo' => validated, 'bar' => validated },
         ),
       )]

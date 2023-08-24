@@ -37,7 +37,7 @@ WITH
             coalesce(ST_HausdorffDistance(
                 ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY version)), 2154),
                 ST_Transform(geom, 2154)
-            ), 0) AS change_distance
+            ), 0) AS geom_distance
         FROM (
                 SELECT *, NULL::json AS changeset FROM base_i
                 UNION ALL
@@ -58,7 +58,7 @@ WITH
 SELECT
     objtype,
     id,
-    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'geom' - 'nodes')::jsonb AS p
+    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'lon' - 'lat' - 'nodes')::jsonb AS p
 FROM
     state
 GROUP BY

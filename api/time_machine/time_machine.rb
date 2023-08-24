@@ -50,7 +50,10 @@ module TimeMachine
     # - uid
     # - username
     # - nodes
-    %w[lat lon deleted members change_distance].each { |attrib|
+    # - lat
+    # - lon
+    # - geom_distance
+    %w[deleted members geom_distance].each { |attrib|
       diff_attribs[attrib] = [] if (!before && after[attrib]) || before && before[attrib] != after[attrib]
     }
 
@@ -97,6 +100,10 @@ module TimeMachine
       config.validators.each{ |validator|
         validator.apply(before, after, diff)
       }
+      if !diff.attribs['geom_distance'].nil?
+        diff.attribs['geom'] = (diff.attribs['geom'] || []) + T.must(diff.attribs['geom_distance'])
+        diff.attribs.delete('geom_distance')
+      end
 
       fully_accepted = diff.fully_accepted?
       if fully_accepted

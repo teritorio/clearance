@@ -14,8 +14,8 @@ module ChangesDb
 
   OSMChangeProperties = T.type_alias {
     {
-      'lat' => T.nilable(Float),
-      'lon' => T.nilable(Float),
+      'geom' => T.untyped,
+      'geom_distance' => T.any(Float, Integer),
       'deleted' => T::Boolean,
       'members' => T.nilable(T::Array[Integer]),
       'version' => Integer,
@@ -24,7 +24,6 @@ module ChangesDb
       'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
-      'change_distance' => T.any(Float, Integer),
     }
   }
 

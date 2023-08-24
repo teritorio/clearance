@@ -61,9 +61,9 @@ class TestUserList < Test::Unit::TestCase
       action: action,
     )]
 
-    after = {
-      'lat' => 0.0,
-      'lon' => 0.0,
+    after = T.let({
+      'geom' => 'Point(0 0)',
+      'geom_distance' => 0,
       'deleted' => false,
       'members' => nil,
       'version' => 1,
@@ -74,14 +74,13 @@ class TestUserList < Test::Unit::TestCase
       'tags' => {
         'foo' => 'barbar',
       },
-      'change_distance' => 0,
-    }
+    }, ChangesDb::OSMChangeProperties)
 
     diff = TimeMachine.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => validation_action, 'lon' => validation_action, 'change_distance' => validation_action },
+        attribs: { 'geom_distance' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
@@ -122,9 +121,9 @@ class TestTagsChanges < Test::Unit::TestCase
       action: 'reject',
     )]
 
-    after = {
-      'lat' => 0.0,
-      'lon' => 0.0,
+    after = T.let({
+      'geom' => 'Point(0 0)',
+      'geom_distance' => 0,
       'deleted' => false,
       'members' => nil,
       'version' => 1,
@@ -137,14 +136,13 @@ class TestTagsChanges < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
-      'change_distance' => 0,
-    }
+    }, ChangesDb::OSMChangeProperties)
 
     diff = TimeMachine.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
+        attribs: { 'geom_distance' => [] },
         tags: { 'shop' => validation_action_reject, 'phone' => validation_action_reject, 'foo' => validation_action_accept }
       ).inspect,
       diff.inspect
@@ -181,9 +179,9 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
       action: 'accept',
     )]
 
-    after = {
-      'lat' => 0.0,
-      'lon' => 0.0,
+    after = T.let({
+      'geom' => 'Point(0 0)',
+      'geom_distance' => 0,
       'deleted' => false,
       'members' => nil,
       'version' => 1,
@@ -196,14 +194,13 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
-      'change_distance' => 0,
-    }
+    }, ChangesDb::OSMChangeProperties)
 
     diff = TimeMachine.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
     assert_equal(
       TimeMachine::DiffActions.new(
-        attribs: { 'lat' => [], 'lon' => [], 'change_distance' => [] },
+        attribs: { 'geom_distance' => [] },
         tags: { 'shop' => [], 'phone' => validation_action_accept, 'foo' => [] }
       ).inspect,
       diff.inspect
