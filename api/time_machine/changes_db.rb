@@ -172,7 +172,7 @@ module ChangesDb
         (
           $1, $2, $3, $4,
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($5::json) AS t(i)),
-          $6, $7, $8, $9, $10, $11
+          $6, $7::json, $8, $9, $10, $11
         )
     ")
     i = 0

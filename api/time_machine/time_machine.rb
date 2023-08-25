@@ -151,7 +151,7 @@ module TimeMachine
           config.osm_tags_matches.match(object['tags'])
         }.flatten(1).collect{ |_tag, match|
           ChangesDb::ValidationLogMatch.new(
-            sources: match.sources || [],
+            sources: match.sources&.compact || [],
             selector: match.selector,
             user_groups: match.user_groups,
           )
