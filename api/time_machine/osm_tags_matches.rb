@@ -19,7 +19,7 @@ module OsmTagsMatches
     sig { returns(T.nilable(T::Array[String])) }
     attr_accessor :sources
 
-    sig { returns(T.nilable(T::Array[String])) }
+    sig { returns(T::Array[String]) }
     attr_accessor :user_groups
 
     sig {
@@ -27,10 +27,10 @@ module OsmTagsMatches
         selector: String,
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
         sources: T.nilable(T::Array[String]),
-        user_groups: T.nilable(T::Array[String]),
+        user_groups: T::Array[String],
       ).void
     }
-    def initialize(selector, selector_extra: nil, sources: nil, user_groups: nil)
+    def initialize(selector, selector_extra: nil, sources: nil, user_groups: [])
       throw 'Tags tags selector format' if selector.size <= 2
 
       a = T.must(selector[1..-2]).split('][').collect{ |osm_tag|

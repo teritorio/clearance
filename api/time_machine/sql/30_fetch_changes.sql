@@ -1,4 +1,11 @@
 WITH
+    polygons AS (
+        SELECT
+            row_json->>0 AS group_id,
+            ST_GeomFromGeoJSON(row_json->>1) AS geom
+        FROM
+            json_array_elements(:group_id_polys::json) AS t(row_json)
+    ),
     change_uniq AS (
         SELECT
             objtype,
@@ -37,7 +44,8 @@ WITH
             coalesce(ST_HausdorffDistance(
                 ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY version)), 2154),
                 ST_Transform(geom, 2154)
-            ), 0) AS geom_distance
+            ), 0) AS geom_distance,
+            (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
         FROM (
                 SELECT *, NULL::json AS changeset FROM base_i
                 UNION ALL

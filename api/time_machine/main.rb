@@ -50,7 +50,7 @@ else
 
   if @options[:apply_unclibled_changes]
     osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
-    polygons = T.let(config.user_groups.values.collect(&:polygon), T::Array[T.nilable(String)])
+    polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
     Db::DbConnWrite.conn(project){ |conn|
       ChangesDb.apply_unclibled_changes(conn, osm_tags_matches.to_sql(->(s) { conn.escape_literal(s) }), polygons)
     }

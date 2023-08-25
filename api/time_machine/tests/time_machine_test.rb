@@ -24,7 +24,8 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => T.let({
       'foo' => 'bar',
     }, T::Hash[String, String]),
-  }, ChangesDb::OSMChangeProperties)
+    'group_ids' => [],
+    }, ChangesDb::OSMChangeProperties)
 
   @@fixture_node_b = T.let({
     'geom' => 'Point(1 1)',
@@ -39,7 +40,8 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'bar' => 'foo',
     },
-  }, ChangesDb::OSMChangeProperties)
+    'group_ids' => [],
+    }, ChangesDb::OSMChangeProperties)
 
   @@fixture_way_a = T.let({
     'geom' => nil,
@@ -54,7 +56,8 @@ class TestTimeMachine < Test::Unit::TestCase
     'tags' => {
       'foo' => 'bar',
     },
-  }, ChangesDb::OSMChangeProperties)
+    'group_ids' => [],
+    }, ChangesDb::OSMChangeProperties)
 
   def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), user_groups: {})
     Configuration::Config.new(

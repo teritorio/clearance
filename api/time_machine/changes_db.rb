@@ -24,6 +24,7 @@ module ChangesDb
       'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
+      'group_ids' => T::Array[String],
     }
   }
 
@@ -38,11 +39,13 @@ module ChangesDb
   sig {
     params(
       conn: PG::Connection,
+      user_groups: T::Hash[String, Configuration::UserGroupConfig],
       block: T.proc.params(arg0: OSMChangeObject).void
     ).void
   }
-  def self.fetch_changes(conn, &block)
-    conn.exec(File.new('/sql/30_fetch_changes.sql').read) { |result|
+  def self.fetch_changes(conn, user_groups, &block)
+    user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
+    conn.exec(File.new('/sql/30_fetch_changes.sql').read.gsub(':group_id_polys', conn.escape_literal(user_groups_json))) { |result|
       result.each(&block)
     }
   end
@@ -59,34 +62,12 @@ module ChangesDb
 
   sig {
     params(
-      url: String,
-    ).returns(T::Hash[String, T.untyped])
-  }
-  def self.fetch_json(url)
-    puts "Fetch... #{url}"
-    cache = WebCache.new(dir: '/cache/polygons/', life: '1d')
-    response = cache.get(url)
-    raise [url, response].inspect if !response.success?
-
-    JSON.parse(response.content)
-  end
-
-  sig {
-    params(
       conn: PG::Connection,
       sql_osm_filter_tags: String,
-      geojson_polygon_urls: T.nilable(T::Array[T.nilable(String)]),
+      geojson_polygons: T.nilable(T::Array[T::Hash[String, T.untyped]]),
     ).void
   }
-  def self.apply_unclibled_changes(conn, sql_osm_filter_tags, geojson_polygon_urls = nil)
-    geojson_polygons = (
-      if geojson_polygon_urls.nil? || geojson_polygon_urls.include?(nil)
-        nil
-      else
-        geojson_polygon_urls.map{ |url| fetch_json(T.must(url)) }
-      end
-    )
-
+  def self.apply_unclibled_changes(conn, sql_osm_filter_tags, geojson_polygons = nil)
     r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json)))

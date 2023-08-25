@@ -146,14 +146,15 @@ module TimeMachine
   }
   def self.time_machine(conn, config)
     Enumerator.new { |yielder|
-      ChangesDb.fetch_changes(conn) { |osm_change_object|
-        matches = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq.collect{ |object|
+      ChangesDb.fetch_changes(conn, config.user_groups) { |osm_change_object|
+        osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
+        matches = osm_change_object_p.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
         }.flatten(1).collect{ |_tag, match|
           ChangesDb::ValidationLogMatch.new(
             sources: match.sources&.compact || [],
             selector: match.selector,
-            user_groups: match.user_groups,
+            user_groups: match.user_groups.intersection(osm_change_object_p.pluck('group_ids').flatten.uniq),
           )
         }.flatten(1).uniq
 

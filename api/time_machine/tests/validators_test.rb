@@ -74,6 +74,7 @@ class TestUserList < Test::Unit::TestCase
       'tags' => {
         'foo' => 'barbar',
       },
+      'group_ids' => [],
     }, ChangesDb::OSMChangeProperties)
 
     diff = TimeMachine.diff_osm_object(nil, after)
@@ -136,6 +137,7 @@ class TestTagsChanges < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
+      'group_ids' => [],
     }, ChangesDb::OSMChangeProperties)
 
     diff = TimeMachine.diff_osm_object(nil, after)
@@ -194,6 +196,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
+      'group_ids' => [],
     }, ChangesDb::OSMChangeProperties)
 
     diff = TimeMachine.diff_osm_object(nil, after)

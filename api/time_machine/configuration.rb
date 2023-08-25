@@ -17,9 +17,22 @@ module Configuration
   end
 
   class UserGroupConfig < T::Struct
+    extend T::Sig
+
     const :title, T::Hash[String, String]
     const :polygon, T.nilable(String)
     const :users, T::Array[String]
+
+    sig {
+      returns(T::Hash[String, T.untyped])
+    }
+    def polygon_geojson
+      cache = WebCache.new(dir: '/cache/polygons/', life: '1d')
+      response = cache.get(polygon)
+      raise [polygon, response].inspect if !response.success?
+
+      JSON.parse(response.content)
+    end
   end
 
   class Config < T::Struct
