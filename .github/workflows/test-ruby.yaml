@@ -10,15 +10,33 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgis/postgis
+        env:
+          POSTGRES_DB: api
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.0'
+          bundler-cache: true
 
-      - name: Install dependencies
-        run: bundle install
+      - name: Setup test database
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/api
+        run: bundle exec rails db:setup
+
+      - name: Run rubocop
+        run: bundle exec rubocop --parallel -c .rubocop.yml
 
       # - name: Run typecheck
       #   run: |
@@ -27,8 +45,12 @@ jobs:
       #     bundle exec tapioca dsl && \
       #     bundle exec srb typecheck -q
 
-      - name: Run rubocop
-        run: bundle exec rubocop -c ../.rubocop.yml
+      # - name: Run security checks
+      #   run: |
+      #     bin/bundler-audit --update
+      #     bin/brakeman -q -w2
 
       - name: Run tests
         run: bundle exec rake test
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/api

@@ -5,6 +5,7 @@ AllCops:
     - 'bin/*'
     - '**/Rakefile.rb'
     - 'db/schema.rb'
+    - 'vendor/**/*'
 
 require:
  - rubocop-rake
