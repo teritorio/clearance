@@ -5,7 +5,9 @@ set -e
 PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects)}
 
 for PROJECT in $PROJECTS; do
+    echo
     echo $PROJECT
+    echo
     IMPORT=${PROJECT}/import
     CONFIG=${PROJECT}/conf.yaml
 
@@ -27,10 +29,15 @@ for PROJECT in $PROJECTS; do
         rm -f ${IMPORT}/osm_changes.pgcopy
 
         # Validation report
+        echo "== changes-prune ==" && \
         docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
+        echo "== apply_unclibled_changes ==" && \
         docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
+        echo "== fetch_changesets ==" && \
         docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
+        echo "== validate ==" && \
         docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
+        echo "== export-osm-update ==" && \
         docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update
     else
         echo "${PROJECT} Update already locked"
