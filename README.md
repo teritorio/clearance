@@ -29,7 +29,7 @@ docker-compose exec -u postgres postgres psql
 ## Init
 
 ```
-./scripts/setup.sh monaco-poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
+./bin/setup.sh monaco-poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
 ```
 
 ```
@@ -40,12 +40,12 @@ docker-compose run --rm api bundle exec rails db:migrate
 
 Get Update, Import and Generate Validation report in database
 ```
-./scripts/update.sh
+./bin/update.sh
 ```
 
 Run update script from crom:
 ```
-*/1 * * * * cd clearance && bash -c "./scripts/update.sh &>> log-`date --iso`"
+*/1 * * * * cd clearance && bash -c "./bin/update.sh &>> log-`date --iso`"
 ```
 
 ## Dev
@@ -68,6 +68,6 @@ rm -fr sorbet/rbi/gems/rbi*
 Tests and Validation
 ```
 bundle exec srb typecheck --ignore=db,app/models/user.rb,app/controllers/users_controller.rb,app/controllers/users/omniauth_callbacks_controller.rb
-bundle exec rubocop -c ../.rubocop.yml --autocorrect
+bundle exec rubocop -c .rubocop.yml --autocorrect
 bundle exec rake test
 ```

@@ -6,15 +6,15 @@ services:
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
-      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-      - ./scripts:/scripts
+      - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./bin:/scripts
       - ./projects:/projects
       - pgdata:/var/lib/postgresql/data
 #    restart: unless-stopped
 
   api:
     build:
-      context: api
+      context: .
     environment:
       - RAILS_ENV=${RAILS_ENV:-production}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-Toe8eihai5ieShai}
@@ -25,8 +25,8 @@ services:
     ports:
       - 9000:9000
     volumes:
-      - ./api/time_machine/sql:/sql
-      - ./api/:/srv/app/
+      - ./lib/time_machine/sql:/sql
+      - ./:/srv/app/
       - ./cache:/cache
       - ./projects:/projects
     depends_on:
@@ -39,7 +39,7 @@ services:
     ports:
       - 8000:80
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./projects:/projects
 #    restart: unless-stopped
 

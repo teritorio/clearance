@@ -3,6 +3,6 @@ version: '3'
 services:
   ope:
     build:
-      context: ope
+      context: docker/ope
     volumes:
       - ./projects:/projects

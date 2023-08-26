@@ -15,22 +15,20 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          working-directory: api
           ruby-version: '3.0'
 
       - name: Install dependencies
-        run: cd api && bundle install
+        run: bundle install
 
       # - name: Run typecheck
       #   run: |
-      #     cd api && \
       #     bundle exec tapioca init && \
       #     bundle exec rake rails_rbi:routes && \
       #     bundle exec tapioca dsl && \
       #     bundle exec srb typecheck -q
 
       - name: Run rubocop
-        run: cd api && bundle exec rubocop -c ../.rubocop.yml
+        run: bundle exec rubocop -c ../.rubocop.yml
 
       - name: Run tests
-        run: cd api && bundle exec rake test
+        run: bundle exec rake test

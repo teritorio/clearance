@@ -2,9 +2,9 @@ AllCops:
   NewCops: enable
   TargetRubyVersion: 3.0
   Exclude:
-    - '*/bin/*'
+    - 'bin/*'
     - '**/Rakefile.rb'
-    - '*/db/schema.rb'
+    - 'db/schema.rb'
 
 require:
  - rubocop-rake

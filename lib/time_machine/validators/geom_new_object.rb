@@ -1,0 +1,38 @@
+# frozen_string_literal: true
+# typed: strict
+
+require 'sorbet-runtime'
+require './lib/time_machine/types'
+require './lib/time_machine/validators/validator'
+
+module Validators
+  extend T::Sig
+
+  class GeomNewObject < Validator
+    sig {
+      params(
+        id: String,
+        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        action: T.nilable(Types::ActionType),
+        action_force: T.nilable(Types::ActionType),
+        description: T.nilable(String),
+      ).void
+    }
+    def initialize(id:, osm_tags_matches:, action: nil, action_force: nil, description: nil)
+      super(id: id, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
+    end
+
+    sig {
+      override.params(
+        before: T.nilable(ChangesDb::OSMChangeProperties),
+        _after: ChangesDb::OSMChangeProperties,
+        diff: TimeMachine::DiffActions,
+      ).void
+    }
+    def apply(before, _after, diff)
+      %w[lon lat members].each{ |attrib|
+        assign_action(T.must(diff.attribs[attrib])) if !before && !diff.attribs[attrib].nil?
+      }
+    end
+  end
+end
