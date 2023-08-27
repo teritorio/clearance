@@ -77,65 +77,29 @@ module TimeMachine
     params(
       config: Configuration::Config,
       changes: T::Array[ChangesDb::OSMChangeProperties]
-    ).returns(T::Array[ValidationResult])
+    ).returns(ValidationResult)
   }
   def self.object_validation(config, changes)
-    before = T.let(nil, T.nilable(ChangesDb::OSMChangeProperties))
-    afters = T.let([], T::Array[ChangesDb::OSMChangeProperties])
-    if changes.size == 1
-      afters = [T.must(changes[0])] # T.must useless here, but added to keep sorbet hapy
-    elsif changes.size > 1
-      before = changes[0]
-      afters = T.must(changes[1..]) # T.must useless here, but added to keep sorbet hapy
-    end
+    before = T.let(changes.size == 1 ? nil : changes[0], T.nilable(ChangesDb::OSMChangeProperties))
+    after = T.let(T.must(changes[-1]), ChangesDb::OSMChangeProperties)
 
-    accepted_version = T.let(nil, T.nilable(ValidationResult))
-    rejected_version = T.let(nil, T.nilable(ValidationResult))
-    rejected_changeset_ids = []
-
-    fully_accepted = T.let(false, T::Boolean)
-    afters.reverse.each_with_index{ |after, index|
-      diff = diff_osm_object(before, after)
-
-      config.validators.each{ |validator|
-        validator.apply(before, after, diff)
-      }
-      if !diff.attribs['geom_distance'].nil?
-        diff.attribs['geom'] = (diff.attribs['geom'] || []) + T.must(diff.attribs['geom_distance'])
-        diff.attribs.delete('geom_distance')
-      end
-
-      fully_accepted = diff.fully_accepted?
-      if fully_accepted
-        accepted_version = ValidationResult.new(
-          action: 'accept',
-          version: after['version'],
-          deleted: after['deleted'],
-          changeset_ids: T.must(afters.reverse[index..]&.collect{ |version| version['changeset_id'] }),
-          created: after['created'],
-          diff: diff,
-        )
-        break
-      elsif index == 0
-        partialy_rejected = diff.partialy_rejected?
-        rejected_version = ValidationResult.new(
-          action: partialy_rejected ? 'reject' : nil,
-          version: after['version'],
-          deleted: after['deleted'],
-          changeset_ids: [after['changeset_id']],
-          created: after['created'],
-          diff: diff,
-        )
-      else
-        rejected_changeset_ids << after['changeset_id']
-      end
+    diff = diff_osm_object(before, after)
+    config.validators.each{ |validator|
+      validator.apply(before, after, diff)
     }
-
-    if !rejected_version.nil?
-      rejected_version.changeset_ids += rejected_changeset_ids
+    if !diff.attribs['geom_distance'].nil?
+      diff.attribs['geom'] = (diff.attribs['geom'] || []) + T.must(diff.attribs['geom_distance'])
+      diff.attribs.delete('geom_distance')
     end
 
-    [accepted_version, rejected_version].compact
+    ValidationResult.new(
+      action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
+      version: after['version'],
+      deleted: after['deleted'],
+      changeset_ids: after['changesets'].pluck('id'),
+      created: after['created'],
+      diff: diff,
+    )
   end
 
   sig {
@@ -158,10 +122,8 @@ module TimeMachine
           )
         }.flatten(1).uniq
 
-        validation_results = object_validation(config, osm_change_object['p'])
-        validation_results.each{ |validation_result|
-          yielder << [osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
-        }
+        validation_result = object_validation(config, osm_change_object['p'])
+        yielder << [osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
       }
     }
   end

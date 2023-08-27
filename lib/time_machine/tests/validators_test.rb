@@ -67,8 +67,7 @@ class TestUserList < Test::Unit::TestCase
       'deleted' => false,
       'members' => nil,
       'version' => 1,
-      'changeset_id' => 1,
-      'changeset' => nil,
+      'changesets' => nil,
       'username' => 'bob',
       'created' => 'today',
       'tags' => {
@@ -128,8 +127,7 @@ class TestTagsChanges < Test::Unit::TestCase
       'deleted' => false,
       'members' => nil,
       'version' => 1,
-      'changeset_id' => 1,
-      'changeset' => nil,
+      'changesets' => nil,
       'username' => 'bob',
       'created' => 'today',
       'tags' => {
@@ -187,8 +185,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
       'deleted' => false,
       'members' => nil,
       'version' => 1,
-      'changeset_id' => 1,
-      'changeset' => nil,
+      'changesets' => nil,
       'username' => 'bob',
       'created' => 'today',
       'tags' => {

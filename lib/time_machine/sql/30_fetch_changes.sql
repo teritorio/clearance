@@ -22,7 +22,6 @@ WITH
             base.id,
             base.version,
             false AS deleted,
-            base.changeset_id,
             base.created,
             base.uid,
             base.username,
@@ -38,24 +37,68 @@ WITH
                 change_uniq.objtype = base.objtype AND
                 change_uniq.id = base.id
     ),
+    changes_uniq AS (
+        SELECT DISTINCT ON (objtype, id)
+            *
+        FROM
+            osm_changes_geom
+        ORDER BY
+            objtype,
+            id,
+            version,
+            deleted DESC
+    ),
+    changes_with_changesets AS (
+        SELECT
+            osm_changes.objtype,
+            osm_changes.id,
+            osm_changes.version,
+            osm_changes.deleted,
+            osm_changes.created,
+            osm_changes.uid,
+            osm_changes.username,
+            osm_changes.tags,
+            osm_changes.lon,
+            osm_changes.lat,
+            osm_changes.nodes,
+            osm_changes.members,
+            osm_changes.geom,
+            -- array_agg(changeset_id) AS changeset_ids--,
+            json_agg(row_to_json(osm_changesets)) AS changesets
+        FROM
+            changes_uniq AS osm_changes
+            LEFT JOIN osm_changesets ON
+                osm_changesets.id = osm_changes.changeset_id
+        GROUP BY
+            osm_changes.objtype,
+            osm_changes.id,
+            osm_changes.version,
+            osm_changes.deleted,
+            osm_changes.created,
+            osm_changes.uid,
+            osm_changes.username,
+            osm_changes.tags,
+            osm_changes.lon,
+            osm_changes.lat,
+            osm_changes.nodes,
+            osm_changes.members,
+            osm_changes.geom
+    ),
     state AS (
         SELECT
             *,
             coalesce(ST_HausdorffDistance(
-                ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY version)), 2154),
+                ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC)), 2154),
                 ST_Transform(geom, 2154)
             ), 0) AS geom_distance,
-            (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
+            (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids,
+            1 = row_number() OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC) AS first,
+            count(*) OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC)
+                = row_number() OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC) AS last
         FROM (
-                SELECT *, NULL::json AS changeset FROM base_i
+                SELECT *, NULL::json AS changesets FROM base_i
                 UNION ALL
-                SELECT
-                    osm_changes.*,
-                    row_to_json(osm_changesets) AS changeset
-                FROM
-                    osm_changes_geom AS osm_changes
-                    LEFT JOIN osm_changesets ON
-                        osm_changesets.id = osm_changes.changeset_id
+                SELECT * FROM changes_with_changesets
             ) AS t
         ORDER BY
             objtype,
@@ -66,9 +109,11 @@ WITH
 SELECT
     objtype,
     id,
-    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'lon' - 'lat' - 'nodes')::jsonb AS p
+    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'lon' - 'lat' - 'nodes' - 'first' - 'last')::jsonb AS p
 FROM
     state
+WHERE
+    first OR last
 GROUP BY
     objtype,
     id
