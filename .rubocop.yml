@@ -96,3 +96,9 @@ Style/ClassVars:
 
 Rails/NegateInclude:
   Enabled: false
+
+Style/NestedTernaryOperator:
+  Enabled: false
+
+Rails/Output:
+  Enabled: false
