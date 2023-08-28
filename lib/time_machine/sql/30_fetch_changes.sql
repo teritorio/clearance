@@ -86,7 +86,16 @@ WITH
     ),
     state AS (
         SELECT
-            *,
+            objtype,
+            id,
+            version,
+            deleted,
+            created,
+            username,
+            tags,
+            members,
+            geom,
+            changesets,
             coalesce(ST_HausdorffDistance(
                 ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted)), 2154),
                 ST_Transform(geom, 2154)
@@ -109,7 +118,7 @@ WITH
 SELECT
     objtype,
     id,
-    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'uid' - 'lon' - 'lat' - 'nodes' - 'first' - 'last')::jsonb AS p
+    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'row_number' - 'count')::jsonb AS p
 FROM
     state
 WHERE
