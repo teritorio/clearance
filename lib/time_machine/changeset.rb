@@ -13,7 +13,7 @@ module Changeset
     {
       'id' => Integer,
       'created_at' => String,
-      'closed_at' => String,
+      'closed_at' => T.nilable(String),
       'open' => T::Boolean,
       'user' => String,
       'uid' => Integer,

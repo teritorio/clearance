@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS osm_changesets CASCADE;
 CREATE TABLE osm_changesets (
     id BIGINT NOT NULL,
     created_at TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL,
-    closed_at TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL,
+    closed_at TIMESTAMP (0) WITHOUT TIME ZONE,
     open BOOLEAN NOT NULL,
     "user" TEXT NOT NULL,
     uid INTEGER NOT NULL,
