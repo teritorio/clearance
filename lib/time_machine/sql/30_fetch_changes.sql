@@ -88,21 +88,21 @@ WITH
         SELECT
             *,
             coalesce(ST_HausdorffDistance(
-                ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC)), 2154),
+                ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted DESC)), 2154),
                 ST_Transform(geom, 2154)
             ), 0) AS geom_distance,
             (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids,
-            1 = row_number() OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC) AS first,
-            count(*) OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC)
-                = row_number() OVER (PARTITION BY objtype, id ORDER BY version, deleted DESC) AS last
+            row_number() OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted DESC) AS row_number,
+            count(*) OVER (PARTITION BY objtype, id) as count
         FROM (
-                SELECT *, NULL::json AS changesets FROM base_i
+                SELECT *, NULL::json AS changesets, false AS is_change FROM base_i
                 UNION ALL
-                SELECT * FROM changes_with_changesets
+                SELECT *, true AS is_change FROM changes_with_changesets
             ) AS t
         ORDER BY
             objtype,
             id,
+            is_change, -- alows to replay histroy and keep changes after base
             version,
             deleted DESC
     )
@@ -113,7 +113,8 @@ SELECT
 FROM
     state
 WHERE
-    first OR last
+    row_number = 1 OR -- first: base
+    row_number = count -- last: last change
 GROUP BY
     objtype,
     id
