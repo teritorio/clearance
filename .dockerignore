@@ -1,0 +1,8 @@
+.git
+.vscode
+cache/
+docker/
+log/
+projects/
+sorbet/
+tmp/
