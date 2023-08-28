@@ -46,4 +46,4 @@ docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PR
 # mkdir -p projects/${PROJECT}/export
 # docker-compose --env-file .tools.env run --rm api ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm
 
-touch ${IMPORT}/lock
+touch projects/${PROJECT}/lock
