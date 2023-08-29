@@ -15,6 +15,7 @@ module Configuration
     const :validators, T::Hash[String, T::Hash[String, T.untyped]]
     const :main_contacts, T::Array[String]
     const :user_groups, T.nilable(T::Hash[String, T::Hash[String, T.untyped]])
+    const :project_tags, T::Array[String]
   end
 
   class UserGroupConfig < T::Struct
@@ -43,6 +44,7 @@ module Configuration
     const :osm_tags_matches, OsmTagsMatches::OsmTagsMatches
     const :main_contacts, T::Array[String]
     const :user_groups, T::Hash[String, UserGroupConfig]
+    const :project_tags, T::Array[String]
   end
 
   sig {
@@ -105,7 +107,8 @@ module Configuration
       validators: validators,
       osm_tags_matches: osm_tags_matches,
       main_contacts: config.main_contacts,
-      user_groups: user_groups
+      user_groups: user_groups,
+      project_tags: config.project_tags,
     )
   end
 end

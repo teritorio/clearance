@@ -72,7 +72,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'group_ids' => nil,
     }, ChangesDb::OSMChangeProperties)
 
-  def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), main_contacts: [], user_groups: {})
+  def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), main_contacts: [], user_groups: {}, project_tags: [])
     Configuration::Config.new(
         title: title,
         description: description,
@@ -80,6 +80,7 @@ class TestTimeMachine < Test::Unit::TestCase
         osm_tags_matches: osm_tags_matches,
         main_contacts: main_contacts,
         user_groups: user_groups,
+        project_tags: project_tags,
       )
   end
 

@@ -29,6 +29,7 @@ class ProjectsController < ApplicationController
         to_be_validated: count,
         main_contacts: c.main_contacts,
         user_groups: c.user_groups,
+        project_tags: c.project_tags,
       }]
     }
     render json: projects
