@@ -45,7 +45,7 @@ Get Update, Import and Generate Validation report in database
 
 Run update script from crom:
 ```
-*/1 * * * * cd clearance && bash -c "./bin/update.sh &>> log-`date --iso`"
+*/2 * * * * cd clearance && bash -c "./bin/update.sh &>> log-`date --iso`"
 ```
 
 ## Dev
