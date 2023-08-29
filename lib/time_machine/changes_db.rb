@@ -23,7 +23,7 @@ module ChangesDb
       'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
-      'group_ids' => T::Array[String],
+      'group_ids' => T.nilable(T::Array[String]),
     }
   }
 
