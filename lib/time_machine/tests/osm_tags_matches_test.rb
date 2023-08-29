@@ -1,6 +1,5 @@
-# typed: true
 # frozen_string_literal: true
-# typed: yes
+# typed: strict
 
 require 'sorbet-runtime'
 require 'test/unit'
@@ -10,6 +9,7 @@ require './lib/time_machine/osm_tags_matches'
 class TestOsmTagsMatchs < Test::Unit::TestCase
   extend T::Sig
 
+  sig { void }
   def test_match_value
     assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p]').match({ 'p' => '+48' }).collect(&:first))
 
@@ -20,6 +20,7 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
     assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p~5]').match({ 'p' => '+48' }).collect(&:first))
   end
 
+  sig { void }
   def test_matches
     amenity = OsmTagsMatches::OsmTagsMatch.new('[amenity~.*]')
     florist = OsmTagsMatches::OsmTagsMatch.new('[shop=florist]')
@@ -33,6 +34,7 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
     assert_equal([['amenity', amenity]], matches.match({ 'amenity' => 'pole' }))
   end
 
+  sig { void }
   def test_matches_to_sql
     matches = OsmTagsMatches::OsmTagsMatches.new([
       OsmTagsMatches::OsmTagsMatch.new('[amenity]'),

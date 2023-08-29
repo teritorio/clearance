@@ -1,6 +1,5 @@
-# typed: true
 # frozen_string_literal: true
-# typed: yes
+# typed: strict
 
 require 'sorbet-runtime'
 require 'test/unit'
@@ -15,6 +14,7 @@ require './lib/time_machine/configuration'
 class TestValidator < Test::Unit::TestCase
   extend T::Sig
 
+  sig { void }
   def test_simple
     id = 'foo'
     action = 'accept'
@@ -29,6 +29,7 @@ class TestValidator < Test::Unit::TestCase
     assert_equal(action, a.action)
   end
 
+  sig { void }
   def test_action_force
     id = 'foo'
     action = 'accept'
@@ -48,6 +49,7 @@ end
 class TestUserList < Test::Unit::TestCase
   extend T::Sig
 
+  sig { void }
   def test_simple
     id = 'foo'
     action = 'accept'
@@ -101,6 +103,7 @@ end
 class TestTagsChanges < Test::Unit::TestCase
   extend T::Sig
 
+  sig { void }
   def test_simple
     id = 'foo'
     osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new([
@@ -164,6 +167,7 @@ end
 class TestTagsNonSignificantAdd < Test::Unit::TestCase
   extend T::Sig
 
+  sig { void }
   def test_simple
     id = 'foo'
     config = [

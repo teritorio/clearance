@@ -1,6 +1,5 @@
-# typed: true
 # frozen_string_literal: true
-# typed: yes
+# typed: strict
 
 require 'sorbet-runtime'
 require 'test/unit'
@@ -72,7 +71,18 @@ class TestTimeMachine < Test::Unit::TestCase
     'group_ids' => nil,
     }, ChangesDb::OSMChangeProperties)
 
-  def config(validators: [], title: {}, description: {}, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), main_contacts: [], user_groups: {}, project_tags: [])
+  sig {
+    params(
+      title: T::Hash[String, String],
+      description: T::Hash[String, String],
+      validators: T::Array[Validators::ValidatorBase],
+      osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+      main_contacts: T::Array[String],
+      user_groups: T::Hash[String, Configuration::UserGroupConfig],
+      project_tags: T::Array[String],
+    ).returns(Configuration::Config)
+  }
+  def config(title: {}, description: {}, validators: [], osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), main_contacts: [], user_groups: {}, project_tags: [])
     Configuration::Config.new(
         title: title,
         description: description,
@@ -84,11 +94,13 @@ class TestTimeMachine < Test::Unit::TestCase
       )
   end
 
+  sig { void }
   def test_diff_osm_object_same
     diff = TimeMachine.diff_osm_object(@@fixture_node_a, @@fixture_node_a)
     assert_equal(TimeMachine::DiffActions.new(attribs: {}, tags: {}).inspect, diff.inspect)
   end
 
+  sig { void }
   def test_diff_osm_object_nil
     diff = TimeMachine.diff_osm_object(nil, @@fixture_node_a)
     assert_equal(
@@ -109,6 +121,7 @@ class TestTimeMachine < Test::Unit::TestCase
     )
   end
 
+  sig { void }
   def test_object_validation_empty
     validation = TimeMachine.object_validation(config, [@@fixture_node_a])
     validation_result = TimeMachine::ValidationResult.new(
@@ -139,6 +152,7 @@ class TestTimeMachine < Test::Unit::TestCase
     assert_equal(validation_result.inspect, validation.inspect)
   end
 
+  sig { void }
   def test_object_validation_many
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
