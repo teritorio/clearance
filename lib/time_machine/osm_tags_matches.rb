@@ -54,9 +54,9 @@ module OsmTagsMatches
       ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
     }
     def match(tags)
-      @selector_match.collect{ |key, op_values|
+      ret = @selector_match.all?{ |key, op_values|
         value = tags[key]
-        match = !value.nil? && op_values.all?{ |op, values|
+        !value.nil? && op_values.all?{ |op, values|
           case op
           when nil then true
           when '=' then values == value
@@ -66,8 +66,8 @@ module OsmTagsMatches
           else throw "Not implemented operator #{op}"
           end
         }
-        match ? [key, self] : nil
-      }.compact
+      }
+      ret ? @selector_match.collect{ |key, _op_values| [key, self] } : []
     end
 
     sig {
