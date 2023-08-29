@@ -13,6 +13,7 @@ module Configuration
     const :title, T::Hash[String, String]
     const :description, T::Hash[String, String]
     const :validators, T::Hash[String, T::Hash[String, T.untyped]]
+    const :main_contacts, T::Array[String]
     const :user_groups, T.nilable(T::Hash[String, T::Hash[String, T.untyped]])
   end
 
@@ -40,6 +41,7 @@ module Configuration
     const :description, T::Hash[String, String]
     const :validators, T::Array[Validators::ValidatorBase]
     const :osm_tags_matches, OsmTagsMatches::OsmTagsMatches
+    const :main_contacts, T::Array[String]
     const :user_groups, T::Hash[String, UserGroupConfig]
   end
 
@@ -102,6 +104,7 @@ module Configuration
       description: config.description,
       validators: validators,
       osm_tags_matches: osm_tags_matches,
+      main_contacts: config.main_contacts,
       user_groups: user_groups
     )
   end

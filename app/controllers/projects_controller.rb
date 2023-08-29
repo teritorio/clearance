@@ -27,6 +27,7 @@ class ProjectsController < ApplicationController
         date_start: date_start&.timestamp,
         date_last_update: date_last_update&.timestamp,
         to_be_validated: count,
+        main_contacts: c.main_contacts,
         user_groups: c.user_groups,
       }]
     }
