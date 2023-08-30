@@ -9,19 +9,21 @@ require 'open-uri'
 module Configuration
   extend T::Sig
 
+  MultilingualString = T.type_alias { T::Hash[String, String] }
+
   class MainConfig < T::Struct
-    const :title, T::Hash[String, String]
-    const :description, T::Hash[String, String]
+    const :title, MultilingualString
+    const :description, MultilingualString
     const :validators, T::Hash[String, T::Hash[String, T.untyped]]
     const :main_contacts, T::Array[String]
-    const :user_groups, T.nilable(T::Hash[String, T::Hash[String, T.untyped]])
+    const :user_groups, T.nilable(T::Hash[String, { 'title' => String, 'polygon' => String, 'osm_tags' => String, 'users' => T::Array[String] }])
     const :project_tags, T::Array[String]
   end
 
   class UserGroupConfig < T::Struct
     extend T::Sig
 
-    const :title, T::Hash[String, String]
+    const :title, MultilingualString
     const :polygon, T.nilable(String)
     const :users, T::Array[String]
 
@@ -38,8 +40,8 @@ module Configuration
   end
 
   class Config < T::Struct
-    const :title, T::Hash[String, String]
-    const :description, T::Hash[String, String]
+    const :title, MultilingualString
+    const :description, MultilingualString
     const :validators, T::Array[Validators::ValidatorBase]
     const :osm_tags_matches, OsmTagsMatches::OsmTagsMatches
     const :main_contacts, T::Array[String]
@@ -56,7 +58,7 @@ module Configuration
     ])
   }
   def self.load_user_groups(config)
-    osm_tags = T.let([], T::Array[T::Hash[String, T::Hash[Symbol, T.untyped]]])
+    osm_tags = T.let([], T::Array[{ 'select' => String, 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
     user_groups = config.user_groups&.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|
@@ -67,22 +69,13 @@ module Configuration
       [group_id, UserGroupConfig.from_hash(v)]
     } || {}
 
-    osm_tags = osm_tags.group_by{ |t| [t['select'], t['interest']] }.transform_values{ |group|
+    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
       group0 = T.must(group[0]) # Just to keep sorbet happy
-      {
-        'select' => group0['select'],
-        'interest' => group0['interest'],
-        'sources' => group.pluck('sources').flatten.uniq,
-        'group_ids' => group.pluck('group_id').flatten,
-      }
-    }.values
-
-    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new(osm_tags.collect{ |value|
       OsmTagsMatches::OsmTagsMatch.new(
-        value['select'],
-        selector_extra: value['interest'],
-        sources: value['sources'],
-        user_groups: value['group_ids'],
+        group0['select'],
+        selector_extra: group0['interest'],
+        sources: group.pluck('sources').flatten.uniq,
+        user_groups: group.pluck('group_id').flatten,
       )
     })
 

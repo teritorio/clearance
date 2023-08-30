@@ -6,8 +6,6 @@ require 'sorbet-runtime'
 module Types
   extend T::Sig
 
-  MultilingualString = T.type_alias { T::Hash[String, String] }
-
   # class ActionType < T::Enum
   #   enums do
   #     Accept = new
