@@ -159,17 +159,17 @@ module Validation
     changes.each{ |change|
       i += 1
       conn.exec_prepared('validations_log_insert', [
-          change.objtype,
-          change.id,
-          change.version,
-          change.deleted,
-          change.changeset_ids.to_json,
-          change.created,
-          change.matches.to_json,
-          change.action,
-          change.validator_uid,
-          change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,
-          change.diff_tags.empty? ? nil : change.diff_tags.as_json.to_json,
+        change.objtype,
+        change.id,
+        change.version,
+        change.deleted,
+        change.changeset_ids.to_json,
+        change.created,
+        change.matches.to_json,
+        change.action,
+        change.validator_uid,
+        change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,
+        change.diff_tags.empty? ? nil : change.diff_tags.as_json.to_json,
       ])
     }
     puts "Logs #{i} changes"
@@ -185,18 +185,18 @@ module Validation
     apply_changes(conn, changes)
 
     conn.prepare('validations_log_delete', "
-        DELETE FROM
-          validations_log
-        WHERE
-          objtype = $1 AND
-          id = $2 AND
-          version = $3
-      ")
+      DELETE FROM
+        validations_log
+      WHERE
+        objtype = $1 AND
+        id = $2 AND
+        version = $3
+    ")
     changes.each{ |change|
       conn.exec_prepared('validations_log_delete', [
-          change.objtype,
-          change.id,
-          change.version,
+        change.objtype,
+        change.id,
+        change.version,
       ])
     }
   end
