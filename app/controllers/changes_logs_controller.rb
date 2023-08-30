@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 # typed: true
 
+require './lib/time_machine/db/db_conn'
 require './lib/time_machine/osm/types'
 
 class ChangesLogsController < ApplicationController
