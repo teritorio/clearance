@@ -40,13 +40,13 @@ module Configuration
   end
 
   class Config < T::Struct
-    const :title, MultilingualString
-    const :description, MultilingualString
-    const :validators, T::Array[Validators::ValidatorBase]
-    const :osm_tags_matches, Osm::TagsMatches
-    const :main_contacts, T::Array[String]
-    const :user_groups, T::Hash[String, UserGroupConfig]
-    const :project_tags, T::Array[String]
+    const :title, MultilingualString, default: {}
+    const :description, MultilingualString, default: {}
+    const :validators, T::Array[Validators::ValidatorBase], default: []
+    const :osm_tags_matches, Osm::TagsMatches, default: Osm::TagsMatches.new([])
+    const :main_contacts, T::Array[String], default: []
+    const :user_groups, T::Hash[String, UserGroupConfig], default: {}
+    const :project_tags, T::Array[String], default: []
   end
 
   sig {

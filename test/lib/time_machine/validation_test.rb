@@ -11,7 +11,7 @@ require './lib/time_machine/validation/time_machine'
 class TestValidation < Test::Unit::TestCase
   extend T::Sig
 
-  @@fiture_changeset1 = T.let({
+  @@fixture_changeset1 = T.let({
     'id' => 1,
     'created_at' => 'now',
     'closed_at' => 'now',
@@ -33,7 +33,7 @@ class TestValidation < Test::Unit::TestCase
     'deleted' => false,
     'members' => nil,
     'version' => 1,
-    'changesets' => [@@fiture_changeset1],
+    'changesets' => [@@fixture_changeset1],
     'username' => 'bob',
     'created' => 'today',
     'tags' => T.let({
@@ -48,7 +48,7 @@ class TestValidation < Test::Unit::TestCase
     'deleted' => false,
     'members' => nil,
     'version' => 2,
-    'changesets' => [@@fiture_changeset1],
+    'changesets' => [@@fixture_changeset1],
     'username' => 'bob',
     'created' => 'today',
     'tags' => {
@@ -71,29 +71,6 @@ class TestValidation < Test::Unit::TestCase
     },
     'group_ids' => nil,
     }, Validation::OSMChangeProperties)
-
-  sig {
-    params(
-      title: T::Hash[String, String],
-      description: T::Hash[String, String],
-      validators: T::Array[Validators::ValidatorBase],
-      osm_tags_matches: Osm::TagsMatches,
-      main_contacts: T::Array[String],
-      user_groups: T::Hash[String, Configuration::UserGroupConfig],
-      project_tags: T::Array[String],
-    ).returns(Configuration::Config)
-  }
-  def config(title: {}, description: {}, validators: [], osm_tags_matches: Osm::TagsMatches.new([]), main_contacts: [], user_groups: {}, project_tags: [])
-    Configuration::Config.new(
-        title: title,
-        description: description,
-        validators: validators,
-        osm_tags_matches: osm_tags_matches,
-        main_contacts: main_contacts,
-        user_groups: user_groups,
-        project_tags: project_tags,
-      )
-  end
 
   sig { void }
   def test_diff_osm_object_same
@@ -124,7 +101,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation_empty
-    validation = Validation.object_validation(config, [@@fixture_node_a])
+    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a])
     validation_result = Validation::ValidationResult.new(
       action: nil,
       version: @@fixture_node_a['version'],
@@ -138,7 +115,7 @@ class TestValidation < Test::Unit::TestCase
     )
     assert_equal(validation_result.inspect, validation.inspect)
 
-    validation = Validation.object_validation(config, [@@fixture_node_a, @@fixture_node_a])
+    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_a])
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
@@ -158,7 +135,7 @@ class TestValidation < Test::Unit::TestCase
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
       validation = Validation.object_validation(
-        config(validators: [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)]),
+        Configuration::Config.new(validators: [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)]),
         [@@fixture_node_a, @@fixture_node_b],
       )
 
