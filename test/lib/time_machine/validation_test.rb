@@ -8,7 +8,7 @@ require './lib/time_machine/validation/types'
 require './lib/time_machine/validation/time_machine'
 
 
-class TestTimeMachine < Test::Unit::TestCase
+class TestValidation < Test::Unit::TestCase
   extend T::Sig
 
   @@fiture_changeset1 = T.let({
