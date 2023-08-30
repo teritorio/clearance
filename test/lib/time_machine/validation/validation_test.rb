@@ -57,50 +57,8 @@ class TestValidation < Test::Unit::TestCase
     'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 
-  @@fixture_way_a = T.let({
-    'geom' => nil,
-    'geom_distance' => 0,
-    'deleted' => false,
-    'members' => nil,
-    'version' => 1,
-    'changesets' => nil,
-    'username' => 'bob',
-    'created' => 'today',
-    'tags' => {
-      'foo' => 'bar',
-    },
-    'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
-
   sig { void }
-  def test_diff_osm_object_same
-    diff = Validation.diff_osm_object(@@fixture_node_a, @@fixture_node_a)
-    assert_equal(Validation::DiffActions.new(attribs: {}, tags: {}).inspect, diff.inspect)
-  end
-
-  sig { void }
-  def test_diff_osm_object_nil
-    diff = Validation.diff_osm_object(nil, @@fixture_node_a)
-    assert_equal(
-      Validation::DiffActions.new(
-        attribs: { 'geom_distance' => [] },
-        tags: { 'foo' => [] },
-      ).inspect,
-      diff.inspect
-    )
-
-    diff = Validation.diff_osm_object(nil, @@fixture_way_a)
-    assert_equal(
-      Validation::DiffActions.new(
-        attribs: { 'geom_distance' => [] },
-        tags: { 'foo' => [] },
-      ).inspect,
-      diff.inspect
-    )
-  end
-
-  sig { void }
-  def test_object_validation_empty
+  def test_object_validation1
     validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a])
     validation_result = Validation::ValidationResult.new(
       action: nil,
@@ -114,7 +72,10 @@ class TestValidation < Test::Unit::TestCase
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
+  end
 
+  sig { void }
+  def test_object_validation_same
     validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_a])
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
@@ -125,6 +86,23 @@ class TestValidation < Test::Unit::TestCase
       diff: Validation::DiffActions.new(
         attribs: {},
         tags: {},
+      ),
+    )
+    assert_equal(validation_result.inspect, validation.inspect)
+  end
+
+  sig { void }
+  def test_object_validation2
+    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_b])
+    validation_result = Validation::ValidationResult.new(
+      action: nil,
+      version: @@fixture_node_b['version'],
+      deleted: @@fixture_node_b['deleted'],
+      changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
+      created: @@fixture_node_b['created'],
+      diff: Validation::DiffActions.new(
+        attribs: { 'geom' => [] },
+        tags: { 'foo' => [], 'bar' => [] },
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
