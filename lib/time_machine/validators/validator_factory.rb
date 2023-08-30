@@ -12,32 +12,30 @@ require './lib/time_machine/validators/user_list'
 require './lib/time_machine/validators/validator'
 
 module Validators
-  module ValidatorFactory
-    extend T::Sig
+  extend T::Sig
 
-    # Adapted from activesupport/lib/active_support/inflector/methods.rb, line 69
-    sig { params(term: String).returns(String) }
-    def self.camelize(term)
-      string = term.to_s
-      string = string.sub(/^[a-z\d]*/, &:capitalize)
-      string.gsub!(%r{(?:_|(/))([a-z\d]*)}) { "#{Regexp.last_match(1)}#{T.must(Regexp.last_match(2)).capitalize}" }
-      string.gsub!('/', '::')
-      string
-    end
+  # Adapted from activesupport/lib/active_support/inflector/methods.rb, line 69
+  sig { params(term: String).returns(String) }
+  def self.camelize(term)
+    string = term.to_s
+    string = string.sub(/^[a-z\d]*/, &:capitalize)
+    string.gsub!(%r{(?:_|(/))([a-z\d]*)}) { "#{Regexp.last_match(1)}#{T.must(Regexp.last_match(2)).capitalize}" }
+    string.gsub!('/', '::')
+    string
+  end
 
-    sig {
-      params(
-        validators_config: T::Hash[String, T::Hash[String, Object]],
-        osm_tags_matches: Osm::TagsMatches,
-      ).returns(T::Array[ValidatorBase])
+  sig {
+    params(
+      validators_config: T::Hash[String, T::Hash[String, Object]],
+      osm_tags_matches: Osm::TagsMatches,
+    ).returns(T::Array[ValidatorBase])
+  }
+  def self.validators_factory(validators_config, osm_tags_matches)
+    validators_config.collect{ |id, config|
+      class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
+      args = config.except('instance').transform_keys(&:to_sym)
+      args[:osm_tags_matches] = osm_tags_matches
+      Object.const_get(class_name).new(id: id, **args)
     }
-    def self.validators_factory(validators_config, osm_tags_matches)
-      validators_config.collect{ |id, config|
-        class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
-        args = config.except('instance').transform_keys(&:to_sym)
-        args[:osm_tags_matches] = osm_tags_matches
-        Object.const_get(class_name).new(id: id, **args)
-      }
-    end
   end
 end

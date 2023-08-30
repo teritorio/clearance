@@ -92,7 +92,7 @@ module Configuration
     config = MainConfig.from_hash(config_yaml)
 
     user_groups, osm_tags_matches = load_user_groups(config)
-    validators = Validators::ValidatorFactory.validators_factory(config.validators, osm_tags_matches)
+    validators = Validators.validators_factory(config.validators, osm_tags_matches)
 
     Config.new(
       title: config.title,
