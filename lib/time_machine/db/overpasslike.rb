@@ -4,7 +4,7 @@
 require 'sorbet-runtime'
 require './lib/time_machine/osm/types'
 
-module Overpasslike
+module Db
   extend T::Sig
 
   class OverpassCenterResult < T::InexactStruct
@@ -27,7 +27,7 @@ module Overpasslike
       area_id: T.nilable(Integer),
     ).returns(T::Array[T::Hash[Symbol, OverpassResult]])
   }
-  def self.query(conn, tags, area_id)
+  def self.overpass_query(conn, tags, area_id)
     sql_osm_filter_tags = Osm::TagsMatch.new(tags).to_sql(->(s) { conn.escape_literal(s) })
     sql = File.new('/sql/overpasslike.sql').read
               .gsub(':osm_filter_tags', sql_osm_filter_tags)

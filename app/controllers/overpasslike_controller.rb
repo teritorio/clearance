@@ -19,7 +19,7 @@ class OverpasslikeController < ApplicationController
       }.map{ |nwr|
         nwr[(nwr.index('['))..(nwr.rindex(']'))]
       }.compact.collect{ |selector|
-        Overpasslike.query(conn, selector, area_id)
+        Db.overpass_query(conn, selector, area_id)
       }.flatten(1).uniq
 
       render json: {
