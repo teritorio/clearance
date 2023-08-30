@@ -18,7 +18,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::Validator.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)
+    validator = Validators::Validator.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)
 
     actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)
@@ -33,7 +33,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validators::Validator.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action_force: action)
+    validator = Validators::Validator.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action_force: action)
 
     actions = T.let([], T::Array[Types::Action])
     validator.assign_action(actions)
@@ -53,8 +53,8 @@ class TestUserList < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new([
-      OsmTagsMatches::OsmTagsMatch.new('[foo=bar]'),
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new('[foo=bar]'),
     ])
     validator = Validators::UserList.new(id: id, osm_tags_matches: osm_tags_matches, action: action, list: ['bob'])
     validation_action = [Types::Action.new(
@@ -106,8 +106,8 @@ class TestTagsChanges < Test::Unit::TestCase
   sig { void }
   def test_simple
     id = 'foo'
-    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new([
-      OsmTagsMatches::OsmTagsMatch.new(
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(
         '[shop=florist]',
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
@@ -173,10 +173,10 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
     config = [
       Validators::TagsNonSignificantChangeConfig.new(
         match: '[shop=florist]',
-        values: OsmTagsMatches::OsmTagsMatch.new('[phone]'),
+        values: Osm::TagsMatch.new('[phone]'),
       ),
     ]
-    validator = Validators::TagsNonSignificantAdd.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), config: config, action: 'accept')
+    validator = Validators::TagsNonSignificantAdd.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), config: config, action: 'accept')
     validation_action_accept = [Types::Action.new(
       validator_id: id,
       description: nil,

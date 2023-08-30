@@ -43,7 +43,7 @@ module Configuration
     const :title, MultilingualString
     const :description, MultilingualString
     const :validators, T::Array[Validators::ValidatorBase]
-    const :osm_tags_matches, OsmTagsMatches::OsmTagsMatches
+    const :osm_tags_matches, Osm::TagsMatches
     const :main_contacts, T::Array[String]
     const :user_groups, T::Hash[String, UserGroupConfig]
     const :project_tags, T::Array[String]
@@ -54,7 +54,7 @@ module Configuration
       config: MainConfig
     ).returns([
       T::Hash[String, UserGroupConfig],
-      OsmTagsMatches::OsmTagsMatches
+      Osm::TagsMatches
     ])
   }
   def self.load_user_groups(config)
@@ -69,9 +69,9 @@ module Configuration
       [group_id, UserGroupConfig.from_hash(v)]
     } || {}
 
-    osm_tags_matches = OsmTagsMatches::OsmTagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
+    osm_tags_matches = Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
       group0 = T.must(group[0]) # Just to keep sorbet happy
-      OsmTagsMatches::OsmTagsMatch.new(
+      Osm::TagsMatch.new(
         group0['select'],
         selector_extra: group0['interest'],
         sources: group.pluck('sources').flatten.uniq,

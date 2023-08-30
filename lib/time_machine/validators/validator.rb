@@ -14,7 +14,7 @@ module Validators
     sig {
       params(
         id: String,
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
         description: T.nilable(String),
       ).void
     }
@@ -48,7 +48,7 @@ module Validators
     sig {
       params(
         id: String,
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
         description: T.nilable(String),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
@@ -92,7 +92,7 @@ module Validators
     sig {
       params(
         id: String,
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
         accept: String,
         reject: String,
         description: T.nilable(String),

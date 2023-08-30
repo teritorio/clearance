@@ -2,20 +2,20 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/osm_tags_matches'
+require './lib/time_machine/osm/tags_matches'
 require './lib/time_machine/validators/validator'
 
 module Validators
   extend T::Sig
 
   class TagsChanges < ValidatorDual
-    sig { returns(OsmTagsMatches::OsmTagsMatches) }
+    sig { returns(Osm::TagsMatches) }
     attr_reader :osm_tags_matches
 
     sig {
       params(
         id: String,
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
         accept: String,
         reject: String,
         description: T.nilable(String),

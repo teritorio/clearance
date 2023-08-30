@@ -2,15 +2,16 @@
 # typed: strict
 
 require 'sorbet-runtime'
+require_relative 'types'
 
-module OsmTagsMatches
+module Osm
   extend T::Sig
 
-  OsmMatchKey = T.type_alias { String }
+  OsmMatchKey = T.type_alias { OsmKey }
   OsmMatchOperator = T.type_alias { T.any(NilClass, String) }
   OsmMatchValues = T.type_alias { T.any(NilClass, String, Regexp) }
 
-  class OsmTagsMatch
+  class TagsMatch
     extend T::Sig
 
     sig { returns(String) }
@@ -51,7 +52,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
     }
     def match(tags)
       ret = @selector_match.all?{ |key, op_values|
@@ -73,7 +74,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
     }
     def match_with_extra(tags)
       main_keys = match(tags)
@@ -127,12 +128,12 @@ module OsmTagsMatches
     end
   end
 
-  class OsmTagsMatches
+  class TagsMatches
     extend T::Sig
 
     sig {
       params(
-        matches: T::Array[OsmTagsMatch],
+        matches: T::Array[TagsMatch],
       ).void
     }
     def initialize(matches)
@@ -142,7 +143,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
     }
     def match(tags)
       @matches.collect{ |watch|
@@ -153,7 +154,7 @@ module OsmTagsMatches
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, OsmTagsMatch]])
+      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
     }
     def match_with_extra(tags)
       @matches.collect{ |watch|

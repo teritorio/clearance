@@ -12,7 +12,7 @@ module Validators
     sig {
       params(
         id: String,
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
         dist: T.any(Float, Integer),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),

@@ -2,7 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/db'
+require './lib/time_machine/osm/types'
 
 module Overpasslike
   extend T::Sig
@@ -12,9 +12,9 @@ module Overpasslike
     const :lat, Float
   end
 
-  class OverpassResult < Db::ObjectId
+  class OverpassResult < Osm::ObjectId
     const :timestamp, String
-    const :tags, Db::OSMTags
+    const :tags, Osm::OsmTags
     const :lon, T.nilable(Float)
     const :lat, T.nilable(Float)
     const :center, T.nilable(OverpassCenterResult)
@@ -28,7 +28,7 @@ module Overpasslike
     ).returns(T::Array[T::Hash[Symbol, OverpassResult]])
   }
   def self.query(conn, tags, area_id)
-    sql_osm_filter_tags = OsmTagsMatches::OsmTagsMatch.new(tags).to_sql(->(s) { conn.escape_literal(s) })
+    sql_osm_filter_tags = Osm::TagsMatch.new(tags).to_sql(->(s) { conn.escape_literal(s) })
     sql = File.new('/sql/overpasslike.sql').read
               .gsub(':osm_filter_tags', sql_osm_filter_tags)
               .gsub(':area_id', conn.escape_literal(area_id.to_s))

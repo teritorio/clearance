@@ -28,7 +28,7 @@ module Validators
     sig {
       params(
         validators_config: T::Hash[String, T::Hash[String, Object]],
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
       ).returns(T::Array[ValidatorBase])
     }
     def self.validators_factory(validators_config, osm_tags_matches)

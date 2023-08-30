@@ -4,7 +4,8 @@
 require 'sorbet-runtime'
 require 'pg'
 require './lib/time_machine/types'
-require './lib/time_machine/state_file'
+require './lib/time_machine/osm/types'
+require './lib/time_machine/osm/state_file'
 require './lib/time_machine/changeset'
 require 'json'
 require 'nokogiri'
@@ -52,46 +53,9 @@ module Db
     end
   end
 
-  OSMTags = T.type_alias { T::Hash[String, String] }
-
-  class OSMRelationMember < T::InexactStruct
-    const :ref, Integer
-    const :role, String
-    const :type, String
-  end
-
-  OSMRelationMembers = T.type_alias { T::Array[OSMRelationMember] }
-
-  class ObjectId < T::InexactStruct
-    const :objtype, String
-    const :id, Integer
-    const :version, Integer
-  end
-
-  class ObjectBase < ObjectId
-    const :changeset_id, Integer
-    const :changeset, T.nilable(Changeset::Changeset)
-    const :created, Time
-    const :uid, Integer
-    const :username, T.nilable(String)
-    const :tags, OSMTags
-    const :lon, T.nilable(Float)
-    const :lat, T.nilable(Float)
-    const :nodes, T.nilable(T::Array[Integer])
-    const :members, T.nilable(T::Array[OSMRelationMember])
-  end
-
-  class ObjectChangeId < ObjectId
-    const :deleted, T::Boolean
-  end
-
-  class ObjectChanges < ObjectBase
-    const :deleted, T::Boolean
-  end
-
   sig {
     params(
-      object: Db::ObjectBase,
+      object: Osm::ObjectBase,
     ).returns(T::Hash[Symbol, String])
   }
   def self.as_osm_xml_attribs(object)
@@ -108,7 +72,7 @@ module Db
   sig {
     params(
       xml: T.untyped, # Nokogiri::XML::Builder,
-      tags: OSMTags,
+      tags: Osm::OsmTags,
     ).void
   }
   def self.as_osm_xml_tags(xml, tags)
@@ -119,7 +83,7 @@ module Db
 
   sig {
     params(
-      object: ObjectBase,
+      object: Osm::ObjectBase,
     ).returns(String)
   }
   def self.as_osm_xml(object)
@@ -180,7 +144,7 @@ module Db
 
       conn.exec(sql) { |result|
         result.each{ |row|
-          f.write(as_osm_xml(ObjectBase.from_hash(row)))
+          f.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
           f.write("\n")
         }
       }
@@ -219,7 +183,7 @@ module Db
         result.each{ |row|
           has_content = true
 
-          object = ObjectChanges.from_hash(row)
+          object = Osm::ObjectChanges.from_hash(row)
           action = if object.version == 1
                      'create'
                    elsif object.deleted
@@ -262,7 +226,7 @@ module Db
     update_path = "/projects/#{project}/export/update"
     current_state_file = "#{update_path}/state.txt"
 
-    state_file = StateFile::StateFile.from_file(current_state_file)
+    state_file = Osm::StateFile.from_file(current_state_file)
     sequence_number = state_file&.sequence_number || -1
     sequence_number += 1
 
@@ -279,7 +243,7 @@ module Db
 
     if has_content
       osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
-      StateFile::StateFile.new(
+      Osm::StateFile.new(
         timestamp: '2022-09-04T20:21:24Z',
         sequence_number: sequence_number
       ).save_to(osc_gz_state)

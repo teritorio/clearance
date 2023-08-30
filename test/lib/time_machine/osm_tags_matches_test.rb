@@ -3,31 +3,31 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './lib/time_machine/osm_tags_matches'
+require './lib/time_machine/osm/tags_matches'
 
 
-class TestOsmTagsMatchs < Test::Unit::TestCase
+class TestTagsMatchs < Test::Unit::TestCase
   extend T::Sig
 
   sig { void }
   def test_match_value
-    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p]').match({ 'p' => '+48' }).collect(&:first))
+    assert_equal(['p'], Osm::TagsMatch.new('[p]').match({ 'p' => '+48' }).collect(&:first))
 
-    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p=+48]').match({ 'p' => '+48' }).collect(&:first))
-    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p=+48]').match({ 'p' => '+4' }).collect(&:first))
+    assert_equal(['p'], Osm::TagsMatch.new('[p=+48]').match({ 'p' => '+48' }).collect(&:first))
+    assert_equal([], Osm::TagsMatch.new('[p=+48]').match({ 'p' => '+4' }).collect(&:first))
 
-    assert_equal(['p'], OsmTagsMatches::OsmTagsMatch.new('[p~4]').match({ 'p' => '+48' }).collect(&:first))
-    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[p~5]').match({ 'p' => '+48' }).collect(&:first))
+    assert_equal(['p'], Osm::TagsMatch.new('[p~4]').match({ 'p' => '+48' }).collect(&:first))
+    assert_equal([], Osm::TagsMatch.new('[p~5]').match({ 'p' => '+48' }).collect(&:first))
 
-    assert_equal([], OsmTagsMatches::OsmTagsMatch.new('[highway=footway][footway=traffic_island]').match({ 'highway' => 'footway' }).collect(&:first))
-    assert_equal(%w[highway footway], OsmTagsMatches::OsmTagsMatch.new('[highway=footway][footway=traffic_island]').match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
+    assert_equal([], Osm::TagsMatch.new('[highway=footway][footway=traffic_island]').match({ 'highway' => 'footway' }).collect(&:first))
+    assert_equal(%w[highway footway], Osm::TagsMatch.new('[highway=footway][footway=traffic_island]').match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
   end
 
   sig { void }
   def test_matches
-    amenity = OsmTagsMatches::OsmTagsMatch.new('[amenity~.*]')
-    florist = OsmTagsMatches::OsmTagsMatch.new('[shop=florist]')
-    matches = OsmTagsMatches::OsmTagsMatches.new([amenity, florist])
+    amenity = Osm::TagsMatch.new('[amenity~.*]')
+    florist = Osm::TagsMatch.new('[shop=florist]')
+    matches = Osm::TagsMatches.new([amenity, florist])
 
     assert_equal([['shop', florist]], matches.match({ 'shop' => 'florist' }))
     assert_equal([], matches.match({ 'shop' => 'fish' }))
@@ -39,19 +39,19 @@ class TestOsmTagsMatchs < Test::Unit::TestCase
 
   sig { void }
   def test_match_with_extra
-    florist = OsmTagsMatches::OsmTagsMatch.new('[shop=florist]', selector_extra: { 'phone' => nil })
-    matches = OsmTagsMatches::OsmTagsMatches.new([florist])
+    florist = Osm::TagsMatch.new('[shop=florist]', selector_extra: { 'phone' => nil })
+    matches = Osm::TagsMatches.new([florist])
 
     assert_equal([['shop', florist], ['phone', florist]], matches.match_with_extra({ 'shop' => 'florist', 'phone' => '+2', 'fax' => 'forgot' }))
   end
 
   sig { void }
   def test_matches_to_sql
-    matches = OsmTagsMatches::OsmTagsMatches.new([
-      OsmTagsMatches::OsmTagsMatch.new('[amenity]'),
-      OsmTagsMatches::OsmTagsMatch.new('[shop=florist]'),
-      OsmTagsMatches::OsmTagsMatch.new('[shop~pizza.*]'),
-      OsmTagsMatches::OsmTagsMatch.new('[highway=footway][footway=traffic_island]'),
+    matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new('[amenity]'),
+      Osm::TagsMatch.new('[shop=florist]'),
+      Osm::TagsMatch.new('[shop~pizza.*]'),
+      Osm::TagsMatch.new('[highway=footway][footway=traffic_island]'),
     ])
 
     sql = matches.to_sql(->(s) { "'#{s}'" })

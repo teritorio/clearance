@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 
-module StateFile
+module Osm
   class StateFile < T::InexactStruct
     extend T::Sig
 

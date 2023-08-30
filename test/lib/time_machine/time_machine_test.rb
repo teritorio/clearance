@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
+require './lib/time_machine/osm/types'
 require './lib/time_machine/types'
 require './lib/time_machine/time_machine'
 
@@ -24,7 +25,7 @@ class TestTimeMachine < Test::Unit::TestCase
     'comments_count' => 0,
     'changes_count' => 1,
     'tags' => {},
-  }, Changeset::Changeset)
+  }, Osm::Changeset)
 
   @@fixture_node_a = T.let({
     'geom' => nil,
@@ -76,13 +77,13 @@ class TestTimeMachine < Test::Unit::TestCase
       title: T::Hash[String, String],
       description: T::Hash[String, String],
       validators: T::Array[Validators::ValidatorBase],
-      osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+      osm_tags_matches: Osm::TagsMatches,
       main_contacts: T::Array[String],
       user_groups: T::Hash[String, Configuration::UserGroupConfig],
       project_tags: T::Array[String],
     ).returns(Configuration::Config)
   }
-  def config(title: {}, description: {}, validators: [], osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), main_contacts: [], user_groups: {}, project_tags: [])
+  def config(title: {}, description: {}, validators: [], osm_tags_matches: Osm::TagsMatches.new([]), main_contacts: [], user_groups: {}, project_tags: [])
     Configuration::Config.new(
         title: title,
         description: description,
@@ -157,7 +158,7 @@ class TestTimeMachine < Test::Unit::TestCase
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
       validation = TimeMachine.object_validation(
-        config(validators: [Validators::All.new(id: id, osm_tags_matches: OsmTagsMatches::OsmTagsMatches.new([]), action: action)]),
+        config(validators: [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)]),
         [@@fixture_node_a, @@fixture_node_b],
       )
 

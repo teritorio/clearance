@@ -2,18 +2,18 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/osm_tags_matches'
+require './lib/time_machine/osm/tags_matches'
 require './lib/time_machine/types'
 require './lib/time_machine/validators/validator'
 
 module Validators
   extend T::Sig
 
-  class TagsNonSignificantChangeConfig < OsmTagsMatches::OsmTagsMatch
+  class TagsNonSignificantChangeConfig < Osm::TagsMatch
     sig {
       params(
         match: String,
-        values: OsmTagsMatches::OsmTagsMatch,
+        values: Osm::TagsMatch,
       ).void
     }
     def initialize(match:, values:)
@@ -24,7 +24,7 @@ module Validators
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmTagsMatches::OsmMatchKey, OsmTagsMatches::OsmTagsMatch]])
+      ).returns(T::Array[[Osm::OsmMatchKey, Osm::TagsMatch]])
     }
     def match(tags)
       return [] unless super(tags)
@@ -37,7 +37,7 @@ module Validators
     sig {
       params(
         id: String,
-        osm_tags_matches: OsmTagsMatches::OsmTagsMatches,
+        osm_tags_matches: Osm::TagsMatches,
         config: T.any(String, T::Array[TagsNonSignificantChangeConfig]),
         action: T.nilable(Types::ActionType),
         action_force: T.nilable(Types::ActionType),
@@ -54,7 +54,7 @@ module Validators
                         config_yaml.collect{ |item|
                           TagsNonSignificantChangeConfig.new(
                             match: item['match'],
-                            values: OsmTagsMatches::OsmTagsMatch.new(item['values']),
+                            values: Osm::TagsMatch.new(item['values']),
                           )
                         }
                       end, T::Array[TagsNonSignificantChangeConfig])

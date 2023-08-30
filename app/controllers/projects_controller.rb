@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 # typed: true
 
+require './lib/time_machine/osm/types'
 require './lib/time_machine/db'
 require './lib/time_machine/changes_db'
 require './lib/time_machine/configuration'
@@ -9,8 +10,8 @@ class ProjectsController < ApplicationController
   def index
     projects = Dir.glob('/projects/*/').to_h{ |project|
       c = ::Configuration.load("#{project}/config.yaml")
-      date_start = StateFile::StateFile.from_file("#{project}/import/import.state.txt")
-      date_last_update = StateFile::StateFile.from_file("#{project}/import/replication/state.txt")
+      date_start = Osm::StateFile.from_file("#{project}/import/import.state.txt")
+      date_last_update = Osm::StateFile.from_file("#{project}/import/replication/state.txt")
 
       project = T.must(project.split('/')[-1])
 

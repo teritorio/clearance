@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # typed: true
 
-require './lib/time_machine/db'
+require './lib/time_machine/osm/types'
 
 class ChangesLogsController < ApplicationController
   extend T::Sig
@@ -43,7 +43,7 @@ class ChangesLogsController < ApplicationController
     end
 
     changes = params['_json'].map{ |change|
-      Db::ObjectChangeId.new(
+      Osm::ObjectChangeId.new(
         objtype: change['objtype'],
         id: change['id'],
         version: change['version'],

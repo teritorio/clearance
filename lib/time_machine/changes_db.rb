@@ -2,7 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/types'
+require './lib/time_machine/osm/types'
 require './lib/time_machine/changeset'
 require 'json'
 require './lib/time_machine/db'
@@ -19,7 +19,7 @@ module ChangesDb
       'deleted' => T::Boolean,
       'members' => T.nilable(T::Array[Integer]),
       'version' => Integer,
-      'changesets' => T.nilable(T::Array[Changeset::Changeset]),
+      'changesets' => T.nilable(T::Array[Osm::Changeset]),
       'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
@@ -78,7 +78,7 @@ module ChangesDb
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Db::ObjectChangeId]
+      changes: T::Enumerable[Osm::ObjectChangeId]
     ).void
   }
   def self.apply_changes(conn, changes)
@@ -114,7 +114,7 @@ module ChangesDb
     const :selector, String
   end
 
-  class ValidationLog < Db::ObjectChangeId
+  class ValidationLog < Osm::ObjectChangeId
     const :changeset_ids, T::Array[Integer]
     const :created, String
     const :matches, T::Array[ValidationLogMatch]
@@ -178,7 +178,7 @@ module ChangesDb
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Db::ObjectChangeId]
+      changes: T::Enumerable[Osm::ObjectChangeId]
     ).void
   }
   def self.accept_changes(conn, changes)

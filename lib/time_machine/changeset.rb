@@ -9,28 +9,10 @@ require 'webcache'
 module Changeset
   extend T::Sig
 
-  Changeset = T.type_alias {
-    {
-      'id' => Integer,
-      'created_at' => String,
-      'closed_at' => T.nilable(String),
-      'open' => T::Boolean,
-      'user' => String,
-      'uid' => Integer,
-      'minlat' => T.nilable(T.any(Float, Integer)),
-      'minlon' => T.nilable(T.any(Float, Integer)),
-      'maxlat' => T.nilable(T.any(Float, Integer)),
-      'maxlon' => T.nilable(T.any(Float, Integer)),
-      'comments_count' => Integer,
-      'changes_count' => Integer,
-      'tags' => T::Hash[String, String],
-    }
-  }
-
   sig{
     params(
       id: Integer,
-    ).returns(T.nilable(Changeset))
+    ).returns(T.nilable(Osm::Changeset))
   }
   def self.fetch_id(id)
     cache = WebCache.new(dir: '/cache/changesets/', life: '1d')
