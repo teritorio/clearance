@@ -27,9 +27,9 @@ module Validators
 
     sig {
       override.params(
-        before: T.nilable(ChangesDb::OSMChangeProperties),
-        after: ChangesDb::OSMChangeProperties,
-        diff: TimeMachine::DiffActions,
+        before: T.nilable(Validation::OSMChangeProperties),
+        after: Validation::OSMChangeProperties,
+        diff: Validation::DiffActions,
       ).void
     }
     def apply(before, after, diff)

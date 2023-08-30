@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/osm/tags_matches'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/types'
 require './lib/time_machine/validators/validator'
 
 module Validators
@@ -39,8 +39,8 @@ module Validators
         id: String,
         osm_tags_matches: Osm::TagsMatches,
         config: T.any(String, T::Array[TagsNonSignificantChangeConfig]),
-        action: T.nilable(Types::ActionType),
-        action_force: T.nilable(Types::ActionType),
+        action: T.nilable(Validation::ActionType),
+        action_force: T.nilable(Validation::ActionType),
         description: T.nilable(String),
       ).void
     }
@@ -62,9 +62,9 @@ module Validators
 
     sig {
       override.params(
-        before: T.nilable(ChangesDb::OSMChangeProperties),
-        after: ChangesDb::OSMChangeProperties,
-        diff: TimeMachine::DiffActions,
+        before: T.nilable(Validation::OSMChangeProperties),
+        after: Validation::OSMChangeProperties,
+        diff: Validation::DiffActions,
       ).void
     }
     def apply(before, after, diff)

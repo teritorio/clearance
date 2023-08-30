@@ -52,7 +52,7 @@ class ChangesLogsController < ApplicationController
     }
 
     Db::DbConnWrite.conn(project) { |conn|
-      ChangesDb.accept_changes(conn, changes)
+      Validation.accept_changes(conn, changes)
     }
   end
 end

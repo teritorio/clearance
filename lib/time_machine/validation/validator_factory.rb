@@ -2,7 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/types'
 require './lib/time_machine/validators/deleted'
 require './lib/time_machine/validators/geom_changes'
 require './lib/time_machine/validators/geom_new_object'
@@ -11,7 +11,7 @@ require './lib/time_machine/validators/tags_non_significant_add'
 require './lib/time_machine/validators/user_list'
 require './lib/time_machine/validators/validator'
 
-module Validators
+module Validation
   extend T::Sig
 
   # Adapted from activesupport/lib/active_support/inflector/methods.rb, line 69
@@ -28,7 +28,7 @@ module Validators
     params(
       validators_config: T::Hash[String, T::Hash[String, Object]],
       osm_tags_matches: Osm::TagsMatches,
-    ).returns(T::Array[ValidatorBase])
+    ).returns(T::Array[Validators::ValidatorBase])
   }
   def self.validators_factory(validators_config, osm_tags_matches)
     validators_config.collect{ |id, config|

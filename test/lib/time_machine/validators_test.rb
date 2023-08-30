@@ -6,8 +6,8 @@ require 'test/unit'
 require './lib/time_machine/validators/validator'
 require './lib/time_machine/validators/tags_changes'
 require './lib/time_machine/validators/user_list'
-require './lib/time_machine/time_machine'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/time_machine'
+require './lib/time_machine/validation/types'
 require './lib/time_machine/configuration'
 
 
@@ -20,7 +20,7 @@ class TestValidator < Test::Unit::TestCase
     action = 'accept'
     validator = Validators::Validator.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)
 
-    actions = T.let([], T::Array[Types::Action])
+    actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
 
     assert_equal(1, actions.size)
@@ -35,7 +35,7 @@ class TestValidator < Test::Unit::TestCase
     action = 'accept'
     validator = Validators::Validator.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action_force: action)
 
-    actions = T.let([], T::Array[Types::Action])
+    actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
     validator.assign_action(actions)
 
@@ -57,7 +57,7 @@ class TestUserList < Test::Unit::TestCase
       Osm::TagsMatch.new('[foo=bar]'),
     ])
     validator = Validators::UserList.new(id: id, osm_tags_matches: osm_tags_matches, action: action, list: ['bob'])
-    validation_action = [Types::Action.new(
+    validation_action = [Validation::Action.new(
       validator_id: id,
       description: nil,
       action: action,
@@ -76,22 +76,22 @@ class TestUserList < Test::Unit::TestCase
         'foo' => 'barbar',
       },
       'group_ids' => nil,
-    }, ChangesDb::OSMChangeProperties)
+    }, Validation::OSMChangeProperties)
 
-    diff = TimeMachine.diff_osm_object(nil, after)
+    diff = Validation.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: { 'geom_distance' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
     )
 
-    diff = TimeMachine.diff_osm_object(after, after)
+    diff = Validation.diff_osm_object(after, after)
     validator.apply(after, after, diff)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: {},
         tags: {}
       ).inspect,
@@ -113,12 +113,12 @@ class TestTagsChanges < Test::Unit::TestCase
       ),
     ])
     validator = Validators::TagsChanges.new(id: id, osm_tags_matches: osm_tags_matches, accept: 'action_accept', reject: 'action_reject')
-    validation_action_accept = [Types::Action.new(
+    validation_action_accept = [Validation::Action.new(
       validator_id: 'action_accept',
       description: nil,
       action: 'accept',
     )]
-    validation_action_reject = [Types::Action.new(
+    validation_action_reject = [Validation::Action.new(
       validator_id: 'action_reject',
       description: nil,
       action: 'reject',
@@ -139,12 +139,12 @@ class TestTagsChanges < Test::Unit::TestCase
         'foo' => 'bar',
       },
       'group_ids' => nil,
-    }, ChangesDb::OSMChangeProperties)
+    }, Validation::OSMChangeProperties)
 
-    diff = TimeMachine.diff_osm_object(nil, after)
+    diff = Validation.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: { 'geom_distance' => [] },
         tags: { 'shop' => validation_action_reject, 'phone' => validation_action_reject, 'foo' => validation_action_accept }
       ).inspect,
@@ -152,10 +152,10 @@ class TestTagsChanges < Test::Unit::TestCase
     )
 
     # No change
-    diff = TimeMachine.diff_osm_object(after, after)
+    diff = Validation.diff_osm_object(after, after)
     validator.apply(after, after, diff)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: {},
         tags: {}
       ).inspect,
@@ -177,7 +177,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
       ),
     ]
     validator = Validators::TagsNonSignificantAdd.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), config: config, action: 'accept')
-    validation_action_accept = [Types::Action.new(
+    validation_action_accept = [Validation::Action.new(
       validator_id: id,
       description: nil,
       action: 'accept',
@@ -198,12 +198,12 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
         'foo' => 'bar',
       },
       'group_ids' => nil,
-    }, ChangesDb::OSMChangeProperties)
+    }, Validation::OSMChangeProperties)
 
-    diff = TimeMachine.diff_osm_object(nil, after)
+    diff = Validation.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: { 'geom_distance' => [] },
         tags: { 'shop' => [], 'phone' => validation_action_accept, 'foo' => [] }
       ).inspect,
@@ -211,10 +211,10 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
     )
 
     # No change
-    diff = TimeMachine.diff_osm_object(after, after)
+    diff = Validation.diff_osm_object(after, after)
     validator.apply(after, after, diff)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: {},
         tags: {}
       ).inspect,

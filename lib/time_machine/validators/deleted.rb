@@ -2,7 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/types'
 require 'active_support'
 require 'active_support/core_ext'
 require './lib/time_machine/validators/validator'
@@ -13,9 +13,9 @@ module Validators
   class Deleted < Validator
     sig {
       override.params(
-        _before: T.nilable(ChangesDb::OSMChangeProperties),
-        after: ChangesDb::OSMChangeProperties,
-        diff: TimeMachine::DiffActions,
+        _before: T.nilable(Validation::OSMChangeProperties),
+        after: Validation::OSMChangeProperties,
+        diff: Validation::DiffActions,
       ).void
     }
     def apply(_before, after, diff)

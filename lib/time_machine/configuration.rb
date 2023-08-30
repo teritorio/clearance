@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require 'yaml'
-require './lib/time_machine/validators/validator_factory'
+require './lib/time_machine/validation/validator_factory'
 require 'open-uri'
 
 module Configuration
@@ -92,7 +92,7 @@ module Configuration
     config = MainConfig.from_hash(config_yaml)
 
     user_groups, osm_tags_matches = load_user_groups(config)
-    validators = Validators.validators_factory(config.validators, osm_tags_matches)
+    validators = Validation.validators_factory(config.validators, osm_tags_matches)
 
     Config.new(
       title: config.title,

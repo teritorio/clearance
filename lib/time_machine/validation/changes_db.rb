@@ -2,14 +2,14 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/types'
 require './lib/time_machine/osm/types'
 require 'json'
 require './lib/time_machine/db/db_conn'
 require 'webcache'
 
 
-module ChangesDb
+module Validation
   extend T::Sig
 
   OSMChangeProperties = T.type_alias {
@@ -118,10 +118,10 @@ module ChangesDb
     const :changeset_ids, T::Array[Integer]
     const :created, String
     const :matches, T::Array[ValidationLogMatch]
-    const :action, T.nilable(Types::ActionType)
+    const :action, T.nilable(ActionType)
     const :validator_uid, T.nilable(Integer)
-    const :diff_attribs, Types::HashActions
-    const :diff_tags, Types::HashActions
+    const :diff_attribs, HashActions
+    const :diff_tags, HashActions
   end
 
   sig {

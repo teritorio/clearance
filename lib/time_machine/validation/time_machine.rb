@@ -2,19 +2,19 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/changes_db'
+require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/validators/validator'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/types'
 
 
-module TimeMachine
+module Validation
   extend T::Sig
 
   class DiffActions < T::Struct
     extend T::Sig
 
-    const :attribs, Types::HashActions
-    const :tags, Types::HashActions
+    const :attribs, Validation::HashActions
+    const :tags, Validation::HashActions
 
     sig {
       returns(T::Boolean)
@@ -35,13 +35,13 @@ module TimeMachine
 
   sig {
     params(
-      before: T.nilable(ChangesDb::OSMChangeProperties),
-      after: ChangesDb::OSMChangeProperties
+      before: T.nilable(OSMChangeProperties),
+      after: OSMChangeProperties
     ).returns(DiffActions)
   }
   def self.diff_osm_object(before, after)
-    diff_attribs = T.let({}, Types::HashActions)
-    diff_tags = T.let({}, Types::HashActions)
+    diff_attribs = T.let({}, HashActions)
+    diff_tags = T.let({}, HashActions)
 
     # Unchecked attribs
     # - version
@@ -64,7 +64,7 @@ module TimeMachine
   end
 
   class ValidationResult < T::Struct
-    const :action, T.nilable(Types::ActionType)
+    const :action, T.nilable(ActionType)
     const :version, Integer
     const :deleted, T::Boolean
     prop :changeset_ids, T::Array[Integer]
@@ -75,12 +75,12 @@ module TimeMachine
   sig {
     params(
       config: Configuration::Config,
-      changes: T::Array[ChangesDb::OSMChangeProperties]
+      changes: T::Array[OSMChangeProperties]
     ).returns(ValidationResult)
   }
   def self.object_validation(config, changes)
-    before = T.let(changes.size == 1 ? nil : changes[0], T.nilable(ChangesDb::OSMChangeProperties))
-    after = T.let(T.must(changes[-1]), ChangesDb::OSMChangeProperties)
+    before = T.let(changes.size == 1 ? nil : changes[0], T.nilable(OSMChangeProperties))
+    after = T.let(T.must(changes[-1]), OSMChangeProperties)
 
     diff = diff_osm_object(before, after)
     config.validators.each{ |validator|
@@ -109,12 +109,12 @@ module TimeMachine
   }
   def self.time_machine(conn, config)
     Enumerator.new { |yielder|
-      ChangesDb.fetch_changes(conn, config.user_groups) { |osm_change_object|
+      fetch_changes(conn, config.user_groups) { |osm_change_object|
         osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
         matches = osm_change_object_p.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
         }.flatten(1).collect{ |_tag, match|
-          ChangesDb::ValidationLogMatch.new(
+          ValidationLogMatch.new(
             sources: match.sources&.compact || [],
             selector: match.selector,
             user_groups: match.user_groups.intersection(osm_change_object_p.pluck('group_ids').flatten.uniq),
@@ -136,8 +136,8 @@ module TimeMachine
   def self.validate(conn, config)
     validations = time_machine(conn, config)
 
-    ChangesDb.apply_logs(conn, validations.collect{ |objtype, id, matches, validation|
-      ChangesDb::ValidationLog.new(
+    apply_logs(conn, validations.collect{ |objtype, id, matches, validation|
+      ValidationLog.new(
         objtype: objtype,
         id: id,
         version: validation.version,

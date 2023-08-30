@@ -2,7 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/types'
+require './lib/time_machine/validation/types'
 require 'active_support'
 require 'active_support/core_ext'
 
@@ -26,9 +26,9 @@ module Validators
 
     sig {
       overridable.params(
-        _before: T.nilable(ChangesDb::OSMChangeProperties),
-        _after: ChangesDb::OSMChangeProperties,
-        _diff: TimeMachine::DiffActions,
+        _before: T.nilable(Validation::OSMChangeProperties),
+        _after: Validation::OSMChangeProperties,
+        _diff: Validation::DiffActions,
       ).void
     }
     def apply(_before, _after, _diff); end
@@ -50,24 +50,24 @@ module Validators
         id: String,
         osm_tags_matches: Osm::TagsMatches,
         description: T.nilable(String),
-        action: T.nilable(Types::ActionType),
-        action_force: T.nilable(Types::ActionType),
+        action: T.nilable(Validation::ActionType),
+        action_force: T.nilable(Validation::ActionType),
       ).void
     }
     def initialize(id:, osm_tags_matches:, description: nil, action: nil, action_force: nil)
       super(id: id, osm_tags_matches: osm_tags_matches)
       @action_force = T.let(!action_force.nil?, T::Boolean)
-      @action = T.let(Types::Action.new(
+      @action = T.let(Validation::Action.new(
         validator_id: id,
         description: description,
         action: action || action_force || 'reject'
-      ), Types::Action)
+      ), Validation::Action)
     end
 
     sig {
       params(
-        actions: T::Array[Types::Action],
-        value: T.nilable(Types::Action),
+        actions: T::Array[Validation::Action],
+        value: T.nilable(Validation::Action),
         options: T.nilable(T::Hash[String, T.untyped]),
       ).void
     }
@@ -100,21 +100,21 @@ module Validators
     }
     def initialize(id:, osm_tags_matches:, accept:, reject:, description: nil)
       super(id: id, osm_tags_matches: osm_tags_matches)
-      @action_accept = T.let(Types::Action.new(
+      @action_accept = T.let(Validation::Action.new(
         validator_id: accept,
         description: description,
         action: 'accept'
-      ), Types::Action)
-      @action_reject = T.let(Types::Action.new(
+      ), Validation::Action)
+      @action_reject = T.let(Validation::Action.new(
         validator_id: reject,
         description: description,
         action: 'reject'
-      ), Types::Action)
+      ), Validation::Action)
     end
 
     sig {
       params(
-        actions: T::Array[Types::Action],
+        actions: T::Array[Validation::Action],
         options: T.nilable(T::Hash[String, T.untyped]),
       ).void
     }
@@ -132,7 +132,7 @@ module Validators
 
     sig {
       params(
-        actions: T::Array[Types::Action],
+        actions: T::Array[Validation::Action],
         options: T.nilable(T::Hash[String, T.untyped]),
       ).void
     }
@@ -153,9 +153,9 @@ module Validators
   class All < Validator
     sig {
       override.params(
-        _before: T.nilable(ChangesDb::OSMChangeProperties),
-        _after: ChangesDb::OSMChangeProperties,
-        diff: TimeMachine::DiffActions,
+        _before: T.nilable(Validation::OSMChangeProperties),
+        _after: Validation::OSMChangeProperties,
+        diff: Validation::DiffActions,
       ).void
     }
     def apply(_before, _after, diff)

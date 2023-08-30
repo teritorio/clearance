@@ -4,8 +4,8 @@
 require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/osm/types'
-require './lib/time_machine/types'
-require './lib/time_machine/time_machine'
+require './lib/time_machine/validation/types'
+require './lib/time_machine/validation/time_machine'
 
 
 class TestTimeMachine < Test::Unit::TestCase
@@ -40,7 +40,7 @@ class TestTimeMachine < Test::Unit::TestCase
       'foo' => 'bar',
     }, T::Hash[String, String]),
     'group_ids' => nil,
-    }, ChangesDb::OSMChangeProperties)
+    }, Validation::OSMChangeProperties)
 
   @@fixture_node_b = T.let({
     'geom' => 'Point(1 1)',
@@ -55,7 +55,7 @@ class TestTimeMachine < Test::Unit::TestCase
       'bar' => 'foo',
     },
     'group_ids' => nil,
-    }, ChangesDb::OSMChangeProperties)
+    }, Validation::OSMChangeProperties)
 
   @@fixture_way_a = T.let({
     'geom' => nil,
@@ -70,7 +70,7 @@ class TestTimeMachine < Test::Unit::TestCase
       'foo' => 'bar',
     },
     'group_ids' => nil,
-    }, ChangesDb::OSMChangeProperties)
+    }, Validation::OSMChangeProperties)
 
   sig {
     params(
@@ -97,24 +97,24 @@ class TestTimeMachine < Test::Unit::TestCase
 
   sig { void }
   def test_diff_osm_object_same
-    diff = TimeMachine.diff_osm_object(@@fixture_node_a, @@fixture_node_a)
-    assert_equal(TimeMachine::DiffActions.new(attribs: {}, tags: {}).inspect, diff.inspect)
+    diff = Validation.diff_osm_object(@@fixture_node_a, @@fixture_node_a)
+    assert_equal(Validation::DiffActions.new(attribs: {}, tags: {}).inspect, diff.inspect)
   end
 
   sig { void }
   def test_diff_osm_object_nil
-    diff = TimeMachine.diff_osm_object(nil, @@fixture_node_a)
+    diff = Validation.diff_osm_object(nil, @@fixture_node_a)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: { 'geom_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
     )
 
-    diff = TimeMachine.diff_osm_object(nil, @@fixture_way_a)
+    diff = Validation.diff_osm_object(nil, @@fixture_way_a)
     assert_equal(
-      TimeMachine::DiffActions.new(
+      Validation::DiffActions.new(
         attribs: { 'geom_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
@@ -124,28 +124,28 @@ class TestTimeMachine < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation_empty
-    validation = TimeMachine.object_validation(config, [@@fixture_node_a])
-    validation_result = TimeMachine::ValidationResult.new(
+    validation = Validation.object_validation(config, [@@fixture_node_a])
+    validation_result = Validation::ValidationResult.new(
       action: nil,
       version: @@fixture_node_a['version'],
       deleted: @@fixture_node_a['deleted'],
       changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
       created: @@fixture_node_a['created'],
-      diff: TimeMachine::DiffActions.new(
+      diff: Validation::DiffActions.new(
         attribs: { 'geom' => [] },
         tags: { 'foo' => [] },
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
 
-    validation = TimeMachine.object_validation(config, [@@fixture_node_a, @@fixture_node_a])
-    validation_result = TimeMachine::ValidationResult.new(
+    validation = Validation.object_validation(config, [@@fixture_node_a, @@fixture_node_a])
+    validation_result = Validation::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
       deleted: @@fixture_node_a['deleted'],
       changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
       created: @@fixture_node_a['created'],
-      diff: TimeMachine::DiffActions.new(
+      diff: Validation::DiffActions.new(
         attribs: {},
         tags: {},
       ),
@@ -157,22 +157,22 @@ class TestTimeMachine < Test::Unit::TestCase
   def test_object_validation_many
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
-      validation = TimeMachine.object_validation(
+      validation = Validation.object_validation(
         config(validators: [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)]),
         [@@fixture_node_a, @@fixture_node_b],
       )
 
-      validated = [Types::Action.new(
+      validated = [Validation::Action.new(
         validator_id: id,
         action: action || 'reject',
       )]
-      validation_result = TimeMachine::ValidationResult.new(
+      validation_result = Validation::ValidationResult.new(
         action: action || 'reject',
         version: @@fixture_node_b['version'],
         deleted: @@fixture_node_b['deleted'],
         changeset_ids: @@fixture_node_b['changesets'].pluck('id'),
         created: @@fixture_node_b['created'],
-        diff: TimeMachine::DiffActions.new(
+        diff: Validation::DiffActions.new(
           attribs: { 'geom' => validated },
           tags: { 'foo' => validated, 'bar' => validated },
         ),

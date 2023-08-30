@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 
-module Types
+module Validation
   extend T::Sig
 
   # class ActionType < T::Enum
