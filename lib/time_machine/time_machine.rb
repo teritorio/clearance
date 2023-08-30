@@ -3,7 +3,6 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/changes_db'
-require './lib/time_machine/changeset'
 require './lib/time_machine/validators/validator'
 require './lib/time_machine/types'
 

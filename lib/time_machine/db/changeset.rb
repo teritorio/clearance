@@ -2,25 +2,10 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require 'json'
-require 'webcache'
+require_relative '../osm/changeset'
 
-
-module Changeset
+module Db
   extend T::Sig
-
-  sig{
-    params(
-      id: Integer,
-    ).returns(T.nilable(Osm::Changeset))
-  }
-  def self.fetch_id(id)
-    cache = WebCache.new(dir: '/cache/changesets/', life: '1d')
-    response = cache.get("https://www.openstreetmap.org/api/0.6/changeset/#{id}.json")
-    return if !response.success?
-
-    JSON.parse(response.content)['elements'][0].except('type')
-  end
 
   sig {
     params(
@@ -61,7 +46,7 @@ module Changeset
     "
 
     i = conn.exec(sql).collect{ |row|
-      fetch_id(row['id'])
+      Osm.fetch_changeset_by_id(row['id'])
     }.compact.collect{ |changeset|
       conn.exec_prepared('changeset_insert', [
           changeset['id'],

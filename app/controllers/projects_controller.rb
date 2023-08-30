@@ -2,7 +2,7 @@
 # typed: true
 
 require './lib/time_machine/osm/types'
-require './lib/time_machine/db'
+require './lib/time_machine/db/db_conn'
 require './lib/time_machine/changes_db'
 require './lib/time_machine/configuration'
 

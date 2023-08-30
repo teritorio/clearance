@@ -8,7 +8,7 @@ class OverpasslikeController < ApplicationController
     project = T.let(params['project'].to_s, String)
     data = T.let(params['data'], String)
 
-    Db::DbConnWrite.conn(project) { |conn|
+    Db::DbConnRead.conn(project) { |conn|
       area = /area\(([0-9]+)\)/.match(data)&.[](1)
       area_id = area.nil? ? nil : area.to_i - 3_600_000_000
 

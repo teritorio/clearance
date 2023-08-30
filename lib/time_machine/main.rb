@@ -6,7 +6,9 @@ require './lib/time_machine/time_machine'
 require './lib/time_machine/validators/validator'
 require './lib/time_machine/types'
 require './lib/time_machine/configuration'
-require './lib/time_machine/db'
+require './lib/time_machine/db/changeset'
+require './lib/time_machine/db/db_conn'
+require './lib/time_machine/db/export'
 
 @options = T.let({}, T::Hash[Symbol, T.untyped])
 OptionParser.new { |opts|
@@ -64,7 +66,7 @@ else
 
   if @options[:fetch_changesets]
     Db::DbConnWrite.conn(project){ |conn|
-      Changeset.get_missing_changeset_ids(conn)
+      Db.get_missing_changeset_ids(conn)
     }
   end
 
