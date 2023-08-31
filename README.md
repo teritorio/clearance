@@ -70,4 +70,5 @@ Tests and Validation
 bundle exec srb typecheck --ignore=app/models/user.rb,app/controllers/users_controller.rb,app/controllers/users/omniauth_callbacks_controller.rb
 bundle exec rubocop --parallel -c .rubocop.yml --autocorrect
 bundle exec rake test
+bundle exec rake test:sql
 ```

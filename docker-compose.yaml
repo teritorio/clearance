@@ -7,7 +7,7 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-      - ./bin:/scripts
+      - ./lib/time_machine/sql/:/scripts
       - ./projects:/projects
       - pgdata:/var/lib/postgresql/data
 #    restart: unless-stopped

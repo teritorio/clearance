@@ -32,15 +32,15 @@ echo "baseUrl=${BASE_URL}
 maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
 docker-compose up -d postgres && sleep 5
-docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema.sql
+docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema/schema.sql
 
 PG_COPY=${IMPORT}/osm_base.pgcopy
 docker-compose --env-file .tools.env run --rm ope ope /${PBF} /${IMPORT}/osm_base=o
 docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -c "\copy ${PROJECT}.osm_base from '/${PG_COPY}'"
 
-docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema_geom.sql
-docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema_changes_geom.sql
-docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/function.sql
+docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema/schema_geom.sql
+docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/schema/schema_changes_geom.sql
+docker-compose exec -u postgres postgres psql -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f /scripts/changes_logs.sql
 
 # # Export dump
 # mkdir -p projects/${PROJECT}/export

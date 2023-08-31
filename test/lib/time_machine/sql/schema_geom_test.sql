@@ -1,7 +1,7 @@
 DROP SCHEMA IF EXISTS test CASCADE;
 \set schema test
-\i /scripts/schema.sql
-\i /scripts/schema_geom.sql
+\i lib/time_machine/sql/schema/schema.sql
+\i lib/time_machine/sql/schema/schema_geom.sql
 
 -- Test osm_base WHERE objtype = 'w' update
 

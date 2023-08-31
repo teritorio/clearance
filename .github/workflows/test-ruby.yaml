@@ -22,6 +22,10 @@ jobs:
           - 5432:5432
 
     steps:
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: postgresql-client
+
       - uses: actions/checkout@v3
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -52,5 +56,10 @@ jobs:
 
       - name: Run tests
         run: bundle exec rake test
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/api
+
+      - name: Run tests SQL
+        run: bundle exec rake test:sql
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/api
