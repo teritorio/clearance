@@ -1,35 +1,37 @@
 DELETE FROM
-    osm_base AS base
+    osm_base
 USING
     :changes_source AS changes
 WHERE
-    changes.objtype = base.objtype AND
-    changes.id = base.id AND
+    changes.objtype = osm_base.objtype AND
+    changes.id = osm_base.id AND
     changes.deleted
 ;
 
-UPDATE
-    osm_base AS base
-SET
-    -- objtype = changes.objtype,
-    -- id = changes.id,
-    version = changes.version,
-    -- deleted = changes.deleted,
-    changeset_id = changes.changeset_id,
-    created = changes.created,
-    uid = changes.uid,
-    username = changes.username,
-    tags = changes.tags,
-    lon = changes.lon,
-    lat = changes.lat,
-    nodes = changes.nodes,
-    members = changes.members
+INSERT INTO
+    osm_base
+SELECT
+    objtype, id, version, changeset_id, created, uid, username, tags, lon, lat, nodes, members
 FROM
     :changes_source AS changes
 WHERE
-    changes.objtype = base.objtype AND
-    changes.id = base.id AND
     NOT changes.deleted
+ON CONFLICT (id, objtype) DO
+UPDATE
+SET
+    -- objtype = EXCLUDED.objtype,
+    -- id = EXCLUDED.id,
+    version = EXCLUDED.version,
+    -- deleted = EXCLUDED.deleted,
+    changeset_id = EXCLUDED.changeset_id,
+    created = EXCLUDED.created,
+    uid = EXCLUDED.uid,
+    username = EXCLUDED.username,
+    tags = EXCLUDED.tags,
+    lon = EXCLUDED.lon,
+    lat = EXCLUDED.lat,
+    nodes = EXCLUDED.nodes,
+    members = EXCLUDED.members
 ;
 
 INSERT INTO
@@ -37,12 +39,12 @@ INSERT INTO
 SELECT
     changes.*
 FROM
-    osm_changes AS changes,
-    :changes_source AS update
-WHERE
-    update.objtype = changes.objtype AND
-    update.id = changes.id AND
-    update.version >= changes.version
+    osm_changes AS changes
+    JOIN :changes_source AS update ON
+        update.objtype = changes.objtype AND
+        update.id = changes.id AND
+        update.version = changes.version AND
+        update.deleted = changes.deleted
 ;
 
 DELETE FROM
