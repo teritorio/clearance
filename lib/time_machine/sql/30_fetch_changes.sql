@@ -1,10 +1,18 @@
+DROP FUNCTION IF EXISTS fetch_changes();
+CREATE OR REPLACE FUNCTION fetch_changes(
+    group_id_polys JSON
+) RETURNS TABLE(
+    objtype CHAR(1),
+    id BIGINT,
+    p JSON
+) AS $$
 WITH
     polygons AS (
         SELECT
             row_json->>0 AS group_id,
             ST_GeomFromGeoJSON(row_json->>1) AS geom
         FROM
-            json_array_elements(:group_id_polys::json) AS t(row_json)
+            json_array_elements(group_id_polys) AS t(row_json)
     ),
     change_uniq AS (
         SELECT
@@ -45,8 +53,8 @@ WITH
         ORDER BY
             objtype,
             id,
-            version,
-            deleted
+            version DESC,
+            deleted DESC
     ),
     changes_with_changesets AS (
         SELECT
@@ -100,9 +108,7 @@ WITH
                 ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted)), 2154),
                 ST_Transform(geom, 2154)
             ), 0) AS geom_distance,
-            (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids,
-            row_number() OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted) AS row_number,
-            count(*) OVER (PARTITION BY objtype, id) as count
+            (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
         FROM (
                 SELECT *, NULL::json AS changesets, false AS is_change FROM base_i
                 UNION ALL
@@ -111,19 +117,14 @@ WITH
         ORDER BY
             objtype,
             id,
-            is_change, -- alows to replay histroy and keep changes after base
-            version,
-            deleted
+            is_change -- alows to replay histroy and keep changes after base
     )
 SELECT
     objtype,
     id,
-    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id' - 'row_number' - 'count')::jsonb AS p
+    json_agg(row_to_json(state)::jsonb - 'objtype' - 'id')::jsonb AS p
 FROM
     state
-WHERE
-    row_number = 1 OR -- first: base
-    row_number = count -- last: last change
 GROUP BY
     objtype,
     id
@@ -131,3 +132,4 @@ ORDER BY
     objtype,
     id
 ;
+$$ LANGUAGE SQL PARALLEL SAFE;

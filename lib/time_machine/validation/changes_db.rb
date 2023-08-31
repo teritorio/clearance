@@ -44,7 +44,8 @@ module Validation
   }
   def self.fetch_changes(conn, user_groups, &block)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
-    conn.exec(File.new('/sql/30_fetch_changes.sql').read.gsub(':group_id_polys', conn.escape_literal(user_groups_json))) { |result|
+    conn.exec(File.new('/sql/30_fetch_changes.sql').read)
+    conn.exec('SELECT * FROM fetch_changes(:group_id_polys::json)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json))) { |result|
       result.each(&block)
     }
   end
