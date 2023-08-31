@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS changes_update;
 CREATE TEMP TABLE changes_update AS
 WITH
 clip AS (
