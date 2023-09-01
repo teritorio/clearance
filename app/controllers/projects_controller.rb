@@ -11,7 +11,6 @@ class ProjectsController < ApplicationController
   def index
     projects = Dir.glob('/projects/*/').to_h{ |project|
       c = ::Configuration.load("#{project}/config.yaml")
-      date_start = Osm::StateFile.from_file("#{project}/import/import.state.txt")
       date_last_update = Osm::StateFile.from_file("#{project}/import/replication/state.txt")
 
       project = T.must(project.split('/')[-1])
@@ -26,7 +25,6 @@ class ProjectsController < ApplicationController
       [project, {
         title: c.title,
         description: c.description,
-        date_start: date_start&.timestamp,
         date_last_update: date_last_update&.timestamp,
         to_be_validated: count,
         main_contacts: c.main_contacts,
