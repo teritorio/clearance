@@ -45,9 +45,32 @@ WITH
                 change_uniq.objtype = base.objtype AND
                 change_uniq.id = base.id
     ),
-    changes_uniq AS (
+    changes_with_changesets AS (
         SELECT DISTINCT ON (objtype, id)
-            *
+            osm_changes_geom.objtype,
+            osm_changes_geom.id,
+            osm_changes_geom.version,
+            osm_changes_geom.deleted,
+            osm_changes_geom.created,
+            osm_changes_geom.uid,
+            osm_changes_geom.username,
+            osm_changes_geom.tags,
+            osm_changes_geom.lon,
+            osm_changes_geom.lat,
+            osm_changes_geom.nodes,
+            osm_changes_geom.members,
+            osm_changes_geom.geom,
+            (
+                SELECT
+                    json_agg(row_to_json(osm_changesets) ORDER BY osm_changesets.id)
+                FROM
+                    osm_changes
+                    JOIN osm_changesets ON
+                        osm_changesets.id = osm_changes.changeset_id
+                WHERE
+                    osm_changes.objtype = osm_changes_geom.objtype AND
+                    osm_changes.id = osm_changes_geom.id
+            ) AS changesets
         FROM
             osm_changes_geom
         ORDER BY
@@ -55,42 +78,6 @@ WITH
             id,
             version DESC,
             deleted DESC
-    ),
-    changes_with_changesets AS (
-        SELECT
-            osm_changes.objtype,
-            osm_changes.id,
-            osm_changes.version,
-            osm_changes.deleted,
-            osm_changes.created,
-            osm_changes.uid,
-            osm_changes.username,
-            osm_changes.tags,
-            osm_changes.lon,
-            osm_changes.lat,
-            osm_changes.nodes,
-            osm_changes.members,
-            osm_changes.geom,
-            -- array_agg(changeset_id) AS changeset_ids--,
-            json_agg(row_to_json(osm_changesets)) AS changesets
-        FROM
-            changes_uniq AS osm_changes
-            LEFT JOIN osm_changesets ON
-                osm_changesets.id = osm_changes.changeset_id
-        GROUP BY
-            osm_changes.objtype,
-            osm_changes.id,
-            osm_changes.version,
-            osm_changes.deleted,
-            osm_changes.created,
-            osm_changes.uid,
-            osm_changes.username,
-            osm_changes.tags,
-            osm_changes.lon,
-            osm_changes.lat,
-            osm_changes.nodes,
-            osm_changes.members,
-            osm_changes.geom
     ),
     state AS (
         SELECT

@@ -27,9 +27,9 @@ END; $$ LANGUAGE plpgsql;
 -- Change node location
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL),
-  ('n', 1, 3, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL),
-  ('n', 1, 3, true, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+  ('n', 1, 2, false, 2, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL),
+  ('n', 1, 3, false, 3, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL),
+  ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
 ;
 COMMIT;
 
@@ -50,4 +50,21 @@ do $$ BEGIN
     (SELECT p->1->>'version' FROM a);
   ASSERT 'true' = (SELECT p->1->>'deleted' FROM a),
     (SELECT p->1->>'deleted' FROM a);
+END; $$ LANGUAGE plpgsql;
+
+
+
+-- Get all changesets
+BEGIN;
+INSERT INTO osm_changesets VALUES
+  (1, '1999-01-08 04:05:06', NULL, false, 'bob', 1, NULL, NULL, NULL, NULL, 0, 0, '{}'::jsonb),
+  (2, '1999-01-08 04:05:06', NULL, false, 'bob', 1, NULL, NULL, NULL, NULL, 0, 0, '{}'::jsonb),
+  (3, '1999-01-08 04:05:06', NULL, false, 'bob', 1, NULL, NULL, NULL, NULL, 0, 0, '{}'::jsonb),
+  (4, '1999-01-08 04:05:06', NULL, false, 'bob', 1, NULL, NULL, NULL, NULL, 0, 0, '{}'::jsonb)
+;
+COMMIT;
+
+do $$ BEGIN
+  ASSERT 3 = (SELECT json_array_length(p->1->'changesets') FROM a),
+    (SELECT json_array_length(p->1->'changesets') FROM a);
 END; $$ LANGUAGE plpgsql;
