@@ -52,6 +52,6 @@ module Api
     config.action_controller.allow_forgery_protection = false
 
     # Custom setting to help docker to catch logs
-    config.logger = Logger.new(STDOUT)
+    config.logger = Logger.new($stdout)
   end
 end
