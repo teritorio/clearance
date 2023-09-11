@@ -50,5 +50,8 @@ module Api
     config.action_controller.forgery_protection_origin_check = false
     # Disable CSRF to allow call API directly
     config.action_controller.allow_forgery_protection = false
+
+    # Custom setting to help docker to catch logs
+    config.logger = Logger.new(STDOUT)
   end
 end
