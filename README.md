@@ -121,3 +121,29 @@ If a new update make previously retained object pass the validation, is no more 
 Not implemented yet.
 
 The idea is to group objects locally to make validation contextual. It allows to detect, and ignore, eg. delete and recreation of the same object. It will also allow to implement multi object validators, eg. to validate road network continuity.
+
+## Roadmap
+LoCha v1
+  * Clustering strategy (with spatial buffer as naive implementation)
+  * Clustering strategy (mix with topological and buffer, configurable by feature type)
+  * LoCha splitting strategy on large cluster
+  * Support Large object changes:  admin relation, large landuses, rivers
+
+Validators implementation
+  * Changes validation
+    * Contributors reputation: based on external tools / API
+    * Add new duplicate similar object detections
+    * Evaluation of geometry changes: implement a distance based on geometry spatial dimensions and feature types, implement threshold based on feature type
+    * Pass trough after retention delay: allow automatic validation on non disputed features / not change in progress area
+    * Validate again OpenData set
+  * Final state validation
+    * Final state validation: not validating changes but targeted state using external rules set like MapCSS JSOM/osmose validation
+
+Validation evaluation
+  * OSM object independent validation: support splited, merged, redraw objects, spatial dimension changes (requires LoCha)
+  * score: implement a global score rather than just negative / neutral / positive
+
+UI / UX
+  * Validator UI
+  * RSS
+  * Configuration UI
