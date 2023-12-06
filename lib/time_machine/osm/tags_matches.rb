@@ -91,7 +91,10 @@ module Osm
       p = @selector_match.collect { |key, op_values|
         key = escape_literal.call(key.to_s)
         op_values.collect{ |op, value|
-          value = escape_literal.call(value.to_s) if !value.nil?
+          if !value.nil?
+            value = value.to_s.gsub(/^\(\?-mix:/, '(') if value.is_a?(Regexp)
+            value = escape_literal.call(value.to_s)
+          end
           case op
           when nil then "tags?#{key}"
           when '=' then "(tags?#{key} AND tags->>#{key} = #{value})"

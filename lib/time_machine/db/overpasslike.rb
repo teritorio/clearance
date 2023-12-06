@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/osm/types'
+require './lib/time_machine/osm/tags_matches'
 
 module Db
   extend T::Sig
@@ -35,7 +36,7 @@ module Db
       area = /area\(([0-9]+)\)/.match(query)&.[](1)
       area_id = area.nil? ? nil : area.to_i - 3_600_000_000
 
-      query.split(/[;|\n]/).collect(&:strip).select{ |line|
+      query.split(/[;\n]/).collect(&:strip).select{ |line|
         line.start_with?('nwr')
       }.map{ |nwr|
         nwr[(nwr.index('['))..(nwr.rindex(']'))]
