@@ -29,7 +29,7 @@ docker-compose exec -u postgres postgres psql
 ## Init
 
 ```
-./bin/setup.sh monaco-poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
+./bin/setup.sh monaco_poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
 ```
 
 ```
