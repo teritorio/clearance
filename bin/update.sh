@@ -22,23 +22,23 @@ for PROJECT in $PROJECTS; do
         osmosis --read-replication-interval workingDirectory=${IMPORT}/replication --write-xml-change ${IMPORT}/diff.osc.xml.bz2
         # Convert
         [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-        docker-compose --env-file .tools.env run --rm ope ope -H /${IMPORT}/diff.osc.xml.bz2 /${IMPORT}/osm_changes=o && \
+        ope -H /${IMPORT}/diff.osc.xml.bz2 /${IMPORT}/osm_changes=o && \
         rm -f ${IMPORT}/diff.osc.xml.bz2
         # Import
-        docker-compose exec -T -u postgres postgres psql -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes from '/${IMPORT}/osm_changes.pgcopy'" && \
+        psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes from '/${IMPORT}/osm_changes.pgcopy'" && \
         rm -f ${IMPORT}/osm_changes.pgcopy
 
         # Validation report
         echo "== changes-prune ==" && \
-        docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
+        ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
         echo "== apply_unclibled_changes ==" && \
-        docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
+        ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
         echo "== fetch_changesets ==" && \
-        docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
+        ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
         echo "== validate ==" && \
-        docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
+        ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
         echo "== export-osm-update ==" && \
-        docker-compose --env-file .tools.env run --rm api ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update
+        ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update
     else
         echo "${PROJECT} Update already locked"
     fi

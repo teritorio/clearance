@@ -29,7 +29,7 @@ docker-compose exec -u postgres postgres psql
 ## Init
 
 ```
-./bin/setup.sh monaco_poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
+docker-compose --env-file .tools.env run --rm script ./bin/setup.sh monaco_poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
 ```
 
 ```
@@ -40,7 +40,7 @@ docker-compose run --rm api bundle exec rails db:migrate
 
 Get Update, Import and Generate Validation report in database
 ```
-./bin/update.sh
+docker-compose --env-file .tools.env run --rm script ./bin/update.sh projects/monaco_poi
 ```
 
 Run update script from crom:

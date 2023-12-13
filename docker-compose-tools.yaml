@@ -1,8 +1,15 @@
 version: '3'
 
 services:
-  ope:
+  script:
     build:
-      context: docker/ope
+      context: .
+      dockerfile: script.Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
     volumes:
+      - ./lib/time_machine/sql:/sql
+      - ./:/srv/app/
       - ./projects:/projects
+    depends_on:
+      - postgres
