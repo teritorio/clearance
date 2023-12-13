@@ -55,6 +55,6 @@ class TestTagsMatchs < Test::Unit::TestCase
     ])
 
     sql = matches.to_sql(->(s) { "'#{s}'" })
-    assert_equal("(tags?'amenity') OR ((tags?'shop' AND tags->>'shop' = 'florist')) OR ((tags?'shop' AND tags->>'shop' ~ '(?-mix:pizza.*)')) OR ((tags?'highway' AND tags->>'highway' = 'footway') AND (tags?'footway' AND tags->>'footway' = 'traffic_island'))", sql)
+    assert_equal("(tags?'amenity') OR ((tags?'shop' AND tags->>'shop' = 'florist')) OR ((tags?'shop' AND tags->>'shop' ~ '(pizza.*)')) OR ((tags?'highway' AND tags->>'highway' = 'footway') AND (tags?'footway' AND tags->>'footway' = 'traffic_island'))", sql)
   end
 end
