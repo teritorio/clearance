@@ -64,7 +64,7 @@ module Validation
         }.flatten(1).collect{ |_tag, match|
           ValidationLogMatch.new(
             sources: match.sources&.compact || [],
-            selector: match.selector,
+            selectors: match.selectors,
             user_groups: match.user_groups.intersection(osm_change_object_p.pluck('group_ids').flatten.uniq),
           )
         }.flatten(1).uniq

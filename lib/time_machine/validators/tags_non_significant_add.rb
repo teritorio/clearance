@@ -12,12 +12,12 @@ module Validators
   class TagsNonSignificantChangeConfig < Osm::TagsMatch
     sig {
       params(
-        match: String,
+        matches: T::Array[String],
         values: Osm::TagsMatch,
       ).void
     }
-    def initialize(match:, values:)
-      super(match)
+    def initialize(matches:, values:)
+      super(matches)
       @values = values
     end
 
@@ -53,7 +53,7 @@ module Validators
                         config_yaml = YAML.unsafe_load_file(config)
                         config_yaml.collect{ |item|
                           TagsNonSignificantChangeConfig.new(
-                            match: item['match'],
+                            matches: [item['match']],
                             values: Osm::TagsMatch.new(item['values']),
                           )
                         }

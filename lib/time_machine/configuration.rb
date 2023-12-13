@@ -58,7 +58,7 @@ module Configuration
     ])
   }
   def self.load_user_groups(config)
-    osm_tags = T.let([], T::Array[{ 'select' => String, 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
+    osm_tags = T.let([], T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
     user_groups = config.user_groups&.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|

@@ -65,7 +65,7 @@ module Db
       ).returns(T::Array[T::Hash[Symbol, OverpassResult]])
     }
     def self.db_query(conn, tags, area_id)
-      sql_osm_filter_tags = Osm::TagsMatch.new(tags).to_sql(->(s) { conn.escape_literal(s) })
+      sql_osm_filter_tags = Osm::TagsMatch.new([tags]).to_sql(->(s) { conn.escape_literal(s) })
       sql = File.new('/sql/overpasslike.sql').read
                 .gsub(':osm_filter_tags', sql_osm_filter_tags)
                 .gsub(':area_id', conn.escape_literal(area_id.to_s))

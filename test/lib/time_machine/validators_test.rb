@@ -54,7 +54,7 @@ class TestUserList < Test::Unit::TestCase
     id = 'foo'
     action = 'accept'
     osm_tags_matches = Osm::TagsMatches.new([
-      Osm::TagsMatch.new('[foo=bar]'),
+      Osm::TagsMatch.new(['[foo=bar]']),
     ])
     validator = Validators::UserList.new(id: id, osm_tags_matches: osm_tags_matches, action: action, list: ['bob'])
     validation_action = [Validation::Action.new(
@@ -108,7 +108,7 @@ class TestTagsChanges < Test::Unit::TestCase
     id = 'foo'
     osm_tags_matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(
-        '[shop=florist]',
+        ['[shop=florist]'],
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
@@ -172,8 +172,8 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
     id = 'foo'
     config = [
       Validators::TagsNonSignificantChangeConfig.new(
-        match: '[shop=florist]',
-        values: Osm::TagsMatch.new('[phone]'),
+        matches: ['[shop=florist]'],
+        values: Osm::TagsMatch.new(['[phone]']),
       ),
     ]
     validator = Validators::TagsNonSignificantAdd.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), config: config, action: 'accept')

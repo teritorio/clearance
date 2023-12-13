@@ -14,8 +14,8 @@ module Osm
   class TagsMatch
     extend T::Sig
 
-    sig { returns(String) }
-    attr_accessor :selector
+    sig { returns(T::Array[String]) }
+    attr_accessor :selectors
 
     sig { returns(T.nilable(T::Array[String])) }
     attr_accessor :sources
@@ -25,25 +25,27 @@ module Osm
 
     sig {
       params(
-        selector: String,
+        selectors: T::Array[String],
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
         sources: T.nilable(T::Array[String]),
         user_groups: T::Array[String],
       ).void
     }
-    def initialize(selector, selector_extra: nil, sources: nil, user_groups: [])
-      throw 'Tags tags selector format' if selector.size <= 2
+    def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [])
+      a = selectors.collect{ |selector|
+        throw 'Tags selector format' if selector.size <= 2
 
-      a = T.must(selector[1..-2]).split('][').collect{ |osm_tag|
-        k, o, v = osm_tag.split(/(=|~=|=~|!=|!~|~)/, 2).collect{ |s| unquote(s) }
-        if o&.include?('~') && !v.nil?
-          v = Regexp.new(v)
-        end
-        [T.must(k), [o, v]]
-      }.group_by(&:first).transform_values{ |v| v.collect(&:last) }
-      @selector_match = T.let(a, T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]])
+        T.must(selector[1..-2]).split('][').collect{ |osm_tag|
+          k, o, v = osm_tag.split(/(=|~=|=~|!=|!~|~)/, 2).collect{ |s| unquote(s) }
+          if o&.include?('~') && !v.nil?
+            v = Regexp.new(v)
+          end
+          [T.must(k), [o, v]]
+        }.group_by(&:first).transform_values{ |v| v.collect(&:last) }
+      }
+      @selector_matches = T.let(a, T::Array[T::Hash[OsmMatchKey, T::Array[[OsmMatchOperator, OsmMatchValues]]]])
 
-      @selector = selector
+      @selectors = selectors
       @selector_extra = selector_extra
       @sources = sources
       @user_groups = user_groups
@@ -55,20 +57,22 @@ module Osm
       ).returns(T::Array[[OsmMatchKey, TagsMatch]])
     }
     def match(tags)
-      ret = @selector_match.all?{ |key, op_values|
-        value = tags[key]
-        !value.nil? && op_values.all?{ |op, values|
-          case op
-          when nil then true
-          when '=' then values == value
-          when '!=' then values != value
-          when '~' then T.cast(values, Regexp).match(value)
-          when '!~' then !T.cast(values, Regexp).match(value)
-          else throw "Not implemented operator #{op}"
-          end
+      @selector_matches.collect{ |selector_match|
+        ret = selector_match.all?{ |key, op_values|
+          value = tags[key]
+          !value.nil? && op_values.all?{ |op, values|
+            case op
+            when nil then true
+            when '=' then values == value
+            when '!=' then values != value
+            when '~' then T.cast(values, Regexp).match(value)
+            when '!~' then !T.cast(values, Regexp).match(value)
+            else throw "Not implemented operator #{op}"
+            end
+          }
         }
-      }
-      ret ? @selector_match.collect{ |key, _op_values| [key, self] } : []
+        ret ? selector_match.collect{ |key, _op_values| [key, self] } : nil
+      }.select.first || []
     end
 
     sig {
@@ -88,24 +92,27 @@ module Osm
       ).returns(String)
     }
     def to_sql(escape_literal)
-      p = @selector_match.collect { |key, op_values|
-        key = escape_literal.call(key.to_s)
-        op_values.collect{ |op, value|
-          if !value.nil?
-            value = value.to_s.gsub(/^\(\?-mix:/, '(') if value.is_a?(Regexp)
-            value = escape_literal.call(value.to_s)
-          end
-          case op
-          when nil then "tags?#{key}"
-          when '=' then "(tags?#{key} AND tags->>#{key} = #{value})"
-          when '!=' then "(NOT tags?#{key} OR tags->>#{key} != #{value})"
-          when '~' then "(tags?#{key} AND tags->>#{key} ~ #{value})"
-          when '!~' then "(NOT tags?#{key} OR tags->>#{key} !~ #{value})"
-          else throw "Not implemented operator #{op}"
-          end
-        }
-      }.join(' AND ')
-      "(#{p})"
+      pp = @selector_matches.collect{ |selector_match|
+        p = selector_match.collect { |key, op_values|
+          key = escape_literal.call(key.to_s)
+          op_values.collect{ |op, value|
+            if !value.nil?
+              value = value.to_s.gsub(/^\(\?-mix:/, '(') if value.is_a?(Regexp)
+              value = escape_literal.call(value.to_s)
+            end
+            case op
+            when nil then "tags?#{key}"
+            when '=' then "(tags?#{key} AND tags->>#{key} = #{value})"
+            when '!=' then "(NOT tags?#{key} OR tags->>#{key} != #{value})"
+            when '~' then "(tags?#{key} AND tags->>#{key} ~ #{value})"
+            when '!~' then "(NOT tags?#{key} OR tags->>#{key} !~ #{value})"
+            else throw "Not implemented operator #{op}"
+            end
+          }
+        }.join(' AND ')
+        "(#{p})"
+      }
+      pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
     end
 
     # Backport ruby 3.2

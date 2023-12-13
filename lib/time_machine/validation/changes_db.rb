@@ -112,7 +112,7 @@ module Validation
   class ValidationLogMatch < T::InexactStruct
     const :user_groups, T.nilable(T::Array[String])
     const :sources, T.nilable(T::Array[String])
-    const :selector, String
+    const :selectors, T::Array[String]
   end
 
   class ValidationLog < Osm::ObjectChangeId
