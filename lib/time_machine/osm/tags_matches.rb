@@ -57,7 +57,8 @@ module Osm
       ).returns(T::Array[[OsmMatchKey, TagsMatch]])
     }
     def match(tags)
-      @selector_matches.collect{ |selector_match|
+      selectors.zip(@selector_matches).collect{ |selector, selector_match_|
+        selector_match = T.must(selector_match_)
         ret = selector_match.all?{ |key, op_values|
           value = tags[key]
           !value.nil? && op_values.all?{ |op, values|
@@ -71,8 +72,8 @@ module Osm
             end
           }
         }
-        ret ? selector_match.collect{ |key, _op_values| [key, self] } : nil
-      }.select.first || []
+        ret ? selector_match.collect{ |key, _op_values| [selector, self] } : nil
+      }.compact.first || []
     end
 
     sig {

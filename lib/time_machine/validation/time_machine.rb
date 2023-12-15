@@ -61,7 +61,7 @@ module Validation
         osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
         matches = osm_change_object_p.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
-        }.flatten(1).collect{ |_tag, match|
+        }.flatten(1).uniq.collect{ |_tag, match|
           ValidationLogMatch.new(
             sources: match.sources&.compact || [],
             selectors: match.selectors,
