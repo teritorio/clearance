@@ -31,6 +31,7 @@ BASE_URL=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm
 echo "baseUrl=${BASE_URL}
 maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
+psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS ${PROJECT} CASCADE"
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema.sql
 
 PG_COPY=${IMPORT}/osm_base.pgcopy
