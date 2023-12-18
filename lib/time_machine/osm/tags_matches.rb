@@ -72,7 +72,7 @@ module Osm
             end
           }
         }
-        ret ? selector_match.collect{ |key, _op_values| [selector, self] } : nil
+        ret ? selector_match.collect{ |_key, _op_values| [selector, self] } : nil
       }.compact.first || []
     end
 

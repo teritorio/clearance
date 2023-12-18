@@ -10,13 +10,13 @@ Rails.application.routes.draw do
   # DATA
 
   get '/api/0.1/projects', controller: 'projects', action: 'index'
+  get '/api/0.1/projects/:project/', controller: 'projects', action: 'project'
+  get '/api/0.1/projects/:project/changes_logs', controller: 'changes_logs', action: 'index'
+  post '/api/0.1/projects/:project/changes_logs/accept', controller: 'changes_logs', action: 'sets'
 
-  get '/api/0.1/:project/changes_logs', controller: 'changes_logs', action: 'index'
-  post '/api/0.1/:project/changes_logs/accept', controller: 'changes_logs', action: 'sets'
-
-  get '/api/0.1/:project/validators/', to: 'validators#index'
+  get '/api/0.1/projects/:project/validators/', to: 'validators#index'
 
   # Overpass like API
 
-  get '/api/0.1/:project/overpasslike', to: 'overpasslike#interpreter'
+  get '/api/0.1/projects/:project/overpasslike', to: 'overpasslike#interpreter'
 end
