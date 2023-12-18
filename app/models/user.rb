@@ -10,7 +10,7 @@ class User < ApplicationRecord
 
   def self.from_omniauth(auth)
     user = find_or_initialize_by(provider: auth.provider, uid: auth.uid)
-    user.email = 'none@example.com'
+    user.email = "#{auth.uid}@osm.org"
     # user.skip_confirmation!
     user.password = Devise.friendly_token[0, 20]
 
