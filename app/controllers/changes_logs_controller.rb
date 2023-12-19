@@ -35,7 +35,7 @@ class ChangesLogsController < ApplicationController
       return
     end
 
-    user_in_project = config.user_groups.any?{ |_key, user_group|
+    user_in_project = config.main_contacts.include?(current_user_osm_name) || config.user_groups.any?{ |_key, user_group|
       user_group.users.include?(current_user_osm_name)
     }
     if !user_in_project
