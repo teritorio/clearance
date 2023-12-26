@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: yes
+# typed: false
 
 class UsersController < ApplicationController
   def me
