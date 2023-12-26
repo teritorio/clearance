@@ -9,10 +9,12 @@ require './lib/time_machine/configuration'
 
 class ProjectsController < ApplicationController
   def index
+    Project.reload(true)
     render json: Project.all.collect(&:attributes)
   end
 
   def project
+    Project.reload(true)
     render json: Project.find(params['project']).attributes
   end
 end
