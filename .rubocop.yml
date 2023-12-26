@@ -6,6 +6,7 @@ AllCops:
     - '**/Rakefile.rb'
     - 'db/schema.rb'
     - 'vendor/**/*'
+    - assert_migration.rb
 
 require:
  - rubocop-rake
@@ -60,10 +61,10 @@ Metrics/CyclomaticComplexity:
   Max: 30
 
 Metrics/MethodLength:
-  Max: 60
+  Max: 100
 
 Metrics/AbcSize:
-  Max: 50
+  Max: 80
 
 Metrics/PerceivedComplexity:
   Max: 30
@@ -96,6 +97,9 @@ Style/ClassVars:
   Enabled: false
 
 Rails/NegateInclude:
+  Enabled: false
+
+Security/Eval:
   Enabled: false
 
 Style/NestedTernaryOperator:
