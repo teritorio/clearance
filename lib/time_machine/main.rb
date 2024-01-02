@@ -17,9 +17,6 @@ OptionParser.new { |opts|
   opts.on('-pPROJECT', '--project=PROJECT', 'Project directory to use.') do |project|
     @options[:project] = project
   end
-  opts.on('-p', '--changes-prune', 'Changes prune.') do
-    @options[:changes_prune] = true
-  end
   opts.on('-u', '--apply-unclibled-changes', 'Apply unclibled changes.') do
     @options[:apply_unclibled_changes] = true
   end
@@ -42,12 +39,6 @@ if @options[:help]
 else
   project = @options[:project].split('/')[-1]
   config = Configuration.load("#{@options[:project]}/config.yaml")
-
-  if @options[:changes_prune]
-    Db::DbConnWrite.conn(project) { |conn|
-      Validation.changes_prune(conn)
-    }
-  end
 
   if @options[:apply_unclibled_changes]
     osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
