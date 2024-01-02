@@ -40,6 +40,7 @@ class TestValidation < Test::Unit::TestCase
     'tags' => T.let({
       'foo' => 'bar',
     }, T::Hash[String, String]),
+    'is_change' => false,
     'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 
@@ -55,6 +56,7 @@ class TestValidation < Test::Unit::TestCase
     'tags' => {
       'bar' => 'foo',
     },
+    'is_change' => true,
     'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 

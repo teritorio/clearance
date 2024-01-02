@@ -92,9 +92,10 @@ WITH
             geom,
             changesets,
             coalesce(ST_HausdorffDistance(
-                ST_Transform((first_value(geom) OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted)), 2154),
+                ST_Transform((first_value(CASE WHEN NOT is_change THEN geom END) OVER (PARTITION BY objtype, id ORDER BY is_change, version, deleted)), 2154),
                 ST_Transform(geom, 2154)
             ), 0) AS geom_distance,
+            is_change,
             (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
         FROM (
                 SELECT *, NULL::json AS changesets, false AS is_change FROM base_i

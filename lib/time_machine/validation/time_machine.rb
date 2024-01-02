@@ -27,7 +27,7 @@ module Validation
     ).returns(ValidationResult)
   }
   def self.object_validation(config, changes)
-    before = T.let(changes.size == 1 ? nil : changes[0], T.nilable(OSMChangeProperties))
+    before = T.must(changes[0])['is_change'] ? T.let(T.must(changes[0]), OSMChangeProperties) : nil
     after = T.let(T.must(changes[-1]), OSMChangeProperties)
 
     diff = diff_osm_object(before, after)

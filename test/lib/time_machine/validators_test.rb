@@ -75,6 +75,7 @@ class TestUserList < Test::Unit::TestCase
       'tags' => {
         'foo' => 'barbar',
       },
+      'is_change' => true,
       'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 
@@ -138,6 +139,7 @@ class TestTagsChanges < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
+      'is_change' => true,
       'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 
@@ -197,6 +199,7 @@ class TestTagsNonSignificantAdd < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
+      'is_change' => true,
       'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 

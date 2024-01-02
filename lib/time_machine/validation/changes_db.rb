@@ -23,6 +23,7 @@ module Validation
       'username' => String,
       'created' => String,
       'tags' => T::Hash[String, String],
+      'is_change' => T::Boolean,
       'group_ids' => T.nilable(T::Array[String]),
     }
   }
