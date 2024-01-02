@@ -377,7 +377,6 @@ DEPENDENCIES
   test-unit
   tzinfo-data
   webcache
-  yard
 
 RUBY VERSION
    ruby 3.0.4p208
