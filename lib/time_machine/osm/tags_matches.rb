@@ -11,10 +11,12 @@ module Osm
   OsmMatchOperator = T.type_alias { T.any(NilClass, String) }
   OsmMatchValues = T.type_alias { T.any(NilClass, String, Regexp) }
 
+  OsmQuerySelector = T.type_alias { OsmKey }
+
   class TagsMatch
     extend T::Sig
 
-    sig { returns(T::Array[String]) }
+    sig { returns(T::Array[OsmQuerySelector]) }
     attr_accessor :selectors
 
     sig { returns(T.nilable(T::Array[String])) }
@@ -25,7 +27,7 @@ module Osm
 
     sig {
       params(
-        selectors: T::Array[String],
+        selectors: T::Array[OsmQuerySelector],
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
         sources: T.nilable(T::Array[String]),
         user_groups: T::Array[String],
@@ -54,7 +56,7 @@ module Osm
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
+      ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match(tags)
       selectors.zip(@selector_matches).collect{ |selector, selector_match_|
@@ -72,14 +74,14 @@ module Osm
             end
           }
         }
-        ret ? selector_match.collect{ |_key, _op_values| [selector, self] } : nil
+        ret ? [[selector, self]] : nil
       }.compact.first || []
     end
 
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
+      ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match_with_extra(tags)
       main_keys = match(tags)
@@ -154,7 +156,7 @@ module Osm
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
+      ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match(tags)
       @matches.collect{ |watch|
@@ -165,7 +167,7 @@ module Osm
     sig {
       params(
         tags: T::Hash[String, String],
-      ).returns(T::Array[[OsmMatchKey, TagsMatch]])
+      ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match_with_extra(tags)
       @matches.collect{ |watch|

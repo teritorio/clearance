@@ -11,16 +11,16 @@ class TestTagsMatchs < Test::Unit::TestCase
 
   sig { void }
   def test_match_value
-    assert_equal(['p'], Osm::TagsMatch.new(['[p]']).match({ 'p' => '+48' }).collect(&:first))
+    assert_equal(['[p]'], Osm::TagsMatch.new(['[p]']).match({ 'p' => '+48' }).collect(&:first))
 
-    assert_equal(['p'], Osm::TagsMatch.new(['[p=+48]']).match({ 'p' => '+48' }).collect(&:first))
+    assert_equal(['[p=+48]'], Osm::TagsMatch.new(['[p=+48]']).match({ 'p' => '+48' }).collect(&:first))
     assert_equal([], Osm::TagsMatch.new(['[p=+48]']).match({ 'p' => '+4' }).collect(&:first))
 
-    assert_equal(['p'], Osm::TagsMatch.new(['[p~4]']).match({ 'p' => '+48' }).collect(&:first))
+    assert_equal(['[p~4]'], Osm::TagsMatch.new(['[p~4]']).match({ 'p' => '+48' }).collect(&:first))
     assert_equal([], Osm::TagsMatch.new(['[p~5]']).match({ 'p' => '+48' }).collect(&:first))
 
     assert_equal([], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway' }).collect(&:first))
-    assert_equal(%w[highway footway], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
+    assert_equal(['[highway=footway][footway=traffic_island]'], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
   end
 
   sig { void }
@@ -29,12 +29,12 @@ class TestTagsMatchs < Test::Unit::TestCase
     florist = Osm::TagsMatch.new(['[shop=florist]'])
     matches = Osm::TagsMatches.new([amenity, florist])
 
-    assert_equal([['shop', florist]], matches.match({ 'shop' => 'florist' }))
+    assert_equal([['[shop=florist]', florist]], matches.match({ 'shop' => 'florist' }))
     assert_equal([], matches.match({ 'shop' => 'fish' }))
-    assert_equal([['shop', florist]], matches.match({ 'shop' => 'florist', 'phone' => '+48' }))
+    assert_equal([['[shop=florist]', florist]], matches.match({ 'shop' => 'florist', 'phone' => '+48' }))
     assert_equal([], matches.match({ 'shop' => 'fish', 'phone' => '+48' }))
     assert_equal([], matches.match({ 'phone' => '+48' }))
-    assert_equal([['amenity', amenity]], matches.match({ 'amenity' => 'pole' }))
+    assert_equal([['[amenity~.*]', amenity]], matches.match({ 'amenity' => 'pole' }))
   end
 
   sig { void }
@@ -42,7 +42,7 @@ class TestTagsMatchs < Test::Unit::TestCase
     florist = Osm::TagsMatch.new(['[shop=florist]'], selector_extra: { 'phone' => nil })
     matches = Osm::TagsMatches.new([florist])
 
-    assert_equal([['shop', florist], ['phone', florist]], matches.match_with_extra({ 'shop' => 'florist', 'phone' => '+2', 'fax' => 'forgot' }))
+    assert_equal([['[shop=florist]', florist], ['phone', florist]], matches.match_with_extra({ 'shop' => 'florist', 'phone' => '+2', 'fax' => 'forgot' }))
   end
 
   sig { void }
