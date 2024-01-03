@@ -61,7 +61,7 @@ do $$ BEGIN
     (SELECT count(*) FROM changes_update);
 END; $$ LANGUAGE plpgsql;
 
--- Base not in tags, but yes
+-- Base not in tags, but change yes
 \set osm_filter_tags 'tags?\'b\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
