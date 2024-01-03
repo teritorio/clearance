@@ -61,16 +61,16 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation1
-    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a])
+    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_b])
     validation_result = Validation::ValidationResult.new(
       action: nil,
-      version: @@fixture_node_a['version'],
-      deleted: @@fixture_node_a['deleted'],
-      changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
-      created: @@fixture_node_a['created'],
+      version: @@fixture_node_b['version'],
+      deleted: @@fixture_node_b['deleted'],
+      changeset_ids: @@fixture_node_b['changesets'].pluck('id'),
+      created: @@fixture_node_b['created'],
       diff: Validation::DiffActions.new(
         attribs: { 'geom' => [] },
-        tags: { 'foo' => [] },
+        tags: { 'bar' => [] },
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
