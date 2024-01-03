@@ -78,7 +78,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation_same
-    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_a])
+    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_a.merge({ 'is_change' => true })])
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
