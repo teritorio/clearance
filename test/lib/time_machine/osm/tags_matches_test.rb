@@ -42,7 +42,7 @@ class TestTagsMatchs < Test::Unit::TestCase
     florist = Osm::TagsMatch.new(['[shop=florist]'], selector_extra: { 'phone' => nil })
     matches = Osm::TagsMatches.new([florist])
 
-    assert_equal([['[shop=florist]', florist], ['phone', florist]], matches.match_with_extra({ 'shop' => 'florist', 'phone' => '+2', 'fax' => 'forgot' }))
+    assert_equal([['[shop=florist]', florist], ['phone', florist], ['shop', florist]], matches.match_with_extra({ 'shop' => 'florist', 'phone' => '+2', 'fax' => 'forgot' }))
   end
 
   sig { void }

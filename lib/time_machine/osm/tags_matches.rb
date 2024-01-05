@@ -49,6 +49,19 @@ module Osm
 
       @selectors = selectors
       @selector_extra = selector_extra
+
+      # Ensure key from selectors are in selector_extra
+      selectors_keys = a.collect(&:keys).flatten.uniq.filter{ |key| @selector_extra.nil? || !@selector_extra.key?(key) }
+      if @selector_extra.nil?
+        @selector_extra = selectors_keys.index_with{ |_key| nil }
+      else
+        selectors_keys.each{ |key|
+          if !@selector_extra.key?(key)
+            @selector_extra[key] = nil
+          end
+        }
+      end
+
       @sources = sources
       @user_groups = user_groups
     end
