@@ -13,9 +13,9 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     diff_tags json
 ) AS $$
     SELECT
-        osm_base.objtype,
-        osm_base.id,
-        json_build_object(
+        osm_changes.objtype,
+        osm_changes.id,
+        CASE WHEN osm_base is NOT NULL THEN json_build_object(
             'version', osm_base.version,
             'changeset_id', osm_base.changeset_id,
             'created', osm_base.created,
@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'deleted', false,
             'members', osm_base.members,
             'geom', ST_AsGeoJSON(osm_base.geom)::json
-        ) AS base,
+        ) END AS base,
         json_build_object(
             'version', osm_changes.version,
             'changeset_id', osm_changes.changeset_id,
@@ -56,7 +56,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         validations_log.diff_tags
     FROM
         validations_log
-        JOIN osm_base ON
+        LEFT JOIN osm_base ON
             osm_base.objtype = validations_log.objtype AND
             osm_base.id = validations_log.id
         JOIN osm_changes_geom AS osm_changes ON
