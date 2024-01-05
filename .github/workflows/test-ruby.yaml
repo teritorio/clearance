@@ -42,12 +42,13 @@ jobs:
       - name: Run rubocop
         run: bundle exec rubocop --parallel -c .rubocop.yml
 
-      # - name: Run typecheck
-      #   run: |
-      #     bundle exec tapioca init && \
-      #     bundle exec rake rails_rbi:routes && \
-      #     bundle exec tapioca dsl && \
-      #     bundle exec srb typecheck -q
+      - name: Run typecheck
+        run: |
+          bundle exec tapioca init && \
+          bundle exec rake rails_rbi:routes && \
+          bundle exec srb rbi suggest-typed && \
+          bundle exec srb typecheck -q
+          # bundle exec tapioca dsl && \
 
       # - name: Run security checks
       #   run: |

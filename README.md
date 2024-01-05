@@ -56,18 +56,13 @@ bundle install
 bundle exec tapioca init
 
 bundle exec rake rails_rbi:routes
-bundle exec tapioca dsl
+# bundle exec tapioca dsl
 bundle exec srb rbi suggest-typed
-
-# Remove invalid RBI, and requirer
-rm -fr sorbet/rbi/gems/spoom@*
-rm -fr sorbet/rbi/gems/tapioca@*
-rm -fr sorbet/rbi/gems/rbi*
 ```
 
 Tests and Validation
 ```
-bundle exec srb typecheck --ignore=app/models/user.rb,app/controllers/users_controller.rb,app/controllers/users/omniauth_callbacks_controller.rb
+bundle exec srb typecheck --ignore=app/controllers/users/omniauth_callbacks_controller.rb,sorbet/rbi/annotations/activejob.rbi
 bundle exec rubocop --parallel -c .rubocop.yml --autocorrect
 docker-compose --env-file .tools.env run --rm script bundle exec rake test
 docker-compose --env-file .tools.env run --rm script bundle exec rake test:sql
