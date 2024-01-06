@@ -36,6 +36,11 @@ docker-compose --env-file .tools.env run --rm script ./bin/setup.sh monaco_poi h
 docker-compose run --rm api bundle exec rails db:migrate
 ```
 
+After code update, update the database schema:
+```
+docker-compose --env-file .tools.env run --rm script ./bin/update-schema.sh
+```
+
 ## Update
 
 Get Update, Import and Generate Validation report in database
