@@ -29,6 +29,8 @@ for PROJECT in $PROJECTS; do
         rm -f ${IMPORT}/osm_changes.pgcopy
 
         # Validation report
+        echo "== changes-prune ==" && \
+        ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
         echo "== apply_unclibled_changes ==" && \
         ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
         echo "== fetch_changesets ==" && \
