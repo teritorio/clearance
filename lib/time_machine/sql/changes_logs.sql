@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     SELECT
         osm_changes.objtype,
         osm_changes.id,
-        CASE WHEN osm_base is NOT NULL THEN json_build_object(
+        CASE WHEN osm_base.id is NOT NULL THEN json_build_object(
             'version', osm_base.version,
             'changeset_id', osm_base.changeset_id,
             'created', osm_base.created,
