@@ -30,7 +30,7 @@ module Validators
       ).void
     }
     def apply(before, _after, diff)
-      %w[geom_distance].each{ |attrib|
+      %w[geom_distance members].each{ |attrib|
         assign_action(T.must(diff.attribs[attrib])) if !before && !diff.attribs[attrib].nil?
       }
     end
