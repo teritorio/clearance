@@ -76,6 +76,8 @@ module Configuration
         selector_extra: group0['interest'],
         sources: group.pluck('sources').flatten.uniq,
         user_groups: group.pluck('group_id').flatten,
+        name: group0['name'],
+        icon: group0['icon'],
       )
     })
 

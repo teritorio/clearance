@@ -25,15 +25,23 @@ module Osm
     sig { returns(T::Array[String]) }
     attr_accessor :user_groups
 
+    sig { returns(T.nilable(T::Hash[String, String])) }
+    attr_accessor :name
+
+    sig { returns(T.nilable(String)) }
+    attr_accessor :icon
+
     sig {
       params(
         selectors: T::Array[OsmQuerySelector],
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
         sources: T.nilable(T::Array[String]),
         user_groups: T::Array[String],
+        name: T.nilable(T::Hash[String, String]),
+        icon: T.nilable(String),
       ).void
     }
-    def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [])
+    def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [], name: nil, icon: nil)
       a = selectors.collect{ |selector|
         throw 'Tags selector format' if selector.size <= 2
 

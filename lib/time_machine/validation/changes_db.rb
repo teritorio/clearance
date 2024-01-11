@@ -114,6 +114,8 @@ module Validation
     const :user_groups, T.nilable(T::Array[String])
     const :sources, T.nilable(T::Array[String])
     const :selectors, T::Array[String]
+    const :name, T.nilable(T::Hash[String, String])
+    const :icon, T.nilable(String)
   end
 
   class ValidationLog < Osm::ObjectChangeId

@@ -66,6 +66,8 @@ module Validation
             sources: match.sources&.compact || [],
             selectors: match.selectors,
             user_groups: match.user_groups.intersection(osm_change_object_p.pluck('group_ids').flatten.uniq),
+            name: match.name,
+            icon: match.icon,
           )
         }.flatten(1).uniq
 
