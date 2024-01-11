@@ -18,6 +18,10 @@ if [ ! -e "${PBF}" ]; then
     wget ${EXTRACT} --no-clobber -O ${PBF}
 fi
 
+touch projects/${PROJECT}/lock
+LOCK=${PROJECT}/lock
+exec 8>$LOCK;
+
 rm -fr ${IMPORT}/replication
 mkdir -p ${IMPORT}/replication
 osmosis --read-replication-interval-init workingDirectory=${IMPORT}/replication
@@ -43,5 +47,3 @@ psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/
 # # Export dump
 # mkdir -p projects/${PROJECT}/export
 # ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm
-
-touch projects/${PROJECT}/lock
