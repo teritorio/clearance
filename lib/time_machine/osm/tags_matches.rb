@@ -57,6 +57,8 @@ module Osm
 
       @selectors = selectors
       @selector_extra = selector_extra
+      @name = name
+      @icon = icon
 
       # Ensure key from selectors are in selector_extra
       selectors_keys = a.collect(&:keys).flatten.uniq.filter{ |key| @selector_extra.nil? || !@selector_extra.key?(key) }
