@@ -139,7 +139,7 @@ class TestTagsChanges < Test::Unit::TestCase
         'phone' => '+48',
         'foo' => 'bar',
       },
-      'is_change' => false,
+      'is_change' => true,
       'group_ids' => nil,
     }, Validation::OSMChangeProperties)
 
@@ -207,6 +207,133 @@ class TestGeomNewObject < Test::Unit::TestCase
       Validation::DiffActions.new(
         attribs: { 'geom_distance' => validation_action_accept },
         tags: { 'shop' => [] }
+      ).inspect,
+      diff.inspect
+    )
+  end
+end
+
+class TestGeomChanges < Test::Unit::TestCase
+  extend T::Sig
+
+  sig { void }
+  def test_no_dist
+    id = 'foo'
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(
+        ['[shop=florist]'],
+        selector_extra: { 'phone' => nil, 'fee' => nil },
+      ),
+    ])
+    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: nil, action: 'accept')
+    validation_action_accept = [Validation::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'accept',
+    )]
+
+    before = T.let({
+      'geom' => 'Point(10 10)',
+      'geom_distance' => 0,
+      'deleted' => false,
+      'members' => nil,
+      'version' => 1,
+      'changesets' => nil,
+      'username' => 'bob',
+      'created' => 'today',
+      'tags' => {
+        'shop' => 'florist',
+      },
+      'is_change' => false,
+      'group_ids' => nil,
+    }, Validation::OSMChangeProperties)
+
+    after = T.let({
+      'geom' => 'Point(0 0)',
+      'geom_distance' => 0,
+      'deleted' => false,
+      'members' => nil,
+      'version' => 1,
+      'changesets' => nil,
+      'username' => 'bob',
+      'created' => 'today',
+      'tags' => {
+        'shop' => 'florist',
+      },
+      'is_change' => true,
+      'group_ids' => nil,
+    }, Validation::OSMChangeProperties)
+
+    diff = Validation.diff_osm_object(before, after)
+    diff.attribs['geom_distance'] = []
+    puts diff.inspect
+    validator.apply(before, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'geom_distance' => validation_action_accept },
+        tags: {}
+      ).inspect,
+      diff.inspect
+    )
+  end
+
+  sig { void }
+  def test_dist
+    id = 'foo'
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(
+        ['[shop=florist]'],
+        selector_extra: { 'phone' => nil, 'fee' => nil },
+      ),
+    ])
+    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: 1, action: 'accept')
+    validation_action_accept = [Validation::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'accept',
+      options: { 'dist' => 10 },
+    )]
+
+    before = T.let({
+      'geom' => 'Point(10 10)',
+      'geom_distance' => 0,
+      'deleted' => false,
+      'members' => nil,
+      'version' => 1,
+      'changesets' => nil,
+      'username' => 'bob',
+      'created' => 'today',
+      'tags' => {
+        'shop' => 'florist',
+      },
+      'is_change' => false,
+      'group_ids' => nil,
+    }, Validation::OSMChangeProperties)
+
+    after = T.let({
+      'geom' => 'Point(0 0)',
+      'geom_distance' => 10,
+      'deleted' => false,
+      'members' => nil,
+      'version' => 1,
+      'changesets' => nil,
+      'username' => 'bob',
+      'created' => 'today',
+      'tags' => {
+        'shop' => 'florist',
+      },
+      'is_change' => true,
+      'group_ids' => nil,
+    }, Validation::OSMChangeProperties)
+
+    diff = Validation.diff_osm_object(before, after)
+    diff.attribs['geom_distance'] = []
+    puts diff.inspect
+    validator.apply(before, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'geom_distance' => validation_action_accept },
+        tags: {}
       ).inspect,
       diff.inspect
     )
