@@ -30,11 +30,15 @@ class Project < ActiveFile::Base
     end
 
     def count(project)
-      count = T.let(0, Integer)
+      count = T.let(nil, T.nilable(Integer))
       Db::DbConnRead.conn(project) { |conn|
-        conn.exec('SELECT count(*) AS count FROM validations_log WHERE action IS NULL OR action = \'reject\'') { |result|
-          count = result[0]['count'] || 0
-        }
+        count = begin
+          conn.exec('SELECT count(*) AS count FROM validations_log WHERE action IS NULL OR action = \'reject\'') { |result|
+            result[0]['count'] || 0
+          }
+        rescue PG::UndefinedTable
+          nil
+        end
       }
       count
     end

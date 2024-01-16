@@ -14,15 +14,19 @@ class ChangesLogsController < ApplicationController
 
     sql = 'SELECT * FROM changes_logs()'
     Db::DbConnRead.conn(project) { |conn|
-      json = conn.exec(sql).map{ |row|
-        row['base'] = row['base']
-        row['change'] = row['change']
-        row['matches'] = row['matches']
-        row['diff_tags'] = row['diff_tags']
-        row['diff_attribs'] = row['diff_attribs']
-        row
-      }
-      render json: json
+      begin
+        json = conn.exec(sql).map{ |row|
+          row['base'] = row['base']
+          row['change'] = row['change']
+          row['matches'] = row['matches']
+          row['diff_tags'] = row['diff_tags']
+          row['diff_attribs'] = row['diff_attribs']
+          row
+        }
+        render(json: json)
+      rescue PG::UndefinedFunction
+        render(status: :service_unavailable)
+      end
     }
   end
 
