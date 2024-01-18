@@ -50,7 +50,7 @@ docker-compose --env-file .tools.env run --rm script ./bin/update.sh projects/mo
 
 Run update script from crom:
 ```
-*/2 * * * * cd clearance && bash -c "./bin/update.sh &>> log-`date --iso`"
+*/2 * * * * cd clearance && bash -c "docker-compose --env-file .tools.env run --rm script ./bin/update.sh &>> log-`date --iso`"
 ```
 
 ## Dev
