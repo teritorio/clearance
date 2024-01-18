@@ -56,6 +56,7 @@ module Validation
     ).returns(T::Enumerable[[String, Integer, T::Array[String], ValidationResult]])
   }
   def self.time_machine(conn, config)
+    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
       fetch_changes(conn, config.user_groups) { |osm_change_object|
         osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
@@ -71,7 +72,11 @@ module Validation
           )
         }.flatten(1).uniq
 
-        validation_result = object_validation(config.validators, osm_change_object['p'])
+        matching_group = matches.any?{ |match|
+          !match.user_groups&.empty?
+        }
+        validators = matching_group ? config.validators : accept_all_validators
+        validation_result = object_validation(validators, osm_change_object['p'])
         yielder << [osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
       }
     }
