@@ -18,8 +18,8 @@ if [ ! -e "${PBF}" ]; then
     wget ${EXTRACT} --no-clobber -O ${PBF}
 fi
 
-touch projects/${PROJECT}/lock
-LOCK=${PROJECT}/lock
+LOCK=projects/${PROJECT}/lock
+touch $LOCK
 exec 8>$LOCK;
 
 rm -fr ${IMPORT}/replication
