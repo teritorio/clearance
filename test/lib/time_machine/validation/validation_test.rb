@@ -61,7 +61,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation1
-    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_b])
+    validation = Validation.object_validation([], [@@fixture_node_b])
     validation_result = Validation::ValidationResult.new(
       action: nil,
       version: @@fixture_node_b['version'],
@@ -78,7 +78,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation_same
-    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_a.merge({ 'is_change' => true })])
+    validation = Validation.object_validation([], [@@fixture_node_a, @@fixture_node_a.merge({ 'is_change' => true })])
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
       version: @@fixture_node_a['version'],
@@ -95,7 +95,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation2
-    validation = Validation.object_validation(Configuration::Config.new, [@@fixture_node_a, @@fixture_node_b])
+    validation = Validation.object_validation([], [@@fixture_node_a, @@fixture_node_b])
     validation_result = Validation::ValidationResult.new(
       action: nil,
       version: @@fixture_node_b['version'],
@@ -115,7 +115,7 @@ class TestValidation < Test::Unit::TestCase
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
       validation = Validation.object_validation(
-        Configuration::Config.new(validators: [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)]),
+        [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)],
         [@@fixture_node_a, @@fixture_node_b],
       )
 

@@ -22,16 +22,16 @@ module Validation
 
   sig {
     params(
-      config: Configuration::Config,
+      validators: T::Array[Validators::ValidatorBase],
       changes: T::Array[OSMChangeProperties]
     ).returns(ValidationResult)
   }
-  def self.object_validation(config, changes)
+  def self.object_validation(validators, changes)
     before = T.must(changes[0])['is_change'] ? nil : T.let(T.must(changes[0]), OSMChangeProperties)
     after = T.let(T.must(changes[-1]), OSMChangeProperties)
 
     diff = diff_osm_object(before, after)
-    config.validators.each{ |validator|
+    validators.each{ |validator|
       validator.apply(before, after, diff)
     }
     if !diff.attribs['geom_distance'].nil?
@@ -71,7 +71,7 @@ module Validation
           )
         }.flatten(1).uniq
 
-        validation_result = object_validation(config, osm_change_object['p'])
+        validation_result = object_validation(config.validators, osm_change_object['p'])
         yielder << [osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
       }
     }
