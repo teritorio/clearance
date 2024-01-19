@@ -182,15 +182,19 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Osm::ObjectChangeId]
+      changes: T::Enumerable[Osm::ObjectChangeId],
+      validator_uid: T.nilable(Integer),
     ).void
   }
-  def self.accept_changes(conn, changes)
+  def self.accept_changes(conn, changes, validator_uid = nil)
     apply_changes(conn, changes)
 
     conn.prepare('validations_log_delete', "
-      DELETE FROM
+      UPDATE
         validations_log
+      SET
+        action = 'accept',
+        validator_uid = $4
       WHERE
         objtype = $1 AND
         id = $2 AND
@@ -201,6 +205,7 @@ module Validation
         change.objtype,
         change.id,
         change.version,
+        validator_uid,
       ])
     }
   end
