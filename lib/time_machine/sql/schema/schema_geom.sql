@@ -171,16 +171,31 @@ CREATE CONSTRAINT TRIGGER osm_base_changes_ids_trigger
 EXECUTE PROCEDURE osm_base_update_geom();
 
 CREATE OR REPLACE VIEW osm_base_areas AS
+WITH parts AS (
+  SELECT
+    id,
+    version,
+    created,
+    tags,
+    ST_MakePolygon(ST_LineMerge((ST_Dump(geom)).geom)) AS geom
+  FROM
+    osm_base
+  WHERE
+    objtype = 'r'
+)
 SELECT
   id,
   version,
   created,
   tags,
-  ST_MakePolygon(geom) AS geom
+  ST_Union(geom) AS geom
 FROM
-  osm_base
-WHERE
-  objtype = 'r'
+  parts
+GROUP BY
+  id,
+  version,
+  created,
+  tags
 ;
 
 
