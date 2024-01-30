@@ -21,11 +21,11 @@ FROM
 WHERE
   (:osm_filter_tags) AND
   (
-    :area_id IS NULL
+    :area_ids IS NULL
     OR
     ST_Intersects(
       geom,
-      (SELECT geom AS polygon FROM osm_base_areas WHERE id = :area_id)
+      (SELECT ST_Union(geom) AS polygon FROM osm_base_areas WHERE id = ANY(replace(replace(:area_ids, '[', '{'), ']', '}')::int[]))
     )
   )
 ;
