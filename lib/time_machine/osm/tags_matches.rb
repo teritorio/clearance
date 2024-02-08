@@ -50,6 +50,11 @@ module Osm
           if o&.include?('~') && !v.nil?
             v = Regexp.new(v)
           end
+          if k && k[0] == '!'
+            k = k[1..]
+            o = '='
+            v = nil
+          end
           [T.must(k), [o, v]]
         }.group_by(&:first).transform_values{ |v| v.collect(&:last) }
       }
@@ -86,16 +91,26 @@ module Osm
         selector_match = T.must(selector_match_)
         ret = selector_match.all?{ |key, op_values|
           value = tags[key]
-          !value.nil? && op_values.all?{ |op, values|
-            case op
-            when nil then true
-            when '=' then values == value
-            when '!=' then values != value
-            when '~' then T.cast(values, Regexp).match(value)
-            when '!~' then !T.cast(values, Regexp).match(value)
-            else throw "Not implemented operator #{op}"
-            end
-          }
+          if value.nil?
+            op_values.all?{ |op, values|
+              case op
+              when '=' then values.nil?
+              when nil, '!=', '~', '!~' then false
+              else throw "Not implemented operator #{op}"
+              end
+            }
+          else
+            op_values.all?{ |op, values|
+              case op
+              when nil then true
+              when '=' then values == value
+              when '!=' then values != value
+              when '~' then T.cast(values, Regexp).match(value)
+              when '!~' then !T.cast(values, Regexp).match(value)
+              else throw "Not implemented operator #{op}"
+              end
+            }
+          end
         }
         ret ? [[selector, self]] : nil
       }.compact.first || []
@@ -128,7 +143,7 @@ module Osm
             end
             case op
             when nil then "tags?#{key}"
-            when '=' then "(tags?#{key} AND tags->>#{key} = #{value})"
+            when '=' then value.nil? ? "(NOT tags?#{key})" : "(tags?#{key} AND tags->>#{key} = #{value})"
             when '!=' then "(NOT tags?#{key} OR tags->>#{key} != #{value})"
             when '~' then "(tags?#{key} AND tags->>#{key} ~ #{value})"
             when '!~' then "(NOT tags?#{key} OR tags->>#{key} !~ #{value})"

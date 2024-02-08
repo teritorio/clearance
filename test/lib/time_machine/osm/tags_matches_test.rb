@@ -21,6 +21,9 @@ class TestTagsMatchs < Test::Unit::TestCase
 
     assert_equal([], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway' }).collect(&:first))
     assert_equal(['[highway=footway][footway=traffic_island]'], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
+
+    assert_equal(['[highway=footway][!footway]'], Osm::TagsMatch.new(['[highway=footway][!footway]']).match({ 'highway' => 'footway' }).collect(&:first))
+    assert_equal([], Osm::TagsMatch.new(['[highway=footway][!footway]']).match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
   end
 
   sig { void }
@@ -61,5 +64,11 @@ class TestTagsMatchs < Test::Unit::TestCase
     ])
     sql = matches.to_sql(->(s) { "'#{s}'" })
     assert_equal("((tags?'amenity') OR (tags?'shop'))", sql)
+
+    matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(['[!amenity]']),
+    ])
+    sql = matches.to_sql(->(s) { "'#{s}'" })
+    assert_equal("((NOT tags?'amenity'))", sql)
   end
 end
