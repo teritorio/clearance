@@ -19,4 +19,6 @@ Rails.application.routes.draw do
   # Overpass like API
 
   get '/api/0.1/projects/:project/overpasslike', to: 'overpasslike#interpreter'
+  get '/api/0.1/projects/:project/overpasslike/interpreter', to: 'overpasslike#interpreter'
+  post '/api/0.1/projects/:project/overpasslike/interpreter', to: 'overpasslike#interpreter'
 end
