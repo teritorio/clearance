@@ -10,7 +10,7 @@ services:
       - ./lib/time_machine/sql/:/scripts
       - ./projects:/projects
       - pgdata:/var/lib/postgresql/data
-#    restart: unless-stopped
+    restart: unless-stopped
 
   api:
     build:
@@ -32,7 +32,7 @@ services:
     depends_on:
       - postgres
     command: bundle exec rails server --binding=0.0.0.0 --port 9000
-#    restart: unless-stopped
+    restart: unless-stopped
 
   download:
     image: nginx
@@ -41,7 +41,7 @@ services:
     volumes:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./projects:/projects
-#    restart: unless-stopped
+    restart: unless-stopped
 
 volumes:
   pgdata:
