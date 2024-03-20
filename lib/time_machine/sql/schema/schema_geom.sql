@@ -216,31 +216,32 @@ GROUP BY
 
 UPDATE osm_base SET geom=ST_MakePoint(lon, lat) WHERE objtype='n';
 
-WITH a AS (
-  SELECT
-    ways.id,
-    ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
-  FROM
-    osm_base AS ways
-    JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-    JOIN osm_base AS nodes ON
-      nodes.objtype = 'n' AND
-      nodes.id = way_nodes.node_id
-  WHERE
-    ways.objtype = 'w'
-  GROUP BY
-    ways.id
-)
+CREATE TEMP TABLE osm_base_geom_way AS
+SELECT
+  ways.id,
+  ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
+FROM
+  osm_base AS ways
+  JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
+  JOIN osm_base AS nodes ON
+    nodes.objtype = 'n' AND
+    nodes.id = way_nodes.node_id
+WHERE
+  ways.objtype = 'w'
+GROUP BY
+  ways.id
+;
 UPDATE
   osm_base
 SET
-  geom = a.geom
+  geom = osm_base_geom_way.geom
 FROM
-  a
+  osm_base_geom_way
 WHERE
   osm_base.objtype = 'w' AND
-  osm_base.id = a.id
+  osm_base.id = osm_base_geom_way.id
 ;
+DROP TABLE osm_base_geom_way;
 
 WITH a AS (
   SELECT

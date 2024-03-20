@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_03_081610) do
+ActiveRecord::Schema[7.0].define(version: 2024_03_201_10541) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "postgis"
@@ -28,7 +28,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_03_081610) do
     t.string "uid"
     t.string "osm_id", null: false
     t.string "osm_name", null: false
-    t.string "osm_image_url", null: false
+    t.string "osm_image_url"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["uid"], name: "index_users_on_uid", unique: true
   end
