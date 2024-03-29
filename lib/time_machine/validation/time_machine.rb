@@ -62,10 +62,10 @@ module Validation
         osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
         matches = osm_change_object_p.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
-        }.flatten(1).uniq.collect{ |_tag, match|
+        }.flatten(1).uniq.collect{ |overpass, match|
           ValidationLogMatch.new(
             sources: match.sources&.compact || [],
-            selectors: match.selectors,
+            selectors: [overpass],
             user_groups: match.user_groups.intersection(osm_change_object_p.pluck('group_ids').flatten.uniq),
             name: match.name,
             icon: match.icon,

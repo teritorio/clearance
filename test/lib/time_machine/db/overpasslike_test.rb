@@ -15,14 +15,14 @@ class TestOverpass < Test::Unit::TestCase
       [out:json][timeout:25];
       area(id:3600000001)->.a;
       (
-        nwr[a=e]["i"~.*](area.a);
+        nwr[a=e]["i"~'.*'](area.a);
         nwr[foo=bar](area.a);
       );
       out center meta;
     OVERPASS
     assert_equal([
-      ['[a=e]["i"~.*]', [1]],
-      ['[foo=bar]', [1]],
-    ], Db::Overpass.parse(query))
+      '[a=e][i~".*"]',
+      '[foo=bar]',
+    ], Db::Overpass.parse(query).collect{ |selectors, _ids| selectors.to_overpass })
   end
 end

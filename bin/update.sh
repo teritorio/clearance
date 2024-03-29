@@ -30,15 +30,15 @@ for PROJECT in $PROJECTS; do
 
         # Validation report
         echo "== changes-prune ==" && \
-        ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
         echo "== apply_unclibled_changes ==" && \
-        ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
         echo "== fetch_changesets ==" && \
-        ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
         echo "== validate ==" && \
-        ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
         echo "== export-osm-update ==" && \
-        ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update
     else
         echo "${PROJECT} Update already locked"
     fi

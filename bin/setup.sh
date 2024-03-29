@@ -46,4 +46,4 @@ psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/
 
 # # Export dump
 # mkdir -p projects/${PROJECT}/export
-# ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm
+# bundle exec ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm

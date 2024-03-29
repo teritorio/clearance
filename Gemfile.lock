@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/teritorio/overpass_parser-rb.git
+  revision: 4d86dbfff0bd89d6506e37babe19448d21078a02
+  specs:
+    overpass_parser (1.0.0)
+      rice (~> 4.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -245,6 +252,7 @@ GEM
       actionpack (>= 5.2)
       railties (>= 5.2)
     rexml (3.2.6)
+    rice (4.3.1)
     rubocop (1.56.0)
       base64 (~> 0.1.1)
       json (~> 2.3)
@@ -358,6 +366,7 @@ DEPENDENCIES
   omniauth-osm-oauth2
   omniauth-rails_csrf_protection
   optparse
+  overpass_parser!
   pg (~> 1.1)
   psych
   puma (~> 6.0)
