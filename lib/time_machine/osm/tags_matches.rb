@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require_relative 'types'
 require 'overpass_parser/visitor'
+require 'overpass_parser/nodes/selectors'
 
 
 module Osm
@@ -32,7 +33,7 @@ module Osm
 
     sig {
       params(
-        selectors: T::Array[T.any(String, OverpassParser::Selectors)],
+        selectors: T::Array[T.any(String, OverpassParser::Nodes::Selectors)],
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
         sources: T.nilable(T::Array[String]),
         user_groups: T::Array[String],
@@ -46,11 +47,11 @@ module Osm
           throw 'Tags selector format' if selector.size <= 2
 
           tree = OverpassParser.tree("node#{selector};")
-          tree[0][:queries][0][:selectors]
+          tree[0].queries[0].selectors
         else
           selector
         end
-      }, T::Array[OverpassParser::Selectors])
+      }, T::Array[OverpassParser::Nodes::Selectors])
 
       @selector_extra = selector_extra
       @name = name

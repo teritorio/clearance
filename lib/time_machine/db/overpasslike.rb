@@ -9,19 +9,6 @@ require 'overpass_parser/visitor'
 module Db
   extend T::Sig
 
-  class OverpassCenterResult < T::InexactStruct
-    const :lon, Float
-    const :lat, Float
-  end
-
-  class OverpassResult < Osm::ObjectId
-    const :timestamp, String
-    const :tags, Osm::OsmTags
-    const :lon, T.nilable(Float)
-    const :lat, T.nilable(Float)
-    const :center, T.nilable(OverpassCenterResult)
-  end
-
   class Overpass
     extend T::Sig
 
@@ -29,37 +16,15 @@ module Db
       params(
         conn: PG::Connection,
         query: String,
-      ).returns(T::Array[T::Hash[Symbol, OverpassResult]])
+      ).returns(T::Array[T::Hash[String, T.untyped]])
     }
     def self.query(conn, query)
       request = OverpassParser.tree(query)[0]
       sql = File.new('/sql/overpasslike.sql').read
-      sql += request.to_sql(->(s) { conn.escape_literal(s) }).gsub('ST_PointOnSurface(geom) AS geom', 'ST_X(ST_PointOnSurface(geom)) AS lon, ST_Y(ST_PointOnSurface(geom)) AS lat')
+      sql += request.to_sql(->(s) { conn.escape_literal(s) })
 
       conn.exec(sql) { |result|
-        result.collect{ |row|
-          ret = {
-            id: row['id'],
-            version: row['version'],
-            timestamp: row['created'],
-            tags: row['tags'],
-          }
-          if row['osm_type'] == 'n'
-            ret.update({
-              type: 'node',
-              lat: T.must(row['lat']),
-              lon: T.must(row['lon']),
-            })
-          else
-            ret.update({
-              type: row['osm_type'] == 'w' ? 'way' : 'relation',
-              center: {
-                lat: T.must(row['lat']),
-                lon: T.must(row['lon']),
-              },
-            })
-          end
-        }
+        result.pluck('jsonb_strip_nulls')
       }
     end
   end
