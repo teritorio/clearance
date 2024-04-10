@@ -10,8 +10,6 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins(/.*/) # Hack to auto adapt Access-Control-Allow-Origin to request
-
     resource(
         '*',
         headers: :any,
