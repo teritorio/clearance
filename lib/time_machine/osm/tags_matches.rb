@@ -98,12 +98,12 @@ module Osm
 
     sig {
       params(
-        escape_literal: T.proc.params(s: String).returns(String),
+        sql_dialect: OverpassParser::SqlDialect::SqlDialect
       ).returns(String)
     }
-    def to_sql(escape_literal)
+    def to_sql(sql_dialect)
       pp = @selector_matches.collect{ |selectors|
-        p = selectors.to_sql(escape_literal)
+        p = selectors.to_sql(sql_dialect)
         "(#{p})"
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
@@ -146,14 +146,14 @@ module Osm
 
     sig {
       params(
-        escape_literal: T.proc.params(s: String).returns(String),
+        sql_dialect: OverpassParser::SqlDialect::SqlDialect,
       ).returns(String)
     }
-    def to_sql(escape_literal)
+    def to_sql(sql_dialect)
       if @matches.blank?
         'true'
       else
-        @matches.collect{ |match| match.to_sql(escape_literal) }.join(' OR ')
+        @matches.collect{ |match| match.to_sql(sql_dialect) }.join(' OR ')
       end
     end
   end

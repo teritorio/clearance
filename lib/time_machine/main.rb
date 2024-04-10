@@ -2,6 +2,7 @@
 # typed: strict
 
 require 'optparse'
+require 'overpass_parser/sql_dialect/postgres'
 require './lib/time_machine/validation/time_machine'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/configuration'
@@ -53,7 +54,8 @@ else
     osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
     polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
     Db::DbConnWrite.conn(project){ |conn|
-      Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql(->(s) { conn.escape_literal(s) }), polygons)
+      dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
+      Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql(dialect), polygons)
     }
   end
 
