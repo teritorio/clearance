@@ -61,7 +61,7 @@ CREATE TABLE validations_log (
     id BIGINT NOT NULL,
     version INTEGER NOT NULL,
     deleted BOOLEAN NOT NULL,
-    changeset_ids INTEGER[] NOT NULL,
+    changeset_ids INTEGER[],
     created TIMESTAMP (0) WITHOUT TIME ZONE,
     matches JSONB NOT NULL,
     action TEXT,

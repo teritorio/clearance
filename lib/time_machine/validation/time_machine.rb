@@ -15,7 +15,7 @@ module Validation
     const :action, T.nilable(ActionType)
     const :version, Integer
     const :deleted, T::Boolean
-    prop :changeset_ids, T::Array[Integer]
+    prop :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :diff, DiffActions
   end
@@ -43,7 +43,7 @@ module Validation
       action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
       version: after['version'],
       deleted: after['deleted'],
-      changeset_ids: after['changesets'].pluck('id'),
+      changeset_ids: after['changesets']&.pluck('id'),
       created: after['created'],
       diff: diff,
     )

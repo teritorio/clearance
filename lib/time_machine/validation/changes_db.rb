@@ -119,7 +119,7 @@ module Validation
   end
 
   class ValidationLog < Osm::ObjectChangeId
-    const :changeset_ids, T::Array[Integer]
+    const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :matches, T::Array[ValidationLogMatch]
     const :action, T.nilable(ActionType)
@@ -167,7 +167,7 @@ module Validation
         change.id,
         change.version,
         change.deleted,
-        change.changeset_ids.to_json,
+        change.changeset_ids&.to_json,
         change.created,
         change.matches.to_json,
         change.action,
