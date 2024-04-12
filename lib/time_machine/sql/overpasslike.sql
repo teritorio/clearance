@@ -10,6 +10,7 @@ SELECT id, version, created, tags, NULL::bigint[] AS nodes, members, geom, objty
 CREATE OR REPLACE TEMP VIEW nwr AS
 SELECT id, version, created, tags, nodes, members, geom, objtype AS osm_type FROM osm_base;
 
+CREATE INDEX IF NOT EXISTS osm_base_idx_id_36 ON osm_base((id+3600000000)) WHERE objtype = 'r';
 CREATE OR REPLACE TEMP VIEW area AS
 SELECT id + 3600000000 AS id, version, created, tags, NULL::bigint[] AS nodes, NULL::jsonb AS members, geom, 'a' AS osm_type FROM osm_base_areas
 UNION ALL
