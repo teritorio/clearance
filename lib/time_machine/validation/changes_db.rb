@@ -46,7 +46,7 @@ module Validation
   def self.fetch_changes(conn, user_groups, &block)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
     conn.exec(File.new('/sql/30_fetch_changes.sql').read)
-    conn.exec('SELECT * FROM fetch_changes(:group_id_polys::json)'.gsub(':group_id_polys', conn.sql_dialect(user_groups_json))) { |result|
+    conn.exec('SELECT * FROM fetch_changes(:group_id_polys::json)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json))) { |result|
       result.each(&block)
     }
   end
@@ -71,7 +71,7 @@ module Validation
   def self.apply_unclibled_changes(conn, sql_osm_filter_tags, geojson_polygons = nil)
     r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
-      .gsub(':polygon', conn.sql_dialect(geojson_polygons.to_json)))
+      .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json)))
     puts r.inspect
     r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
     puts r.inspect
