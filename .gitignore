@@ -2,3 +2,4 @@ projects/*
 cache/*
 log*
 tmp/
+.env

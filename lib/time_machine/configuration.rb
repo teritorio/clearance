@@ -59,7 +59,7 @@ module Configuration
   }
   def self.load_user_groups(config)
     osm_tags = T.let([], T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
-    user_groups = config.user_groups&.to_h{ |group_id, v|
+    user_groups = config.user_groups.nil? ? {} : config.user_groups&.to_h{ |group_id, v|
       j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
       osm_tags += j.collect{ |rule|
         rule['group_id'] = group_id
@@ -67,7 +67,7 @@ module Configuration
       }
 
       [group_id, UserGroupConfig.from_hash(v)]
-    } || {}
+    }
 
     osm_tags_matches = Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
       group0 = T.must(group[0]) # Just to keep sorbet happy

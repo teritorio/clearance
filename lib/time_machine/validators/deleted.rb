@@ -21,10 +21,10 @@ module Validators
     def apply(_before, after, diff)
       return if !after['deleted']
 
-      diff.attribs.each { |_key, action|
+      diff.attribs.each_value { |action|
         assign_action(action)
       }
-      diff.tags.each { |_key, action|
+      diff.tags.each_value { |action|
         assign_action(action)
       }
     end
