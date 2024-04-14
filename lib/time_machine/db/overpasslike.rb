@@ -20,7 +20,7 @@ module Db
       ).returns(T::Array[T::Hash[String, T.untyped]])
     }
     def self.query(conn, query)
-      request = OverpassParser.tree(query)[0]
+      request = OverpassParser.parse(query)
       sql = File.new('/sql/overpasslike.sql').read
       dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
       sql += request.to_sql(dialect)

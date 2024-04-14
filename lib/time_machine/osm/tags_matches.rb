@@ -44,10 +44,12 @@ module Osm
     def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [], name: nil, icon: nil)
       @selector_matches = T.let(selectors.collect{ |selector|
         if selector.is_a?(String)
-          throw 'Tags selector format' if selector.size <= 2
+          raise 'Tags selector format' if selector.size <= 2
 
-          tree = OverpassParser.tree("node#{selector};")
-          tree[0].queries[0].selectors
+          tree = OverpassParser.parse("node#{selector};")
+          raise "Invalid selector: #{selector}" if tree.queries.empty? || !tree.queries[0].is_a?(OverpassParser::Nodes::QueryObjects)
+
+          T.must(T.cast(tree.queries[0], OverpassParser::Nodes::QueryObjects).selectors)
         else
           selector
         end
