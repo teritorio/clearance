@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require_relative 'types'
-require 'overpass_parser/visitor'
+require 'overpass_parser'
 require 'overpass_parser/nodes/selectors'
 
 
