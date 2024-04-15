@@ -2,7 +2,7 @@
 
 set -e
 
-PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects)}
+PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects -not -name '.*')}
 
 for PROJECT in $PROJECTS; do
     echo
