@@ -58,9 +58,13 @@ module Configuration
     ])
   }
   def self.load_user_groups(config)
+    cache = WebCache.new(dir: '/cache/osm_tags/', life: '1h')
     osm_tags = T.let([], T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
     user_groups = config.user_groups.nil? ? {} : config.user_groups&.to_h{ |group_id, v|
-      j = JSON.parse(T.cast(URI.parse(v['osm_tags']), URI::HTTP).read)
+      response = cache.get(T.cast(URI.parse(v['osm_tags']), URI::HTTP))
+      raise [v['osm_tags'], response].inspect if !response.success?
+
+      j = JSON.parse(response.content)
       osm_tags += j.collect{ |rule|
         rule['group_id'] = group_id
         rule
