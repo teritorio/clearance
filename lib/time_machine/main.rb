@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 # typed: strict
 
+require 'sentry'
 require 'optparse'
 require 'overpass_parser/sql_dialect/postgres'
 require './lib/time_machine/validation/time_machine'
@@ -9,6 +10,16 @@ require './lib/time_machine/configuration'
 require './lib/time_machine/db/changeset'
 require './lib/time_machine/db/db_conn'
 require './lib/time_machine/db/export'
+
+if ENV['SENTRY_DSN_TOOLS']
+  Sentry.init do |config|
+    config.dsn = ENV['SENTRY_DSN_TOOLS']
+    # enable performance monitoring
+    config.enable_tracing = true
+    # get breadcrumbs from logs
+    config.breadcrumbs_logger = [:http_logger]
+  end
+end
 
 @options = T.let({}, T::Hash[Symbol, T.untyped])
 OptionParser.new { |opts|

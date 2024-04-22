@@ -7,6 +7,7 @@ services:
       dockerfile: script.Dockerfile
     environment:
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
+      - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS}
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./:/srv/app/

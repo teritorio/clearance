@@ -38,6 +38,8 @@ gem 'omniauth-rails_csrf_protection'
 gem 'optparse'
 gem 'overpass_parser', git: 'https://github.com/teritorio/overpass_parser-rb.git'
 gem 'pg', '~> 1.1'
+gem 'sentry-rails'
+gem 'sentry-ruby'
 gem 'sorbet-runtime'
 gem 'webcache'
 
