@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # typed: strict
 
-require 'sentry'
+require 'sentry-ruby'
 require 'optparse'
 require 'overpass_parser/sql_dialect/postgres'
 require './lib/time_machine/validation/time_machine'
