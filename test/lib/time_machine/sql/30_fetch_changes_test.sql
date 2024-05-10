@@ -9,7 +9,7 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/30_fetch_changes.sql
 
 CREATE TEMP VIEW a AS
-SELECT * FROM fetch_changes(:group_id_polys::json);
+SELECT * FROM fetch_changes(:group_id_polys::jsonb);
 
 -- No changes
 BEGIN;
@@ -36,8 +36,8 @@ COMMIT;
 do $$ BEGIN
   ASSERT 1 = (SELECT count(*) FROM a),
     (SELECT * FROM a);
-  ASSERT 2 = (SELECT json_array_length(p) FROM a),
-    (SELECT json_array_length(p) FROM a);
+  ASSERT 2 = (SELECT jsonb_array_length(p) FROM a),
+    (SELECT jsonb_array_length(p) FROM a);
 
   -- base
   ASSERT '1' = (SELECT p->0->>'version' FROM a),
@@ -65,6 +65,6 @@ INSERT INTO osm_changesets VALUES
 COMMIT;
 
 do $$ BEGIN
-  ASSERT 3 = (SELECT json_array_length(p->1->'changesets') FROM a),
-    (SELECT json_array_length(p->1->'changesets') FROM a);
+  ASSERT 3 = (SELECT jsonb_array_length(p->1->'changesets') FROM a),
+    (SELECT jsonb_array_length(p->1->'changesets') FROM a);
 END; $$ LANGUAGE plpgsql;

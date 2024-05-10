@@ -1,10 +1,10 @@
 DROP FUNCTION IF EXISTS fetch_changes();
 CREATE OR REPLACE FUNCTION fetch_changes(
-    group_id_polys JSON
+    group_id_polys jsonb
 ) RETURNS TABLE(
-    objtype CHAR(1),
-    id BIGINT,
-    p JSON
+    objtype char(1),
+    id bigint,
+    p jsonb
 ) AS $$
 WITH
     polygons AS (
@@ -12,7 +12,7 @@ WITH
             row_json->>0 AS group_id,
             ST_GeomFromGeoJSON(row_json->>1) AS geom
         FROM
-            json_array_elements(group_id_polys) AS t(row_json)
+            jsonb_array_elements(group_id_polys) AS t(row_json)
     ),
     change_uniq AS (
         SELECT

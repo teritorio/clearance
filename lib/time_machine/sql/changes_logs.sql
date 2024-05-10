@@ -4,18 +4,18 @@ DROP FUNCTION IF EXISTS changes_logs();
 CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     objtype character(1),
     id bigint,
-    base json,
-    change json,
-    changesets json,
-    matches json,
+    base jsonb,
+    change jsonb,
+    changesets jsonb,
+    matches jsonb,
     action text,
-    diff_attribs json,
-    diff_tags json
+    diff_attribs jsonb,
+    diff_tags jsonb
 ) AS $$
     SELECT
         osm_changes.objtype,
         osm_changes.id,
-        CASE WHEN osm_base.id is NOT NULL THEN json_build_object(
+        CASE WHEN osm_base.id is NOT NULL THEN jsonb_build_object(
             'version', osm_base.version,
             'changeset_id', osm_base.changeset_id,
             'created', osm_base.created,
@@ -24,9 +24,9 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'tags', osm_base.tags,
             'deleted', false,
             'members', osm_base.members,
-            'geom', ST_AsGeoJSON(osm_base.geom)::json
+            'geom', ST_AsGeoJSON(osm_base.geom)::jsonb
         ) END AS base,
-        json_build_object(
+        jsonb_build_object(
             'version', osm_changes.version,
             'changeset_id', osm_changes.changeset_id,
             'created', osm_changes.created,
@@ -35,12 +35,12 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'tags', osm_changes.tags,
             'deleted', osm_changes.deleted,
             'members', osm_changes.members,
-            'geom', ST_AsGeoJSON(osm_changes.geom)::json
+            'geom', ST_AsGeoJSON(osm_changes.geom)::jsonb
         ) AS change,
         (
-            SELECT json_agg(j) FROM (
+            SELECT jsonb_agg(j) FROM (
                 SELECT
-                    row_to_json(osm_changesets) AS j
+                    row_to_json(osm_changesets)::jsonb AS j
                 FROM
                     osm_changesets
                 WHERE
