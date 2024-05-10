@@ -8,7 +8,7 @@ Online demo : https://clearance-dev.teritorio.xyz
 
 ## Build
 ```
-docker-compose --env-file .tools.env build
+docker compose --profile "*" build
 ```
 
 ## Configure
@@ -18,39 +18,39 @@ Adjust `config.yaml`
 
 ## Start
 ```
-docker-compose up -d postgres
+docker compose up -d postgres
 ```
 
 Enter postgres with
 ```
-docker-compose exec -u postgres postgres psql
+docker compose exec -u postgres postgres psql
 ```
 
 ## Init
 
 ```
-docker-compose --env-file .tools.env run --rm script ./bin/setup.sh monaco_poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
+docker compose run --rm script ./bin/setup.sh monaco_poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
 ```
 
 ```
-docker-compose run --rm api bundle exec rails db:migrate
+docker compose run --rm api bundle exec rails db:migrate
 ```
 
 After code update, update the database schema:
 ```
-docker-compose --env-file .tools.env run --rm script ./bin/update-schema.sh
+docker compose run --rm script ./bin/update-schema.sh
 ```
 
 ## Update
 
 Get Update, Import and Generate Validation report in database
 ```
-docker-compose --env-file .tools.env run --rm script ./bin/update.sh projects/monaco_poi
+docker compose run --rm script ./bin/update.sh projects/monaco_poi
 ```
 
 Run update script from crom:
 ```
-*/2 * * * * cd clearance && bash -c "docker-compose --env-file .tools.env run --rm script ./bin/update.sh &>> log-`date --iso`"
+*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
 ```
 
 ## Dev
@@ -69,8 +69,8 @@ Tests and Validation
 ```
 bundle exec srb typecheck --ignore=app/controllers/users/omniauth_callbacks_controller.rb,sorbet/rbi/annotations/activejob.rbi
 bundle exec rubocop --parallel -c .rubocop.yml --autocorrect
-docker-compose --env-file .tools.env run --rm script bundle exec rake test
-docker-compose --env-file .tools.env run --rm script bundle exec rake test:sql
+docker compose run --rm script bundle exec rake test
+docker compose run --rm script bundle exec rake test:sql
 ```
 
 ## What Clearance do and how it works

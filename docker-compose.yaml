@@ -12,6 +12,22 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
+  script:
+    profiles:
+      - tools
+    build:
+      context: .
+      dockerfile: script.Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
+      - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS}
+    volumes:
+      - ./lib/time_machine/sql:/sql
+      - ./:/srv/app/
+      - ./projects:/projects
+    depends_on:
+      - postgres
+
   api:
     build:
       context: .
