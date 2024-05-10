@@ -78,6 +78,9 @@ Metrics/ClassLength:
 Metrics/ParameterLists:
   Max: 10
 
+Metrics/BlockNesting:
+  Max: 5
+
 Style/Next:
   Enabled: false
 
