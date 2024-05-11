@@ -28,8 +28,9 @@ module Validation
     }
   }
 
-  OSMChangeObject = T.type_alias {
+  OSMLochaObject = T.type_alias {
     {
+      'locha_id' => Integer,
       'objtype' => String,
       'id' => Integer,
       'p' => T::Array[OSMChangeProperties]
@@ -39,14 +40,19 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
+      local_srid: Integer,
+      locha_cluster_distance: Integer,
       user_groups: T::Hash[String, Configuration::UserGroupConfig],
-      block: T.proc.params(arg0: OSMChangeObject).void
+      block: T.proc.params(arg0: OSMLochaObject).void
     ).void
   }
-  def self.fetch_changes(conn, user_groups, &block)
+  def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
     conn.exec(File.new('/sql/30_fetch_changes.sql').read)
-    conn.exec('SELECT * FROM fetch_changes(:group_id_polys::jsonb)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json))) { |result|
+    conn.exec_params(
+      'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb, $1, $2)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
+      [local_srid, locha_cluster_distance],
+    ) { |result|
       result.each(&block)
     }
   end
@@ -119,6 +125,7 @@ module Validation
   end
 
   class ValidationLog < Osm::ObjectChangeId
+    const :locha_id, Integer
     const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :matches, T::Array[ValidationLogMatch]
@@ -156,7 +163,7 @@ module Validation
         (
           $1, $2, $3, $4,
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($5::json) AS t(i)),
-          $6, $7::json, $8, $9, $10, $11
+          $6, $7::json, $8, $9, $10, $11, $12
         )
     ")
     i = 0
@@ -174,6 +181,7 @@ module Validation
         change.validator_uid,
         change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,
         change.diff_tags.empty? ? nil : change.diff_tags.as_json.to_json,
+        change.locha_id,
       ])
     }
     puts "Logs #{i} changes"

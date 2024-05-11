@@ -57,6 +57,7 @@ ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype, version, deleted); -- %PK:o
 
 DROP TABLE IF EXISTS validations_log CASCADE;
 CREATE TABLE validations_log (
+    locha_id INTEGER,
     objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
     id BIGINT NOT NULL,
     version INTEGER NOT NULL,

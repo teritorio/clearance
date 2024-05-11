@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION fetch_changes(
 ) RETURNS TABLE(
     objtype char(1),
     id bigint,
+    geom geometry(Geometry, 4326),
     p jsonb
 ) AS $$
 WITH
@@ -110,6 +111,7 @@ WITH
 SELECT
     objtype,
     id,
+    ST_Union(geom) AS geom,
     json_agg(row_to_json(state)::jsonb - 'objtype' - 'id')::jsonb AS p
 FROM
     state
@@ -119,5 +121,34 @@ GROUP BY
 ORDER BY
     objtype,
     id
+;
+$$ LANGUAGE SQL PARALLEL SAFE;
+
+
+DROP FUNCTION IF EXISTS fetch_locha_changes();
+CREATE OR REPLACE FUNCTION fetch_locha_changes(
+    group_id_polys jsonb,
+    proj integer,
+    distance float
+) RETURNS TABLE(
+    locha_id integer,
+    objtype char(1),
+    id bigint,
+    p jsonb
+) AS $$
+SELECT
+    coalesce(
+        -- Equivalent to ST_ClusterWithinWin
+        ST_ClusterDBSCAN(ST_Transform(geom, proj), distance, 0) OVER (),
+        -- Negative value to avoid colision with cluster id
+        -1 * row_number() OVER ()
+     ) AS locha_id,
+    objtype,
+    id,
+    p
+FROM
+    fetch_changes(group_id_polys)
+ORDER BY
+    locha_id
 ;
 $$ LANGUAGE SQL PARALLEL SAFE;

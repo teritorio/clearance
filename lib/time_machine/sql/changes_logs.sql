@@ -2,17 +2,12 @@ SET search_path TO :schema,public;
 
 DROP FUNCTION IF EXISTS changes_logs();
 CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
-    objtype character(1),
-    id bigint,
-    base jsonb,
-    change jsonb,
-    changesets jsonb,
-    matches jsonb,
-    action text,
-    diff_attribs jsonb,
-    diff_tags jsonb
+    id integer,
+    objects jsonb
 ) AS $$
+    WITH objects AS (
     SELECT
+        validations_log.locha_id,
         osm_changes.objtype,
         osm_changes.id,
         CASE WHEN osm_base.id is NOT NULL THEN jsonb_build_object(
@@ -68,11 +63,25 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         action IS NULL OR
         action = 'reject'
     ORDER BY
+        validations_log.locha_id,
         osm_changes.changeset_id,
         osm_changes.created,
         osm_changes.objtype,
         osm_changes.id,
         osm_changes.version
+    )
+    SELECT
+        locha_id,
+        jsonb_agg(
+            row_to_json(objects)::jsonb - 'locha_id'
+            ORDER BY change->>'created'
+        )::jsonb
+    FROM
+        objects
+    GROUP BY
+        locha_id
+    ORDER BY
+        max(change->>'created')
     ;
 $$ LANGUAGE SQL PARALLEL SAFE;
 

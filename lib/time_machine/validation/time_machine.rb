@@ -53,12 +53,12 @@ module Validation
     params(
       conn: PG::Connection,
       config: Configuration::Config,
-    ).returns(T::Enumerable[[String, Integer, T::Array[String], ValidationResult]])
+    ).returns(T::Enumerable[[Integer, String, Integer, T::Array[String], ValidationResult]])
   }
   def self.time_machine(conn, config)
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
-      fetch_changes(conn, config.user_groups) { |osm_change_object|
+      fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |osm_change_object|
         osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
         matches = osm_change_object_p.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
@@ -77,7 +77,7 @@ module Validation
         }
         validators = matching_group ? config.validators : accept_all_validators
         validation_result = object_validation(validators, osm_change_object['p'])
-        yielder << [osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
+        yielder << [osm_change_object['locha_id'], osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
       }
     }
   end
@@ -91,8 +91,9 @@ module Validation
   def self.validate(conn, config)
     validations = time_machine(conn, config)
 
-    apply_logs(conn, validations.collect{ |objtype, id, matches, validation|
+    apply_logs(conn, validations.collect{ |locha_id, objtype, id, matches, validation|
       ValidationLog.new(
+        locha_id: locha_id,
         objtype: objtype,
         id: id,
         version: validation.version,

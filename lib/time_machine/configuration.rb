@@ -18,6 +18,8 @@ module Configuration
     const :main_contacts, T::Array[String]
     const :user_groups, T.nilable(T::Hash[String, { 'title' => String, 'polygon' => String, 'osm_tags' => String, 'users' => T::Array[String] }])
     const :project_tags, T::Array[String]
+    const :local_srid, Integer
+    const :locha_cluster_distance, Integer
   end
 
   class UserGroupConfig < T::Struct
@@ -47,6 +49,8 @@ module Configuration
     const :main_contacts, T::Array[String], default: []
     const :user_groups, T::Hash[String, UserGroupConfig], default: {}
     const :project_tags, T::Array[String], default: []
+    const :local_srid, Integer
+    const :locha_cluster_distance, Integer
   end
 
   sig {
@@ -109,6 +113,8 @@ module Configuration
       main_contacts: config.main_contacts,
       user_groups: user_groups,
       project_tags: config.project_tags,
+      local_srid: config.local_srid,
+      locha_cluster_distance: config.locha_cluster_distance,
     )
   end
 end
