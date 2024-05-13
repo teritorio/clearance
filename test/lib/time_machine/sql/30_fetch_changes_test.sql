@@ -14,7 +14,10 @@ SELECT * FROM fetch_changes(:group_id_polys::jsonb);
 -- No changes
 BEGIN;
 INSERT INTO osm_base VALUES
-  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL)
+  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
+  ('n', 101, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
+  ('n', 102, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
+  ('w', 100, 1, 1, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101], NULL)
 ;
 COMMIT;
 
@@ -35,21 +38,21 @@ COMMIT;
 
 do $$ BEGIN
   ASSERT 1 = (SELECT count(*) FROM a),
-    (SELECT * FROM a);
+    'Changes numbers';
   ASSERT 2 = (SELECT jsonb_array_length(p) FROM a),
-    (SELECT jsonb_array_length(p) FROM a);
+    'Objects version';
 
   -- base
   ASSERT '1' = (SELECT p->0->>'version' FROM a),
-    (SELECT p->0->>'version' FROM a);
+    'Version base';
   ASSERT 'false' = (SELECT p->0->>'deleted' FROM a),
-    (SELECT p->0->>'deleted' FROM a);
+    'Deleted base';
 
   -- change
   ASSERT '3' = (SELECT p->1->>'version' FROM a),
-    (SELECT p->1->>'version' FROM a);
+    'Version change';
   ASSERT 'true' = (SELECT p->1->>'deleted' FROM a),
-    (SELECT p->1->>'deleted' FROM a);
+    'Deleted change';
 END; $$ LANGUAGE plpgsql;
 
 
@@ -67,4 +70,31 @@ COMMIT;
 do $$ BEGIN
   ASSERT 3 = (SELECT jsonb_array_length(p->1->'changesets') FROM a),
     (SELECT jsonb_array_length(p->1->'changesets') FROM a);
+END; $$ LANGUAGE plpgsql;
+
+
+
+-- Change way nodes
+BEGIN;
+TRUNCATE osm_changes;
+INSERT INTO osm_changes VALUES
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL)
+;
+COMMIT;
+
+do $$ BEGIN
+  ASSERT 1 = (SELECT count(*) FROM a),
+    'Changes numbers';
+
+  -- base
+  ASSERT '1' = (SELECT p->0->>'version' FROM a),
+    'Version base';
+  ASSERT 'false' = (SELECT p->0->>'deleted' FROM a),
+    'Deleted base';
+
+  -- change
+  ASSERT '2' = (SELECT p->1->>'version' FROM a),
+    'Version change';
+  ASSERT 'false' = (SELECT p->1->>'deleted' FROM a),
+    'Deleted change';
 END; $$ LANGUAGE plpgsql;
