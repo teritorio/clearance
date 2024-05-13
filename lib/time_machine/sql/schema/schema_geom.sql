@@ -4,6 +4,26 @@ ALTER TABLE osm_base ADD COLUMN geom geometry(Geometry, 4326);
 
 CREATE INDEX osm_base_idx_nodes ON osm_base USING gin(nodes) WHERE objtype = 'w';
 
+DROP FUNCTION IF EXISTS osm_base_idx_nodes_members();
+CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
+    _members jsonb,
+    _type char(1)
+) RETURNS bigint[] AS $$
+  SELECT
+    array_agg(id)
+  FROM (
+    SELECT
+      (jsonb_array_elements(_members)->'ref')::bigint AS id,
+      jsonb_array_elements(_members)->>'type' AS type
+  ) AS t
+  WHERE
+    type = _type
+;
+$$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
+
+CREATE INDEX osm_base_idx_members_n ON osm_base USING gin(osm_base_idx_nodes_members(members, 'n')) WHERE objtype = 'r';
+CREATE INDEX osm_base_idx_members_w ON osm_base USING gin(osm_base_idx_nodes_members(members, 'w')) WHERE objtype = 'r';
+
 
 -- Trigger to update geom
 DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
@@ -63,8 +83,58 @@ EXECUTE PROCEDURE osm_base_log_update();
 
 CREATE OR REPLACE FUNCTION osm_base_update_geom() RETURNS trigger AS $$
 BEGIN
+  -- Add transitive changes, from nodes to ways
+  INSERT INTO osm_base_changes_ids
+  SELECT DISTINCT ON (ways.id)
+    ways.objtype,
+    ways.id
+  FROM
+    osm_base_changes_ids
+    JOIN osm_base AS ways ON
+      ways.objtype = 'w' AND
+      ARRAY[osm_base_changes_ids.id] <@ ways.nodes
+  WHERE
+    osm_base_changes_ids.objtype = 'n'
+  ORDER BY
+    ways.id
+  ON CONFLICT (objtype, id) DO NOTHING
+  ;
+
+  -- Add transitive changes, to relations
+  INSERT INTO osm_base_changes_ids (
+  SELECT DISTINCT ON (relations.id)
+    relations.objtype,
+    relations.id
+  FROM
+    osm_base_changes_ids
+    JOIN osm_base AS relations ON
+      relations.objtype = 'r' AND
+      ARRAY[osm_base_changes_ids.id] @> (osm_base_idx_nodes_members(members, 'n'))
+  WHERE
+    osm_base_changes_ids.objtype = 'n'
+  ORDER BY
+    relations.id
+
+  ) UNION ALL (
+
+  SELECT DISTINCT ON (relations.id)
+    relations.objtype,
+    relations.id
+  FROM
+    osm_base_changes_ids
+    JOIN osm_base AS relations ON
+      relations.objtype = 'r' AND
+      ARRAY[osm_base_changes_ids.id] @> (osm_base_idx_nodes_members(members, 'w'))
+  WHERE
+    osm_base_changes_ids.objtype = 'w'
+  ORDER BY
+    relations.id
+  )
+  ON CONFLICT (objtype, id) DO NOTHING
+  ;
+
   WITH
-  ways AS ((
+  ways AS (
     SELECT
       ways.id,
       ways.nodes
@@ -75,22 +145,7 @@ BEGIN
         ways.id = osm_base_changes_ids.id
     WHERE
       osm_base_changes_ids.objtype = 'w'
-
-    ) UNION (
-
-    SELECT DISTINCT ON (ways.id)
-      ways.id,
-      ways.nodes
-    FROM
-      osm_base_changes_ids
-      JOIN osm_base AS ways ON
-        ways.objtype = 'w' AND
-        ARRAY[osm_base_changes_ids.id] <@ ways.nodes
-    WHERE
-      osm_base_changes_ids.objtype = 'n'
-    ORDER BY
-      ways.id
-  )),
+  ),
   a AS (
     SELECT
       ways.id,
@@ -116,7 +171,7 @@ BEGIN
   ;
 
   WITH
-  relations AS ((
+  relations AS (
     SELECT
       relations.id,
       relations.members
@@ -127,9 +182,7 @@ BEGIN
         relations.id = osm_base_changes_ids.id
     WHERE
       osm_base_changes_ids.objtype = 'r'
-
-    -- TODO also list relations with changed members
-  )),
+  ),
   a AS (
     SELECT
       relations.id,
