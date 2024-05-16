@@ -73,58 +73,69 @@ docker compose run --rm script bundle exec rake test
 docker compose run --rm script bundle exec rake test:sql
 ```
 
-## What Clearance do and how it works
+## What Clearance Does and How It Works
 
 ### OSM Extracts
-Clearance start by download an OSM extract from a remote sources like [OSM-FR](download.openstreetmap.fr/) or [Geofabrik](http://download.geofabrik.de/) and load the objects in a Postgres/PostGIS database in raw format (not as spatial object). Each object is a row in the `osm_base` table whatever the object type is.
+Clearance starts by downloading an OSM extract from remote sources like [OSM-FR](https://download.openstreetmap.fr/) or [Geofabrik](https://download.geofabrik.de/) and loads the objects into a Postgres/PostGIS database in raw format (not as spatial objects). Each object is a row in the `osm_base` table, regardless of the object type.
 
-This `osm_base` table is `the truth`. The data is considered as qualified and with goal to not deteriorate the quality.
+This `osm_base` table is _the truth_. The data is considered as qualified and with the goal to not deteriorate its quality.
 
-The `osm_base` can be queried with an Overpass-like API.
+The `osm_base` can be queried with an Overpass API and is also available as an OSM extract with _diff_ updates.
 
-### OSM Update
+### OSM Incoming Update
 
-Updates are fetched from remote source in loop. Minutely available from OSM-FR, and daily available from Geofarik.
+Updates are fetched from remote sources in a loop. Minutely updates are available from OSM-FR, and daily updates are available from Geofabrik.
 
-The update are loaded in an `osm_changes` table, in the same raw format.
+The updates are loaded into an `osm_changes` table, as is, in raw format, without applying the updates.
 
-### Update validation processing
+### Update Validation Processing
 
-Content of `osm_changes` is processed to determine if the changes can be applied to the `osm_base`:
-1. If the changes, in `osm_base` or `osm_changes` it is outside of the area of interested it can be applied (note, object can be moved).
-2. If `osm_base` or `osm_change` tags are not targeted by the configured tags combination it as also out of interested, and changes can be applied.
-3. Then changes of interest in area of interest are subjects to validation rules. Changes not triggering validator rules are also not hold and applied.
+The content of `osm_changes` is processed to determine if the changes can be applied to the `osm_base`:
+1. If the changes are outside of the area of interest, they can be applied (note: objects can be moved in or out of the area of interest).
+2. If the changed tags are not targeted by the configured tag combination, they are also out of interest, then changes can be applied.
+3. Changes of interest in the area of interest are subject to validation rules. Changes not triggering any validator rules are also applied to the `osm_base`.
 
-Note: hold objects can also be applied to `osm_base` by manual validation.
+Changes can also be applied to `osm_base` by manual validation, see below.
 
-While changes are applied to `osm_base` it also produces new OSM update files. So The Clearance project act as a OSM Extract/Update proxy with validated data. The Extracts and the Updates are standards and can be used in any OSM compatible tools.
+Held objects are kept in the `osm_changes` table.
+
+While changes are applied to `osm_base`, they are removed from `osm_changes`. Validated changes are available from the Overpass API and as update diffs.
+
+So, the Clearance project acts as an OSM Extract/Update proxy of valid data. The OSM Extracts and Updates are standards and can be used with any OSM compatible tools.
 
 ### Validations
 
-The goal is to retain suspect changes as not complying with criteria quality.
+The goal is to retain suspect changes as not complying with quality criteria.
 The OSM tags properties, the metadata properties, the geometry and the changeset properties can be used to evaluate the quality.
 
 Currently implemented validators:
-- deleted: flag deleted object
-- geom: flag object with change distance greater than a threshold
-- tags: flag object based on tags key and value
-- user: flag object based on contributor name
+- deleted: flag deleted objects
+- geom: flag objects with change distance greater than a threshold
+- tags: flag objects based on tags key and value
+- user: flag objects based on contributor name
 
 More advanced validators are planned.
 
-After each update the validation is reevaluated. The validation is done using last version of objects. Changes to validate are computed between `osm_base` and the last version of OSM objects.
+After each update, the validation is reevaluated. The validation is done using the last version of incoming changed objects. Changes to validate are computed between `osm_base` and the last version of OSM objects.
 
-If a new update make previously retained object pass the validation, is no more retained to changes are applied to `osm_base`. Fixing the objects in OSM make them pass automatically.
+If a new update makes previously retained objects pass the validation, there are no more objects to retain and cumulated changes are applied to `osm_base`.
 
-#### Logical changes
+### Manual Intervention
 
-Not implemented yet.
+Held objects rejected by validation must be fixed in order to comply with quality rules. Once fixed in OpenStreetMap, the next update makes them pass the validation and they are available in `osm_base`.
 
-The idea is to group objects locally to make validation contextual. It allows to detect, and ignore, eg. delete and recreation of the same object. It will also allow to implement multi object validators, eg. to validate road network continuity.
+The original OpenStreetMap data is the only modifiable version. All contributions must be done to the original OpenStreetMap database.
+
+In case the change is considered valid according to the user despite the quality rule rejecting it, the integration into the `osm_base` can be accepted manually.
+
+Held objects and manual object acceptance are available via API and user [frontend](https://github.com/teritorio/clearance-frontend/).
+
+#### Logical Changes (LoCha)
+
+The idea is to group changes locally to make contextual validation. It allows detecting, and ignoring, e.g. deletion and recreation of the same object. It also allows implementing multi-object validators, e.g. to validate road network continuity.
 
 ## Roadmap
 LoCha v1
-  * Clustering strategy (with spatial buffer as naive implementation)
   * Clustering strategy (mix with topological and buffer, configurable by feature type)
   * LoCha splitting strategy on large cluster
   * Support Large object changes:  admin relation, large landuses, rivers
