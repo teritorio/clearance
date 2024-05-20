@@ -148,6 +148,7 @@ Validators implementation
     * Pass trough after retention delay: allow automatic validation on non disputed features / not change in progress area
     * Validate again OpenData set
   * Final state validation
+    * Geometry validity (self, crossing, not closed polygon...)
     * Final state validation: not validating changes but targeted state using external rules set like MapCSS JSOM/osmose validation
 
 Validation evaluation
@@ -158,3 +159,6 @@ UI / UX
   * Validator UI
   * RSS
   * Configuration UI
+  * User tools
+    * Review status (Fixed, I will do it, Need help...)
+    * Data Revert tool
