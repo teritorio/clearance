@@ -79,7 +79,7 @@ module Validation
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json)))
     puts r.inspect
-    r = conn.exec(File.new('/sql/25_transitives_changes.sqll').read)
+    r = conn.exec(File.new('/sql/25_transitives_changes.sql').read)
     puts r.inspect
     r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
     puts r.inspect
