@@ -6,3 +6,4 @@ log/
 projects/
 sorbet/
 tmp/
+core
