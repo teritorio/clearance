@@ -7,3 +7,4 @@ projects/
 sorbet/
 tmp/
 core
+log*
