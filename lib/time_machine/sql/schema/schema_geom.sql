@@ -1,8 +1,8 @@
 SET search_path TO :schema,public;
 
-ALTER TABLE osm_base ADD COLUMN geom geometry(Geometry, 4326);
+ALTER TABLE osm_base ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
 
-CREATE INDEX osm_base_idx_nodes ON osm_base USING gin(nodes) WHERE objtype = 'w';
+CREATE INDEX IF NOT EXISTS osm_base_idx_nodes ON osm_base USING gin(nodes) WHERE objtype = 'w';
 
 DROP FUNCTION IF EXISTS osm_base_idx_nodes_members();
 CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
