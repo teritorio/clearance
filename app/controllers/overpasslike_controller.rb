@@ -30,8 +30,6 @@ class OverpasslikeController < ApplicationController
 <p><strong style=\"color:#FF0000\">Error</strong>: #{e}</p>
 </body>
 </html>"
-    rescue StandardError => e
-      puts 'exeption', e.inspect
     end
   end
 end
