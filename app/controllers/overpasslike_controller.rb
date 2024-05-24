@@ -8,7 +8,7 @@ require 'overpass_parser/visitor'
 class OverpasslikeController < ApplicationController
   def interpreter
     project = T.let(params['project'].to_s, String)
-    data = T.let(params['data'], String)
+    data = T.cast(params.require(:data), String)
 
     begin
       Db::DbConnRead.conn(project) { |conn|

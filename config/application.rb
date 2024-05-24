@@ -53,5 +53,7 @@ module Api
 
     # Custom setting to help docker to catch logs
     config.logger = Logger.new($stdout)
+
+    config.action_on_unpermitted_parameters = :raise
   end
 end
