@@ -48,7 +48,7 @@ Get Update, Import and Generate Validation report in database
 docker compose run --rm script ./bin/update.sh projects/monaco_poi
 ```
 
-Run update script from crom:
+Run update script from cron:
 ```
 */2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
 ```
