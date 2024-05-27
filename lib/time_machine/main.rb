@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 # typed: strict
 
+require 'sorbet-runtime'
 require 'sentry-ruby'
 require 'optparse'
 require 'overpass_parser/sql_dialect/postgres'
@@ -10,6 +11,8 @@ require './lib/time_machine/configuration'
 require './lib/time_machine/db/changeset'
 require './lib/time_machine/db/db_conn'
 require './lib/time_machine/db/export'
+
+extend T::Sig
 
 if ENV['SENTRY_DSN_TOOLS']
   Sentry.init do |config|
@@ -49,46 +52,60 @@ OptionParser.new { |opts|
   end
 }.parse!
 
-if @options[:help]
-  puts 'RTFC'
-else
-  project = @options[:project].split('/')[-1]
-  config = Configuration.load("#{@options[:project]}/config.yaml")
+sig {
+  params(
+    options: T::Hash[Symbol, T.untyped]
+  ).void
+}
+def main(options)
+  if options[:help]
+    puts 'RTFC'
+  else
+    project = options[:project].split('/')[-1]
+    config = Configuration.load("#{options[:project]}/config.yaml")
 
-  if @options[:changes_prune]
-    Db::DbConnWrite.conn(project) { |conn|
-      Validation.changes_prune(conn)
-    }
-  end
+    if options[:changes_prune]
+      Db::DbConnWrite.conn(project) { |conn|
+        Validation.changes_prune(conn)
+      }
+    end
 
-  if @options[:apply_unclibled_changes]
-    osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
-    polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
-    Db::DbConnWrite.conn(project){ |conn|
-      dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
-      Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql(dialect), polygons)
-    }
-  end
+    if options[:apply_unclibled_changes]
+      osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
+      polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
+      Db::DbConnWrite.conn(project){ |conn|
+        dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
+        Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql(dialect), polygons)
+      }
+    end
 
-  if @options[:validate]
-    Db::DbConnWrite.conn(project){ |conn|
-      Validation.validate(conn, config)
-    }
-  end
+    if options[:validate]
+      Db::DbConnWrite.conn(project){ |conn|
+        Validation.validate(conn, config)
+      }
+    end
 
-  if @options[:fetch_changesets]
-    Db::DbConnWrite.conn(project){ |conn|
-      Db.get_missing_changeset_ids(conn)
-    }
-  end
+    if options[:fetch_changesets]
+      Db::DbConnWrite.conn(project){ |conn|
+        Db.get_missing_changeset_ids(conn)
+      }
+    end
 
-  if @options[:export_osm]
-    Db::DbConnRead.conn(project){ |conn|
-      Db.export(conn, "/projects/#{project}/export/#{project}.osm.bz2")
-    }
-  elsif @options[:export_osm_update]
-    Db::DbConnWrite.conn(project){ |conn|
-      Db.export_update(conn, project)
-    }
+    if options[:export_osm]
+      Db::DbConnRead.conn(project){ |conn|
+        Db.export(conn, "/projects/#{project}/export/#{project}.osm.bz2")
+      }
+    elsif options[:export_osm_update]
+      Db::DbConnWrite.conn(project){ |conn|
+        Db.export_update(conn, project)
+      }
+    end
   end
+end
+
+begin
+  main(@options)
+rescue StandardError => e
+  Sentry.capture_exception(e)
+  raise
 end
