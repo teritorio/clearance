@@ -45,6 +45,9 @@ FROM
         update.id = changes.id AND
         update.version = changes.version AND
         update.deleted = changes.deleted
+-- FIXME rather than check for conflicts on each, better validate data by lochas and do not re-insert objects changed only by transitivity.
+ON CONFLICT ON CONSTRAINT osm_changes_applyed_pkey
+DO NOTHING
 ;
 
 DELETE FROM

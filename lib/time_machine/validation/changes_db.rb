@@ -167,6 +167,9 @@ module Validation
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($5::json) AS t(i)),
           $6, $7::json, $8, $9, $10, $11, $12
         )
+      -- FIXME rather than check for conflicts on each, better validate data by lochas and do not re-insert objects changed only by transitivity.
+      ON CONFLICT ON CONSTRAINT validations_log_pkey
+      DO NOTHING
     ")
     i = 0
     changes.each{ |change|
