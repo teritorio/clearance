@@ -29,7 +29,7 @@ docker compose exec -u postgres postgres psql
 ## Init
 
 ```
-docker compose run --rm script ./bin/setup.sh monaco_poi http://download.openstreetmap.fr/extracts/europe/monaco.osm.pbf
+docker compose run --rm script ./bin/setup.sh small_poi http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
 ```
 
 ```
@@ -45,7 +45,7 @@ docker compose run --rm script ./bin/update-schema.sh
 
 Get Update, Import and Generate Validation report in database
 ```
-docker compose run --rm script ./bin/update.sh projects/monaco_poi
+docker compose run --rm script ./bin/update.sh projects/small_poi
 ```
 
 Run update script from cron:

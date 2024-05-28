@@ -4,6 +4,7 @@ RUN apt update -y && apt install -y \
     build-essential \
     bzip2 \
     cmake \
+    gzip \
     libboost-dev \
     libboost-program-options-dev \
     libexpat1-dev \
