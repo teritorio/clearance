@@ -28,7 +28,6 @@ for PROJECT in $PROJECTS; do
 
         # Check all extracts have the same sequenceNumber
         STATES=$(find ${IMPORT} -wholename "*/replication/state.txt")
-        echo $STATES | wc -w
         if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
             echo "Missing states files. Abort."
             exit 1
