@@ -51,7 +51,3 @@ rm -f projects/${PROJECT}/import/*.pgcopy.gz
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_geom.sql
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_changes_geom.sql
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/changes_logs.sql
-
-# # Export dump
-# mkdir -p projects/${PROJECT}/export
-# bundle exec ruby time_machine/main.rb --project=/projects/${PROJECT} --export-osm

@@ -185,7 +185,7 @@ module Db
     current_state_file = "#{update_path}/state.txt"
 
     state_file = Osm::StateFile.from_file(current_state_file)
-    sequence_number = state_file&.sequence_number || -1
+    sequence_number = state_file&.sequence_number || 0
     sequence_number += 1
 
     sequence_path = format('%09d', sequence_number)
@@ -195,14 +195,14 @@ module Db
 
     path = "#{update_path}/#{sequence_path2}/#{sequence_path1}"
     FileUtils.mkdir_p(path)
-    osc_gz = "#{path}/#{sequence_path0}.osm.gz"
+    osc_gz = "#{path}/#{sequence_path0}.osc.gz"
 
     has_content = export_changes(conn, osc_gz)
 
     if has_content
-      osc_gz_state = osc_gz.gsub('.osm.gz', '.state.txt')
+      osc_gz_state = osc_gz.gsub('.osc.gz', '.state.txt')
       Osm::StateFile.new(
-        timestamp: '2022-09-04T20:21:24Z',
+        timestamp: '2022-09-04T20\\:21\\:24Z',
         sequence_number: sequence_number
       ).save_to(osc_gz_state)
       FileUtils.copy(osc_gz_state, current_state_file)

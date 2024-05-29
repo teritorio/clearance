@@ -11,6 +11,7 @@ RUN apt update -y && apt install -y \
     libosmium2-dev \
     libpq-dev \
     libprotozero-dev \
+    osmium-tool \
     osmosis \
     postgresql-client \
     ruby-dev \
