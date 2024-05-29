@@ -22,8 +22,8 @@ for PROJECT in $PROJECTS; do
         TIMESTAMP=$(date +%s)
         [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
         for EXTRACT in $EXTRACTS; do
-        echo "Extract: $EXTRACT"
-            osmosis --read-replication-interval workingDirectory=${EXTRACT}/replication --write-xml-change ${IMPORT}/diff-${PROJECT_NAME}-${TIMESTAMP}.osc.xml.bz2
+            EXTRACT_NAME=$(basename "$EXTRACT")
+            osmosis --read-replication-interval workingDirectory=${EXTRACT}/replication --write-xml-change ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
         done
 
         # Check all extracts have the same sequenceNumber
