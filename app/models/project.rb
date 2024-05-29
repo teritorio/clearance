@@ -14,7 +14,7 @@ class Project < ActiveFile::Base
     def load_file
       Dir.glob('*', base: 'projects/').collect{ |project|
         c = ::Configuration.load("projects/#{project}/config.yaml")
-        date_last_update = Osm::StateFile.from_file("projects/#{project}/import/replication/state.txt")
+        date_last_update = Osm::StateFile.from_file("projects/#{project}/export/state.txt")
 
         {
           id: project,

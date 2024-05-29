@@ -38,6 +38,7 @@ for PROJECT in $PROJECTS; do
             echo "Different sequenceNumber from state.txt files. Abort."
             exit 2
         fi
+        cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
 
         # Merge Updates
         echo osmosis `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` --append-change sourceCount=`find ${IMPORT}/diff-*.osc.xml.bz2 | wc -l` --sort-change --simplify-change --write-xml-change ${IMPORT}/diff.osc.xml.bz2
@@ -64,7 +65,8 @@ for PROJECT in $PROJECTS; do
         echo "== validate ==" && \
         bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
         echo "== export-osm-update ==" && \
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update && \
+        cp ${IMPORT}/state.txt /${PROJECT}/export/state.txt
     else
         echo "${PROJECT} Update already locked"
     fi

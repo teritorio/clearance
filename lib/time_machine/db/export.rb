@@ -181,11 +181,13 @@ module Db
     ).void
   }
   def self.export_update(conn, project)
-    update_path = "/projects/#{project}/export/update"
-    current_state_file = "#{update_path}/state.txt"
+    import_state_file = T.must(Osm::StateFile.from_file("/projects/#{project}/import/state.txt"))
 
-    state_file = Osm::StateFile.from_file(current_state_file)
-    sequence_number = state_file&.sequence_number || 0
+    export_path = "/projects/#{project}/export/update"
+    export_state_file_path = "#{export_path}/state.txt"
+    export_state_file = Osm::StateFile.from_file(export_state_file_path)
+
+    sequence_number = export_state_file&.sequence_number || 0
     sequence_number += 1
 
     sequence_path = format('%09d', sequence_number)
@@ -193,7 +195,7 @@ module Db
     sequence_path1 = sequence_path[-6..-4]
     sequence_path2 = sequence_path[..-7]
 
-    path = "#{update_path}/#{sequence_path2}/#{sequence_path1}"
+    path = "#{export_path}/#{sequence_path2}/#{sequence_path1}"
     FileUtils.mkdir_p(path)
     osc_gz = "#{path}/#{sequence_path0}.osc.gz"
 
@@ -202,10 +204,10 @@ module Db
     if has_content
       osc_gz_state = osc_gz.gsub('.osc.gz', '.state.txt')
       Osm::StateFile.new(
-        timestamp: '2022-09-04T20\\:21\\:24Z',
+        timestamp: import_state_file.timestamp,
         sequence_number: sequence_number
       ).save_to(osc_gz_state)
-      FileUtils.copy(osc_gz_state, current_state_file)
+      FileUtils.copy(osc_gz_state, export_state_file_path)
     else
       # Nothing exported, remove files
       File.delete(osc_gz)
