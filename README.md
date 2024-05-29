@@ -82,7 +82,7 @@ bundle exec srb rbi suggest-typed
 
 Tests and Validation
 ```
-bundle exec srb typecheck --ignore=app/controllers/users/omniauth_callbacks_controller.rb,sorbet/rbi/annotations/activejob.rbi
+bundle exec srb typecheck
 bundle exec rubocop --parallel -c .rubocop.yml --autocorrect
 docker compose run --rm script bundle exec rake test
 docker compose run --rm script bundle exec rake test:sql
