@@ -11,12 +11,7 @@ Online demo : https://clearance-dev.teritorio.xyz
 docker compose --profile "*" build
 ```
 
-## Configure
-
-Create at least one project inside `projects` from template directory.
-Adjust `config.yaml`
-
-## Start
+## Setup
 ```
 docker compose up -d postgres
 ```
@@ -24,12 +19,6 @@ docker compose up -d postgres
 Enter postgres with
 ```
 docker compose exec -u postgres postgres psql
-```
-
-## Init
-
-```
-docker compose run --rm script ./bin/setup.sh small_poi http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
 ```
 
 ```
@@ -41,16 +30,42 @@ After code update, update the database schema:
 docker compose run --rm script ./bin/update-schema.sh
 ```
 
-## Update
+Run update script from cron:
+```
+*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
+```
 
+## Projects
+
+### Configure
+
+Create at least one project inside `projects` from template directory.
+Adjust `config.yaml`
+
+### Init
+
+```
+docker compose run --rm script ./bin/setup.sh small_poi http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
+```
+
+Optionaly, dump the first extract.
+```
+docker compose run --rm script ./bin/dump.sh projects/small_poi
+```
+
+### Update
+
+The update should be done by the cron. But can also be run manualy.
 Get Update, Import and Generate Validation report in database
 ```
 docker compose run --rm script ./bin/update.sh projects/small_poi
 ```
 
-Run update script from cron:
+### Drop
+
+Drop a project.
 ```
-*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
+docker compose run --rm script ./bin/drop.sh projects/small_poi
 ```
 
 ## Dev
