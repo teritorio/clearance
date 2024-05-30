@@ -4,6 +4,63 @@ set -e
 
 PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects -not -name '.*')}
 
+function project() {
+    PROJECT=$1
+
+    echo "# Get Updates"
+    EXTRACTS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
+    TIMESTAMP=$(date +%s)
+    [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
+    for EXTRACT in $EXTRACTS; do
+        EXTRACT_NAME=$(basename "$EXTRACT")
+        osmosis --read-replication-interval workingDirectory=${EXTRACT}/replication --write-xml-change ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
+    done
+
+    echo "# Check all extracts have the same sequenceNumber"
+    STATES=$(find ${IMPORT} -wholename "*/replication/state.txt")
+    if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
+        echo "Missing states files. Abort."
+        return 1
+    fi
+    COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
+    if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
+        echo "Different sequenceNumber from state.txt files. Abort."
+        return 2
+    fi
+    cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
+
+    echo "# Merge Updates"
+    [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
+    osmosis \
+        `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` \
+        `yes -- '--merge-change' | head -n $(($(find ${IMPORT}/diff-*.osc.xml.bz2 | wc -l)-1))` \
+        --write-xml-change ${IMPORT}/diff.osc.xml.bz2 || $(rm -f ${IMPORT}/diff.osc.xml.bz2 && return 3)
+    rm -f ${IMPORT}/diff-*.osc.xml.bz2
+
+    echo "# Convert"
+    [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
+    ope -H /${IMPORT}/diff.osc.xml.bz2 /${IMPORT}/osm_changes=o || $(rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
+    rm -f ${IMPORT}/diff.osc.xml.bz2
+
+    echo "# Import"
+    psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes from '/${IMPORT}/osm_changes.pgcopy'"
+    rm -f ${IMPORT}/osm_changes.pgcopy
+
+    echo "# Validation report"
+    echo "== changes-prune ==" && \
+    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
+    echo "== apply_unclibled_changes ==" && \
+    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
+    echo "== fetch_changesets ==" && \
+    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
+    echo "== validate ==" && \
+    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
+    echo "== export-osm-update ==" && \
+    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update && \
+    cp ${IMPORT}/state.txt /${PROJECT}/export/state.txt
+}
+
+
 for PROJECT in $PROJECTS; do
     echo
     echo $PROJECT
@@ -17,55 +74,7 @@ for PROJECT in $PROJECTS; do
     exec 8>$LOCK;
 
     if flock -n -x 8; then
-        # Get Updates
-        EXTRACTS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
-        TIMESTAMP=$(date +%s)
-        [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-        for EXTRACT in $EXTRACTS; do
-            EXTRACT_NAME=$(basename "$EXTRACT")
-            osmosis --read-replication-interval workingDirectory=${EXTRACT}/replication --write-xml-change ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
-        done
-
-        # Check all extracts have the same sequenceNumber
-        STATES=$(find ${IMPORT} -wholename "*/replication/state.txt")
-        if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
-            echo "Missing states files. Abort."
-            exit 1
-        fi
-        COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
-        if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
-            echo "Different sequenceNumber from state.txt files. Abort."
-            exit 2
-        fi
-        cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
-
-        # Merge Updates
-        echo osmosis `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` --append-change sourceCount=`find ${IMPORT}/diff-*.osc.xml.bz2 | wc -l` --sort-change --simplify-change --write-xml-change ${IMPORT}/diff.osc.xml.bz2
-        [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-        osmosis `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` --append-change sourceCount=`find ${IMPORT}/diff-*.osc.xml.bz2 | wc -l` --sort-change --simplify-change --write-xml-change ${IMPORT}/diff.osc.xml.bz2 || exit 3 && \
-        rm -f ${IMPORT}/diff-*.osc.xml.bz2
-
-        # Convert
-        [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-        ope -H /${IMPORT}/diff.osc.xml.bz2 /${IMPORT}/osm_changes=o || exit 3 && \
-        rm -f ${IMPORT}/diff.osc.xml.bz2
-
-        # Import
-        psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes from '/${IMPORT}/osm_changes.pgcopy'" || exit 3 && \
-        rm -f ${IMPORT}/osm_changes.pgcopy
-
-        # Validation report
-        echo "== changes-prune ==" && \
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
-        echo "== apply_unclibled_changes ==" && \
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
-        echo "== fetch_changesets ==" && \
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
-        echo "== validate ==" && \
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
-        echo "== export-osm-update ==" && \
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update && \
-        cp ${IMPORT}/state.txt /${PROJECT}/export/state.txt
+        project ${PROJECT} || echo "${PROJECT} Update failed ($?)"
     else
         echo "${PROJECT} Update already locked"
     fi
