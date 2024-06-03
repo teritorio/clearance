@@ -10,7 +10,7 @@ function project() {
     echo "# Get Updates"
     EXTRACTS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
     TIMESTAMP=$(date +%s)
-    [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
+    [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
     for EXTRACT in $EXTRACTS; do
         EXTRACT_NAME=$(basename "$EXTRACT")
         osmosis --read-replication-interval workingDirectory=${EXTRACT}/replication --write-xml-change ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
@@ -30,17 +30,17 @@ function project() {
     cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
 
     echo "# Merge Updates"
-    [ ! -f ${IMPORT}/diff.osc.xml.bz2 ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
+    [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
     osmosis \
         `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` \
         `yes -- '--merge-change' | head -n $(($(find ${IMPORT}/diff-*.osc.xml.bz2 | wc -l)-1))` \
-        --write-xml-change ${IMPORT}/diff.osc.xml.bz2 || $(rm -f ${IMPORT}/diff.osc.xml.bz2 && return 3)
+        --write-xml-change ${IMPORT}/diff.osc.xml.gz || $(rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
     rm -f ${IMPORT}/diff-*.osc.xml.bz2
 
     echo "# Convert"
     [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-    ope -H /${IMPORT}/diff.osc.xml.bz2 /${IMPORT}/osm_changes=o || $(rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
-    rm -f ${IMPORT}/diff.osc.xml.bz2
+    ope -H /${IMPORT}/diff.osc.xml.gz /${IMPORT}/osm_changes=o || $(rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
+    rm -f ${IMPORT}/diff.osc.xml.gz
 
     echo "# Import"
     psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes from '/${IMPORT}/osm_changes.pgcopy'"
