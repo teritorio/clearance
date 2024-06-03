@@ -7,8 +7,8 @@ DROP SCHEMA IF EXISTS test CASCADE;
 -- No changes
 BEGIN;
 INSERT INTO osm_base VALUES
-  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
-  ('w', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1], NULL)
+  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL, 'POINT(1 1)'::geometry),
+  ('w', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1], NULL, 'POINT(1 1)'::geometry)
 ;
 COMMIT;
 
