@@ -21,9 +21,6 @@ CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
 ;
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
-CREATE INDEX osm_base_idx_members_n ON osm_base USING gin(osm_base_idx_nodes_members(members, 'n')) WHERE objtype = 'r';
-CREATE INDEX osm_base_idx_members_w ON osm_base USING gin(osm_base_idx_nodes_members(members, 'w')) WHERE objtype = 'r';
-
 
 -- Trigger to update geom
 DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
