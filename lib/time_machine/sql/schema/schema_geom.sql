@@ -244,6 +244,7 @@ poly AS (
   FROM
     parts
   WHERE
+    ST_NPoints(geom) >= 4 AND
     ST_IsClosed(geom)
 )
 SELECT
