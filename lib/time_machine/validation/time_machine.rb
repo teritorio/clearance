@@ -23,13 +23,11 @@ module Validation
   sig {
     params(
       validators: T::Array[Validators::ValidatorBase],
-      changes: T::Array[OSMChangeProperties]
+      before: T.nilable(OSMChangeProperties),
+      after: OSMChangeProperties,
     ).returns(ValidationResult)
   }
-  def self.object_validation(validators, changes)
-    before = T.must(changes[0])['is_change'] ? nil : T.let(T.must(changes[0]), OSMChangeProperties)
-    after = T.let(T.must(changes[-1]), OSMChangeProperties)
-
+  def self.object_validation(validators, before, after)
     diff = diff_osm_object(before, after)
     validators.each{ |validator|
       validator.apply(before, after, diff)
@@ -76,7 +74,9 @@ module Validation
           !match.user_groups&.empty?
         }
         validators = matching_group ? config.validators : accept_all_validators
-        validation_result = object_validation(validators, osm_change_object['p'])
+        before = osm_change_object['p'][0]['is_change'] ? nil : T.let(osm_change_object['p'][0], OSMChangeProperties)
+        after = T.let(osm_change_object['p'][-1], OSMChangeProperties)
+        validation_result = object_validation(validators, before, after)
         yielder << [osm_change_object['locha_id'], osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
       }
     }
