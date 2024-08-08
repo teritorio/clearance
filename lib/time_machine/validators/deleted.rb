@@ -14,12 +14,12 @@ module Validators
     sig {
       override.params(
         _before: T.nilable(Validation::OSMChangeProperties),
-        after: Validation::OSMChangeProperties,
+        after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
       ).void
     }
     def apply(_before, after, diff)
-      return if !after['deleted']
+      return if !after.nil? && !after['deleted']
 
       diff.attribs.each_value { |action|
         assign_action(action)

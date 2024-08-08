@@ -86,7 +86,7 @@ class TestUserList < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'geom_distance' => validation_action },
+        attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
@@ -153,7 +153,7 @@ class TestTagsChanges < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'geom_distance' => [] },
+        attribs: { 'deleted' => [], 'geom_distance' => [] },
         tags: { 'shop' => validation_action_reject, 'phone' => validation_action_reject, 'foo' => validation_action_accept }
       ).inspect,
       diff.inspect
@@ -214,7 +214,7 @@ class TestGeomNewObject < Test::Unit::TestCase
     validator.apply(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'geom_distance' => validation_action_accept },
+        attribs: { 'deleted' => [], 'geom_distance' => validation_action_accept },
         tags: { 'shop' => [] }
       ).inspect,
       diff.inspect

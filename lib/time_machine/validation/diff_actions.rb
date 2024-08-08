@@ -35,7 +35,7 @@ module Validation
   sig {
     params(
       before: T.nilable(OSMChangeProperties),
-      after: OSMChangeProperties
+      after: T.nilable(OSMChangeProperties),
     ).returns(DiffActions)
   }
   def self.diff_osm_object(before, after)
@@ -51,11 +51,11 @@ module Validation
     # - lat
     # - lon
     %w[deleted members geom_distance].each { |attrib|
-      diff_attribs[attrib] = [] if (!before && after[attrib]) || before && before[attrib] != after[attrib]
+      diff_attribs[attrib] = [] if before&.dig(attrib) != after&.dig(attrib)
     }
 
-    ((before && before['tags'].keys || []) + after['tags'].keys).uniq.each{ |tag|
-      diff_tags[tag] = [] if !before || before['tags'][tag] != after['tags'][tag]
+    ((before&.dig('tags')&.keys || []) + (after&.dig('tags')&.keys || [])).uniq.each{ |tag|
+      diff_tags[tag] = [] if before&.dig('tags', tag) != after&.dig('tags', tag)
     }
 
     DiffActions.new(attribs: diff_attribs, tags: diff_tags)

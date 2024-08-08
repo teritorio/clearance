@@ -25,7 +25,7 @@ module Validators
     sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),
-        _after: Validation::OSMChangeProperties,
+        _after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
       ).void
     }

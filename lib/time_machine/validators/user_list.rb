@@ -27,12 +27,12 @@ module Validators
     sig {
       override.params(
         _before: T.nilable(Validation::OSMChangeProperties),
-        after: Validation::OSMChangeProperties,
+        after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
       ).void
     }
     def apply(_before, after, diff)
-      return if @list.exclude?(after['username'])
+      return if after.nil? || @list.exclude?(after['username'])
 
       (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)

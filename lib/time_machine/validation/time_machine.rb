@@ -13,8 +13,9 @@ module Validation
 
   class ValidationResult < T::Struct
     const :action, T.nilable(ActionType)
-    const :version, Integer
-    const :deleted, T::Boolean
+    const :before_object, T.nilable(Osm::ObjectChangeId)
+    const :after_object, Osm::ObjectChangeId
+    const :sementic_deletetion, T::Boolean
     prop :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :diff, DiffActions
@@ -24,10 +25,13 @@ module Validation
     params(
       validators: T::Array[Validators::ValidatorBase],
       before: T.nilable(OSMChangeProperties),
-      after: OSMChangeProperties,
+      before_at_now: T.nilable(OSMChangeProperties),
+      after: T.nilable(OSMChangeProperties),
     ).returns(ValidationResult)
   }
-  def self.object_validation(validators, before, after)
+  def self.object_validation(validators, before, before_at_now, after)
+    throw 'Precondition fails' if before.nil? && after.nil?
+
     diff = diff_osm_object(before, after)
     validators.each{ |validator|
       validator.apply(before, after, diff)
@@ -39,10 +43,13 @@ module Validation
 
     ValidationResult.new(
       action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
-      version: after['version'],
-      deleted: after['deleted'],
-      changeset_ids: after['changesets']&.pluck('id'),
-      created: after['created'],
+      before_object: before.nil? ? nil : Osm::ObjectChangeId.new(objtype: before['objtype'], id: before['id'], version: before['version'], deleted: before['deleted']),
+      after_object: T.must(after.nil? ?
+        before_at_now.nil? ? nil : Osm::ObjectChangeId.new(objtype: before_at_now['objtype'], id: before_at_now['id'], version: before_at_now['version'], deleted: before_at_now['deleted']) :
+        Osm::ObjectChangeId.new(objtype: after['objtype'], id: after['id'], version: after['version'], deleted: after['deleted'])),
+      sementic_deletetion: after.nil?,
+      changeset_ids: T.must(after || before_at_now)['changesets']&.pluck('id'),
+      created: T.must(after || before_at_now)['created'],
       diff: diff,
     )
   end
@@ -51,7 +58,7 @@ module Validation
     params(
       conn: PG::Connection,
       config: Configuration::Config,
-    ).returns(T::Enumerable[[Integer, String, Integer, T::Array[String], ValidationResult]])
+    ).returns(T::Enumerable[[Integer, T::Array[String], ValidationResult]])
   }
   def self.time_machine(conn, config)
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
@@ -74,8 +81,8 @@ module Validation
           !match.user_groups&.empty?
         }
         validators = matching_group ? config.validators : accept_all_validators
-        validation_result = object_validation(validators, before, after)
-        yielder << [after['locha_id'], after['objtype'], after['id'], matches, validation_result]
+        validation_result = object_validation(validators, before, after, after)
+        yielder << [(before || after)['locha_id'], matches, validation_result]
       }
     }
   end
@@ -89,13 +96,11 @@ module Validation
   def self.validate(conn, config)
     validations = time_machine(conn, config)
 
-    apply_logs(conn, validations.collect{ |locha_id, objtype, id, matches, validation|
+    apply_logs(conn, validations.collect{ |locha_id, matches, validation|
       ValidationLog.new(
         locha_id: locha_id,
-        objtype: objtype,
-        id: id,
-        version: validation.version,
-        deleted: validation.deleted,
+        before_objects: validation.before_object,
+        after_objects: validation.after_object,
         changeset_ids: validation.changeset_ids,
         created: validation.created,
         matches: matches,

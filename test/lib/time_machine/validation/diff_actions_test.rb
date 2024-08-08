@@ -73,11 +73,23 @@ class TestValidation < Test::Unit::TestCase
   end
 
   sig { void }
-  def test_diff_osm_object_nil
+  def test_diff_osm_object_nil_before
     diff = Validation.diff_osm_object(nil, @@fixture_node_a)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'geom_distance' => [] },
+        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        tags: { 'foo' => [] },
+      ).inspect,
+      diff.inspect
+    )
+  end
+
+  sig { void }
+  def test_diff_osm_object_nil_after
+    diff = Validation.diff_osm_object(@@fixture_node_a, nil)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'deleted' => [], 'geom_distance' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect

@@ -27,7 +27,7 @@ module Validators
     sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),
-        after: Validation::OSMChangeProperties,
+        after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
       ).void
     }
@@ -37,7 +37,7 @@ module Validators
       if @dist.nil?
         assign_action(diff.attribs['geom_distance'] || []) if diff.attribs['geom_distance']
         assign_action(diff.attribs['members'] || []) if diff.attribs['members']
-      elsif after['geom_distance']
+      elsif !after.nil? && after['geom_distance']
         dist = after['geom_distance']
         return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 

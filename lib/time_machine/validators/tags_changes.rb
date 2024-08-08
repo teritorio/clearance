@@ -28,14 +28,14 @@ module Validators
     sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),
-        after: Validation::OSMChangeProperties,
+        after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
       ).void
     }
     def apply(before, after, diff)
       matcheses = (
         (before && @osm_tags_matches.match_with_extra(before['tags']) || []) +
-        @osm_tags_matches.match_with_extra(after['tags'])
+        @osm_tags_matches.match_with_extra(after&.dig('tags') || {})
       ).group_by(&:first).select{ |key, _match|
         diff.tags.key?(key)
       }
