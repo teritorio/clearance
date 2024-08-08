@@ -64,6 +64,9 @@ class TestUserList < Test::Unit::TestCase
     )]
 
     after = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(0 0)',
       'geom_distance' => 0,
       'deleted' => false,
@@ -126,6 +129,9 @@ class TestTagsChanges < Test::Unit::TestCase
     )]
 
     after = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(0 0)',
       'geom_distance' => 0,
       'deleted' => false,
@@ -186,6 +192,9 @@ class TestGeomNewObject < Test::Unit::TestCase
     )]
 
     after = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(0 0)',
       'geom_distance' => 0,
       'deleted' => false,
@@ -233,6 +242,9 @@ class TestGeomChanges < Test::Unit::TestCase
     )]
 
     before = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(10 10)',
       'geom_distance' => 0,
       'deleted' => false,
@@ -249,6 +261,9 @@ class TestGeomChanges < Test::Unit::TestCase
     }, Validation::OSMChangeProperties)
 
     after = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(0 0)',
       'geom_distance' => 0,
       'deleted' => false,
@@ -295,6 +310,9 @@ class TestGeomChanges < Test::Unit::TestCase
     )]
 
     before = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(10 10)',
       'geom_distance' => 0,
       'deleted' => false,
@@ -311,6 +329,9 @@ class TestGeomChanges < Test::Unit::TestCase
     }, Validation::OSMChangeProperties)
 
     after = T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => 1,
       'geom' => 'Point(0 0)',
       'geom_distance' => 10,
       'deleted' => false,

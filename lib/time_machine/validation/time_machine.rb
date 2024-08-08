@@ -56,8 +56,8 @@ module Validation
   def self.time_machine(conn, config)
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
-      fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |osm_change_object|
-        osm_change_object_p = [osm_change_object['p'][0], osm_change_object['p'][-1]].compact.uniq
+      fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |before, after|
+        osm_change_object_p = [before, after].compact.uniq
         matches = osm_change_object_p.collect{ |object|
           config.osm_tags_matches.match(object['tags'])
         }.flatten(1).uniq.collect{ |overpass, match|
@@ -74,10 +74,8 @@ module Validation
           !match.user_groups&.empty?
         }
         validators = matching_group ? config.validators : accept_all_validators
-        before = osm_change_object['p'][0]['is_change'] ? nil : T.let(osm_change_object['p'][0], OSMChangeProperties)
-        after = T.let(osm_change_object['p'][-1], OSMChangeProperties)
         validation_result = object_validation(validators, before, after)
-        yielder << [osm_change_object['locha_id'], osm_change_object['objtype'], osm_change_object['id'], matches, validation_result]
+        yielder << [after['locha_id'], after['objtype'], after['id'], matches, validation_result]
       }
     }
   end

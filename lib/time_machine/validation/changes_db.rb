@@ -14,6 +14,9 @@ module Validation
 
   OSMChangeProperties = T.type_alias {
     {
+      'locha_id' => Integer,
+      'objtype' => String,
+      'id' => Integer,
       'geom' => T.untyped,
       'geom_distance' => T.any(Float, Integer),
       'deleted' => T::Boolean,
@@ -28,22 +31,13 @@ module Validation
     }
   }
 
-  OSMLochaObject = T.type_alias {
-    {
-      'locha_id' => Integer,
-      'objtype' => String,
-      'id' => Integer,
-      'p' => T::Array[OSMChangeProperties]
-    }
-  }
-
   sig {
     params(
       conn: PG::Connection,
       local_srid: Integer,
       locha_cluster_distance: Integer,
       user_groups: T::Hash[String, Configuration::UserGroupConfig],
-      block: T.proc.params(arg0: OSMLochaObject).void
+      block: T.proc.params(before: T.nilable(OSMChangeProperties), after: OSMChangeProperties).void
     ).void
   }
   def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
@@ -53,7 +47,12 @@ module Validation
       'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb, $1, $2)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
       [local_srid, locha_cluster_distance],
     ) { |result|
-      result.each(&block)
+      result.each{ |osm_change_object|
+        ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'] }
+        before = osm_change_object['p'][0]['is_change'] ? nil : T.let(osm_change_object['p'][0].merge(ids), OSMChangeProperties)
+        after = T.let(osm_change_object['p'][-1].merge(ids), OSMChangeProperties)
+        block.call(before, after)
+      }
     }
   end
 

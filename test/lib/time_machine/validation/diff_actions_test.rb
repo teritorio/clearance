@@ -29,6 +29,9 @@ class TestValidation < Test::Unit::TestCase
   }, Osm::Changeset)
 
   @@fixture_node_a = T.let({
+    'locha_id' => 1,
+    'objtype' => 'n',
+    'id' => 1,
     'geom' => nil,
     'geom_distance' => 0,
     'deleted' => false,
@@ -45,6 +48,9 @@ class TestValidation < Test::Unit::TestCase
     }, Validation::OSMChangeProperties)
 
   @@fixture_node_b = T.let({
+    'locha_id' => 1,
+    'objtype' => 'n',
+    'id' => 1,
     'geom' => 'Point(1 1)',
     'geom_distance' => 1,
     'deleted' => false,
