@@ -64,7 +64,7 @@ module Validation
   }
   def self.changes_prune(conn)
     r = conn.exec(File.new('/sql/10_changes_prune.sql').read)
-    puts r.inspect
+    puts "  10_changes_prune #{r.inspect}"
   end
 
   sig {
@@ -78,11 +78,11 @@ module Validation
     r = conn.exec(File.new('/sql/20_changes_uncibled.sql').read
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json)))
-    puts r.inspect
+    puts "  20_changes_uncibled #{r.inspect}"
     r = conn.exec(File.new('/sql/25_transitives_changes.sql').read)
-    puts r.inspect
+    puts "  25_transitives_changes #{r.inspect}"
     r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
-    puts r.inspect
+    puts "  90_changes_apply #{r.inspect}"
   end
 
   sig {
@@ -101,7 +101,7 @@ module Validation
       )
     "
     r = conn.exec(sql_create_table)
-    puts r.inspect
+    puts "  changes_update #{r.inspect}"
 
     conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4)')
     i = 0
@@ -112,10 +112,10 @@ module Validation
     puts "Apply on #{i} changes"
 
     r = conn.exec(File.new('/sql/40_validated_changes.sql').read)
-    puts r.inspect
+    puts "  40_validated_changes #{r.inspect}"
 
     r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_source'))
-    puts r.inspect
+    puts " 90_changes_apply #{r.inspect}"
   end
 
   class ValidationLogMatch < T::InexactStruct
