@@ -17,7 +17,8 @@ FROM
   osm_changes_geom
   JOIN osm_base AS osm_base_node ON
     osm_base_node.objtype = 'n' AND
-    osm_base_node.id = osm_changes_geom.id
+    osm_base_node.id = osm_changes_geom.id AND
+    NOT ST_Equals(osm_changes_geom.geom, osm_base_node.geom)
   JOIN osm_base AS ways ON
     ways.objtype = 'w' AND
     (osm_changes_geom.geom && ways.geom OR osm_base_node.geom && ways.geom) AND
@@ -48,7 +49,8 @@ FROM
   osm_changes_geom
   JOIN osm_base AS osm_base_node ON
     osm_base_node.objtype = 'n' AND
-    osm_base_node.id = osm_changes_geom.id
+    osm_base_node.id = osm_changes_geom.id AND
+    NOT ST_Equals(osm_changes_geom.geom, osm_base_node.geom)
   JOIN osm_base AS relations ON
     relations.objtype = 'r' AND
     (osm_changes_geom.geom && relations.geom OR osm_base_node.geom && relations.geom) AND
@@ -78,7 +80,8 @@ FROM
   osm_changes_geom
   JOIN osm_base AS osm_base_way ON
     osm_base_way.objtype = 'w' AND
-    osm_base_way.id = osm_changes_geom.id
+    osm_base_way.id = osm_changes_geom.id AND
+    NOT ST_Equals(osm_changes_geom.geom, osm_base_way.geom)
   JOIN osm_base AS relations ON
     relations.objtype = 'r' AND
     (osm_changes_geom.geom && relations.geom OR osm_base_way.geom && relations.geom) AND
