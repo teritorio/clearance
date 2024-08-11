@@ -8,9 +8,9 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     WITH objects AS (
     SELECT
         validations_log.locha_id,
-        osm_changes.objtype,
-        osm_changes.id,
         CASE WHEN osm_base.id is NOT NULL THEN jsonb_build_object(
+            'objtype', osm_base.objtype,
+            'id', osm_base.id,
             'version', osm_base.version,
             'changeset_id', osm_base.changeset_id,
             'created', osm_base.created,
@@ -22,6 +22,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             'geom', ST_AsGeoJSON(osm_base.geom)::jsonb
         ) END AS base,
         jsonb_build_object(
+            'objtype', osm_changes.objtype,
+            'id', osm_changes.id,
             'version', osm_changes.version,
             'changeset_id', osm_changes.changeset_id,
             'created', osm_changes.created,
@@ -52,23 +54,19 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     FROM
         validations_log
         LEFT JOIN osm_base ON
-            osm_base.objtype = validations_log.objtype AND
-            osm_base.id = validations_log.id
-        JOIN osm_changes_geom AS osm_changes ON
-            osm_changes.objtype = validations_log.objtype AND
-            osm_changes.id = validations_log.id AND
-            osm_changes.version = validations_log.version AND
-            osm_changes.deleted = validations_log.deleted
+            osm_base.objtype = validations_log.before_object->>'objtype' AND
+            osm_base.id = (validations_log.before_object->>'id')::bigint
+        LEFT JOIN osm_changes_geom AS osm_changes ON
+            osm_changes.objtype = validations_log.after_object->>'objtype' AND
+            osm_changes.id = (validations_log.after_object->>'id')::bigint AND
+            osm_changes.version = (validations_log.after_object->>'version')::integer AND
+            osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
     WHERE
         action IS NULL OR
         action = 'reject'
     ORDER BY
         validations_log.locha_id,
-        osm_changes.changeset_id,
-        osm_changes.created,
-        osm_changes.objtype,
-        osm_changes.id,
-        osm_changes.version
+        osm_changes.created
     )
     SELECT
         locha_id,

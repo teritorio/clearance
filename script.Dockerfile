@@ -8,6 +8,7 @@ RUN apt update -y && apt install -y \
     libboost-dev \
     libboost-program-options-dev \
     libexpat1-dev \
+    libgeos-dev \
     libosmium2-dev \
     libpq-dev \
     libprotozero-dev \

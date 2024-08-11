@@ -37,21 +37,29 @@ module Validation
       local_srid: Integer,
       locha_cluster_distance: Integer,
       user_groups: T::Hash[String, Configuration::UserGroupConfig],
-      block: T.proc.params(before: T.nilable(OSMChangeProperties), after: OSMChangeProperties).void
+      block: T.proc.params(arg0: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]]).void
     ).void
   }
   def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
     conn.exec(File.new('/sql/30_fetch_changes.sql').read)
+    results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
+    last_locha_id = T.let(nil, T.nilable(T::Boolean))
     conn.exec_params(
       'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb, $1, $2)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
       [local_srid, locha_cluster_distance],
     ) { |result|
       result.each{ |osm_change_object|
+        if !last_locha_id.nil? && last_locha_id != osm_change_object['locha_id']
+          block.call(results)
+          results = []
+        end
+
         ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'] }
         before = osm_change_object['p'][0]['is_change'] ? nil : T.let(osm_change_object['p'][0].merge(ids), OSMChangeProperties)
         after = T.let(osm_change_object['p'][-1].merge(ids), OSMChangeProperties)
-        block.call(before, after)
+        results << [before, after]
+        last_locha_id = osm_change_object['locha_id']
       }
     }
   end
@@ -87,7 +95,7 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Osm::ObjectChangeId]
+      changes: T::Enumerable[ValidationLog]
     ).void
   }
   def self.apply_changes(conn, changes)
@@ -96,17 +104,18 @@ module Validation
         objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
         id BIGINT NOT NULL,
         version INTEGER NOT NULL,
-        deleted BOOLEAN NOT NULL
+        deleted BOOLEAN NOT NULL,
+        PRIMARY KEY (objtype, id, version, deleted)
       )
     "
     r = conn.exec(sql_create_table)
     puts "  changes_update #{r.inspect}"
 
-    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4)')
+    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING')
     i = 0
     changes.each{ |change|
       i += 1
-      conn.exec_prepared('changes_update_insert', [change.objtype, change.id, change.version, change.deleted])
+      conn.exec_prepared('changes_update_insert', [change.after_objects.objtype, change.after_objects.id, change.after_objects.version, change.after_objects.deleted])
     }
     puts "Apply on #{i} changes"
 
@@ -125,8 +134,10 @@ module Validation
     const :icon, T.nilable(String)
   end
 
-  class ValidationLog < Osm::ObjectChangeId
+  class ValidationLog < T::InexactStruct
     const :locha_id, Integer
+    const :before_objects, T.nilable(Osm::ObjectChangeId)
+    const :after_objects, Osm::ObjectChangeId
     const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :matches, T::Array[ValidationLogMatch]
@@ -162,22 +173,14 @@ module Validation
         validations_log
       VALUES
         (
-          $1, $2, $3, $4,
-          (SELECT array_agg(i)::integer[] FROM json_array_elements_text($5::json) AS t(i)),
-          $6, $7::json, $8, $9, $10, $11, $12
+          (SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i)),
+          $2, $3::json, $4, $5, $6, $7, $8, $9::json, $10::json
         )
-      -- FIXME rather than check for conflicts on each, better validate data by lochas and do not re-insert objects changed only by transitivity.
-      ON CONFLICT ON CONSTRAINT validations_log_pkey
-      DO NOTHING
     ")
     i = 0
     changes.each{ |change|
       i += 1
       conn.exec_prepared('validations_log_insert', [
-        change.objtype,
-        change.id,
-        change.version,
-        change.deleted,
         change.changeset_ids&.to_json,
         change.created,
         change.matches.to_json,
@@ -186,6 +189,8 @@ module Validation
         change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,
         change.diff_tags.empty? ? nil : change.diff_tags.as_json.to_json,
         change.locha_id,
+        change.before_objects&.to_json,
+        change.after_objects.to_json,
       ])
     }
     puts "Logs #{i} changes"
@@ -194,7 +199,7 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[Osm::ObjectChangeId],
+      changes: T::Enumerable[ValidationLog],
       validator_uid: T.nilable(Integer),
     ).void
   }
@@ -214,9 +219,9 @@ module Validation
     ")
     changes.each{ |change|
       conn.exec_prepared('validations_log_delete', [
-        change.objtype,
-        change.id,
-        change.version,
+        change.after_objects.objtype,
+        change.after_objects.id,
+        change.after_objects.version,
         validator_uid,
       ])
     }

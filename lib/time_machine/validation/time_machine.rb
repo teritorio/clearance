@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/changes_db'
+require './lib/time_machine/validation/lo_cha'
 require './lib/time_machine/validation/diff_actions'
 require './lib/time_machine/validators/validator'
 require './lib/time_machine/validation/types'
@@ -63,26 +64,36 @@ module Validation
   def self.time_machine(conn, config)
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
-      fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |before, after|
-        osm_change_object_p = [before, after].compact.uniq
-        matches = osm_change_object_p.collect{ |object|
-          config.osm_tags_matches.match(object['tags'])
-        }.flatten(1).uniq.collect{ |overpass, match|
-          ValidationLogMatch.new(
-            sources: match.sources&.compact || [],
-            selectors: [overpass],
-            user_groups: match.user_groups.intersection(osm_change_object_p.pluck('group_ids').flatten.uniq),
-            name: match.name,
-            icon: match.icon,
-          )
-        }.flatten(1).uniq
+      fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |lo_cha|
+        befores = lo_cha.collect(&:first).compact
+        afters = lo_cha.collect(&:last).compact
+        conflations = LoCha.conflate(befores, afters)
 
-        matching_group = matches.any?{ |match|
-          !match.user_groups&.empty?
+        conflations.each{ |conflation|
+          matches = [conflation[0], conflation[-1]].compact.collect{ |object|
+            config.osm_tags_matches.match(object['tags'])
+          }.flatten(1).uniq.collect{ |overpass, match|
+            ValidationLogMatch.new(
+              sources: match.sources&.compact || [],
+              selectors: [overpass],
+              user_groups: match.user_groups.intersection(conflation.compact.pluck('group_ids').flatten.uniq),
+              name: match.name,
+              icon: match.icon,
+            )
+          }.flatten(1).uniq
+
+          matching_group = matches.any?{ |match|
+            !match.user_groups&.empty?
+          }
+          validators = matching_group ? config.validators : accept_all_validators
+          before, before_at_now, after = conflation
+          validation_result = object_validation(validators, before, before_at_now, after)
+          yielder << [
+            T.must(before || after)['locha_id'],
+            matches,
+            validation_result
+          ]
         }
-        validators = matching_group ? config.validators : accept_all_validators
-        validation_result = object_validation(validators, before, after, after)
-        yielder << [(before || after)['locha_id'], matches, validation_result]
       }
     }
   end

@@ -57,10 +57,6 @@ ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype, version, deleted); -- %PK:o
 
 DROP TABLE IF EXISTS validations_log CASCADE;
 CREATE TABLE validations_log (
-    objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
-    id BIGINT NOT NULL,
-    version INTEGER NOT NULL,
-    deleted BOOLEAN NOT NULL,
     changeset_ids INTEGER[],
     created TIMESTAMP (0) WITHOUT TIME ZONE,
     matches JSONB NOT NULL,
@@ -68,9 +64,15 @@ CREATE TABLE validations_log (
     validator_uid INTEGER,
     diff_attribs JSONB,
     diff_tags JSONB,
-    locha_id INTEGER
+    locha_id INTEGER,
+    ---- JSONB object with the following structure:
+    -- objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
+    -- id BIGINT NOT NULL,
+    -- version INTEGER NOT NULL,
+    -- deleted BOOLEAN NOT NULL,
+    before_object JSONB,
+    after_object JSONB
 );
-ALTER TABLE validations_log ADD PRIMARY KEY(id, objtype, version, deleted);
 
 DROP TABLE IF EXISTS osm_changes_applyed CASCADE;
 CREATE TABLE osm_changes_applyed AS
