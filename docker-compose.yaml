@@ -24,8 +24,8 @@ services:
       - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS}
     volumes:
       - ./lib/time_machine/sql:/sql
-      - ./:/srv/app/
       - ./projects:/projects
+      - ./projects:/srv/app/projects
     depends_on:
       - postgres
 
@@ -44,9 +44,9 @@ services:
       - ${API_PORT:-9000}:9000
     volumes:
       - ./lib/time_machine/sql:/sql
-      - ./:/srv/app/
       - ./cache:/cache
       - ./projects:/projects
+      - ./projects:/srv/app/projects
     depends_on:
       - postgres
     command: bundle exec rails server --binding=0.0.0.0 --port 9000
