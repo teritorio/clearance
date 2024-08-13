@@ -3,3 +3,4 @@ cache/*
 log*
 tmp/
 .env
+sorbet/
