@@ -8,4 +8,8 @@ class ApplicationController < ActionController::API
   rescue_from ActionController::ParameterMissing do |exception|
     render json: { error: exception.message }, status: :bad_request
   end
+
+  rescue_from ActiveHash::RecordNotFound do |_exception|
+    render nothing: true, status: :not_found
+  end
 end
