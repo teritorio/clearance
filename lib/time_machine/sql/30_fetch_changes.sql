@@ -136,6 +136,8 @@ CREATE OR REPLACE FUNCTION fetch_locha_changes(
     id bigint,
     p jsonb
 ) AS $$
+WITH
+locha AS (
 SELECT
     coalesce(
         -- Equivalent to ST_ClusterWithinWin
@@ -145,10 +147,35 @@ SELECT
      ) AS locha_id,
     objtype,
     id,
+    objtype || '|' || id || '|' || (p[-1]->>'version') || '|' || (p[-1]->>'deleted') || '|' AS key,
     p
 FROM
     fetch_changes(group_id_polys)
 ORDER BY
-    locha_id
+    objtype,
+    id,
+    p[-1]->>'version',
+    p[-1]->>'deleted'
+),
+g AS(
+SELECT
+    locha_id,
+    (hashtext(string_agg(key, ',')))::bigint AS hash_keys
+FROM
+    locha
+GROUP BY
+    locha.locha_id
+)
+SELECT
+    hash_keys AS locha_id,
+    objtype,
+    id,
+    p
+FROM
+    locha
+    JOIN g ON
+        g.locha_id = locha.locha_id
+ORDER BY
+    hash_keys
 ;
 $$ LANGUAGE SQL PARALLEL SAFE;

@@ -64,7 +64,7 @@ CREATE TABLE validations_log (
     validator_uid INTEGER,
     diff_attribs JSONB,
     diff_tags JSONB,
-    locha_id INTEGER,
+    locha_id INTEGER NOT NULL,
     ---- JSONB object with the following structure:
     -- objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
     -- id BIGINT NOT NULL,

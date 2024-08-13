@@ -95,6 +95,57 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
+      locha_ids: T::Array[Integer],
+    ).void
+  }
+  def self.apply_lochas_ids(conn, locha_ids)
+    sql_create_table = "
+      CREATE TEMP TABLE changes_update (
+        objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
+        id BIGINT NOT NULL,
+        version INTEGER NOT NULL,
+        deleted BOOLEAN NOT NULL,
+        PRIMARY KEY (objtype, id, version, deleted)
+      )
+    "
+    r = conn.exec(sql_create_table)
+    puts "  changes_update #{r.inspect}"
+
+    conn.exec("
+      INSERT INTO changes_update
+      SELECT
+        before_object->>'objtype' AS objtype,
+        (before_object->>'id')::bigint AS id,
+        (before_object->>'version')::integer AS version,
+        (before_object->>'deleted')::boolean AS deleted
+      FROM
+        validations_log
+      WHERE
+        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[]) AND
+        before_object IS NOT NULL
+      UNION ALL
+      SELECT
+        after_object->>'objtype' AS objtype,
+        (after_object->>'id')::bigint AS id,
+        (after_object->>'version')::integer AS version,
+        (after_object->>'deleted')::boolean AS deleted
+      FROM
+        validations_log
+      WHERE
+        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[]) AND
+        after_object IS NOT NULL
+      ON CONFLICT DO NOTHING
+    ", [
+      locha_ids.to_json,
+    ])
+    puts "Apply on #{locha_ids.size} loCha"
+
+    validate_changes(conn)
+  end
+
+  sig {
+    params(
+      conn: PG::Connection,
       changes: T::Enumerable[ValidationLog]
     ).void
   }
@@ -119,6 +170,15 @@ module Validation
     }
     puts "Apply on #{i} changes"
 
+    validate_changes(conn)
+  end
+
+  sig {
+    params(
+      conn: PG::Connection,
+    ).void
+  }
+  def self.validate_changes(conn)
     r = conn.exec(File.new('/sql/40_validated_changes.sql').read)
     puts "  40_validated_changes #{r.inspect}"
 
@@ -199,31 +259,24 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
-      changes: T::Enumerable[ValidationLog],
+      locha_ids: T::Array[Integer],
       validator_uid: T.nilable(Integer),
     ).void
   }
-  def self.accept_changes(conn, changes, validator_uid = nil)
-    apply_changes(conn, changes)
+  def self.accept_changes(conn, locha_ids, validator_uid = nil)
+    apply_lochas_ids(conn, locha_ids)
 
-    conn.prepare('validations_log_delete', "
+    conn.exec("
       UPDATE
         validations_log
       SET
         action = 'accept',
-        validator_uid = $4
+        validator_uid = $2
       WHERE
-        objtype = $1 AND
-        id = $2 AND
-        version = $3
-    ")
-    changes.each{ |change|
-      conn.exec_prepared('validations_log_delete', [
-        change.after_objects.objtype,
-        change.after_objects.id,
-        change.after_objects.version,
-        validator_uid,
-      ])
-    }
+        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[])
+    ", [
+      locha_ids.to_json,
+      validator_uid,
+    ])
   end
 end

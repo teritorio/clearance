@@ -2,7 +2,7 @@ SET search_path TO :schema,public;
 
 DROP FUNCTION IF EXISTS changes_logs();
 CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
-    id integer,
+    id bigint,
     objects jsonb
 ) AS $$
     WITH objects AS (

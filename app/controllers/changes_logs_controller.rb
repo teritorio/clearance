@@ -40,17 +40,9 @@ class ChangesLogsController < ApplicationController
       return
     end
 
-    changes = params['_json'].map{ |change|
-      Osm::ObjectChangeId.new(
-        objtype: change['objtype'],
-        id: change['id'],
-        version: change['version'],
-        deleted: change['deleted'],
-      )
-    }
-
+    locha_ids = T.let(params['_json'], T::Array[Integer])
     Db::DbConnWrite.conn(project) { |conn|
-      Validation.accept_changes(conn, changes, current_user_osm_id.to_i)
+      Validation.accept_changes(conn, locha_ids, current_user_osm_id.to_i)
     }
   end
 end
