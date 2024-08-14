@@ -74,12 +74,28 @@ module LoCha
 
   sig {
     params(
+      geom_a: RGeo::Feature::Geometry,
+      geom_b: RGeo::Feature::Geometry,
+      demi_distance: Float,
+    ).returns(Float)
+  }
+  def self.log_distance(geom_a, geom_b, demi_distance)
+    distance = geom_a.distance(geom_b)
+    # 0.0 -> 0.0
+    # demi_distance -> 0.5
+    # infinite -> 1.0
+    1.0 - 1.0 / (distance / demi_distance + 1.0)
+  end
+
+  sig {
+    params(
       geom_a: T.nilable(T::Hash[String, T.untyped]),
       geom_b: T.nilable(T::Hash[String, T.untyped]),
+      demi_distance: Float,
       decode: T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry),
     ).returns(Float)
   }
-  def self.geom_distance(geom_a, geom_b, decode = ->(geom) { RGeo::GeoJSON.decode(geom) })
+  def self.geom_distance(geom_a, geom_b, demi_distance, decode = ->(geom) { RGeo::GeoJSON.decode(geom) })
     return 1.0 if geom_a.nil? || geom_b.nil?
     return 0.0 if geom_a == geom_b
 
@@ -91,7 +107,6 @@ module LoCha
     end
     return 0.0 if r_geom_a.equals?(r_geom_b)
 
-    diameter = geom_diameter(r_geom_a + r_geom_b)
     if r_geom_a.intersects?(r_geom_b)
       dim_a = r_geom_a.dimension
       if dim_a != r_geom_b.dimension ||
@@ -104,9 +119,9 @@ module LoCha
         r_geom_a.sym_difference(r_geom_b).area / r_geom_a.union(r_geom_b).area / 2
       end
     elsif r_geom_a.dimension == 0 && r_geom_b.dimension == 0
-      r_geom_a.distance(r_geom_b) / diameter / 2
+      log_distance(r_geom_a, r_geom_b, demi_distance)
     else
-      0.5 + (r_geom_a.distance(r_geom_b) / diameter) / 2
+      0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
     end
   end
 
@@ -122,9 +137,10 @@ module LoCha
     params(
       befores: T::Array[Validation::OSMChangeProperties],
       afters: T::Array[Validation::OSMChangeProperties],
+      demi_distance: Float,
     ).returns(Conflations)
   }
-  def self.conflate(befores, afters)
+  def self.conflate(befores, afters, demi_distance)
     distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
     min = 3.0
     geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
@@ -134,7 +150,7 @@ module LoCha
         if t_dist < 0.5
           v = distance_matrix[[b, a]] = [
             t_dist,
-            geom_distance(b['geom'], a['geom'], lambda { |geom|
+            geom_distance(b['geom'], a['geom'], demi_distance, lambda { |geom|
               geom_cache[geom] ||= RGeo::GeoJSON.decode(geom)
               geom_cache[geom]
             }),

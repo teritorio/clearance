@@ -9,6 +9,8 @@ require './lib/time_machine/validation/lo_cha'
 class TestLoCha < Test::Unit::TestCase
   extend T::Sig
 
+  @@demi_distance = T.let(1.0, Float) # m
+
   sig { void }
   def test_key_val_main_distance
     assert_equal(0.0, LoCha.key_val_main_distance({}, {}))
@@ -94,13 +96,13 @@ class TestLoCha < Test::Unit::TestCase
   sig { void }
   def test_conflate_tags
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'highway' => 'a' })
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], after[0]]])
 
     before, after = build_objects(before_tags: { 'foo' => 'a' }, after_tags: { 'foo' => 'b' })
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], after[0]]])
 
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'building' => 'b' })
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], nil], [nil, nil, after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], nil], [nil, nil, after[0]]])
 
     bt = {
       'name' => 'Utopia',
@@ -121,30 +123,33 @@ class TestLoCha < Test::Unit::TestCase
     before, after = build_objects(before_tags: bt, after_tags: at)
 
     assert(LoCha.tags_distance(bt, at) < 0.5)
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], after[0]]])
   end
 
   sig { void }
   def test_conflate_geom
-    before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[1,1]}')
+    before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[0,1]}')
     assert_equal(0.5, LoCha.geom_distance(
       T.must(before[0])['geom'],
-      T.must(after[0])['geom']
+      T.must(after[0])['geom'],
+      @@demi_distance
     ))
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], after[0]]])
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
     assert_equal(0.5, LoCha.geom_distance(
       T.must(before[0])['geom'],
-      T.must(after[0])['geom']
+      T.must(after[0])['geom'],
+      @@demi_distance
     ))
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], after[0]]])
 
-    before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,1]]}', after_geom: '{"type":"LineString","coordinates":[[3,3],[4,4]]}')
+    before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', after_geom: '{"type":"LineString","coordinates":[[0,2],[0,3]]}')
     assert_equal(0.75, LoCha.geom_distance(
       T.must(before[0])['geom'],
-      T.must(after[0])['geom']
+      T.must(after[0])['geom'],
+      @@demi_distance
     ))
-    assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
+    assert_equal(LoCha.conflate(before, after, @@demi_distance), [[before[0], after[0], after[0]]])
   end
 end
