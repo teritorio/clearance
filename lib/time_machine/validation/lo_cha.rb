@@ -64,6 +64,16 @@ module LoCha
 
   sig {
     params(
+      geom: RGeo::Feature::Geometry,
+    ).returns(Float)
+  }
+  def self.geom_diameter(geom)
+    ring = geom.envelope.exterior_ring
+    ring.point_n(0).distance(ring.point_n(2))
+  end
+
+  sig {
+    params(
       geom_a: T.nilable(T::Hash[String, T.untyped]),
       geom_b: T.nilable(T::Hash[String, T.untyped]),
       decode: T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry),
@@ -81,13 +91,12 @@ module LoCha
     end
     return 0.0 if r_geom_a.equals?(r_geom_b)
 
-    ring = (r_geom_a + r_geom_b).envelope.exterior_ring
-    diameter = ring.point_n(0).distance(ring.point_n(2))
+    diameter = geom_diameter(r_geom_a + r_geom_b)
     if r_geom_a.intersects?(r_geom_b)
       dim_a = r_geom_a.dimension
       if dim_a != r_geom_b.dimension ||
-         r_geom_a.buffer(diameter * 0.05).contains?(r_geom_b) ||
-         r_geom_b.buffer(diameter * 0.05).contains?(r_geom_a)
+         r_geom_a.buffer(geom_diameter(r_geom_a) * 0.05).contains?(r_geom_b) ||
+         r_geom_b.buffer(geom_diameter(r_geom_b) * 0.05).contains?(r_geom_a)
         0.0
       elsif dim_a == 1
         r_geom_a.sym_difference(r_geom_b).length / r_geom_a.union(r_geom_b).length / 2
