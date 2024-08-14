@@ -10,18 +10,24 @@ class TestLoCha < Test::Unit::TestCase
   extend T::Sig
 
   sig { void }
-  def test_key_val_distance
-    assert_equal(0.0, LoCha.key_val_distance({}, {}))
-    assert_equal(0.0, LoCha.key_val_distance({ 'foo' => 'bar' }, { 'foo' => 'bar' }))
-    assert_equal(1.0, LoCha.key_val_distance({ 'foo' => 'bar' }, {}))
-    assert_equal(1.0, LoCha.key_val_distance({}, { 'foo' => 'bar' }))
+  def test_key_val_main_distance
+    assert_equal(0.0, LoCha.key_val_main_distance({}, {}))
+    assert_equal(0.0, LoCha.key_val_main_distance({ 'foo' => 'bar' }, { 'foo' => 'bar' }))
+    assert_equal(1.0, LoCha.key_val_main_distance({ 'foo' => 'bar' }, {}))
+    assert_equal(1.0, LoCha.key_val_main_distance({}, { 'foo' => 'bar' }))
 
-    assert_equal(0.5, LoCha.key_val_distance({ 'foo' => 'a' }, { 'foo' => 'b' }))
-    assert_equal(0.25, LoCha.key_val_distance({ 'foo' => 'a' }, { 'foo' => 'ab' }))
-    assert_equal(0.25, LoCha.key_val_distance({ 'foo' => 'ab' }, { 'foo' => 'ac' }))
-    assert_equal(1.0 / 3, LoCha.key_val_distance({ 'foo' => 'a' }, { 'foo' => 'abc' }))
+    assert_equal(1.0, LoCha.key_val_main_distance({ 'foo' => 'a' }, { 'foo' => 'b' }))
+    assert_equal(1.0, LoCha.key_val_main_distance({ 'foo' => 'a' }, { 'foo' => 'ab' }))
+  end
 
-    assert_equal(0.5, LoCha.key_val_distance({ 'foo' => 'a' }, { 'foo' => 'a', 'bar' => 'b' }))
+  sig { void }
+  def test_key_val_fuzzy_distance
+    assert_equal(0.5, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'b' }))
+    assert_equal(0.25, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'ab' }))
+    assert_equal(0.25, LoCha.key_val_fuzzy_distance({ 'foo' => 'ab' }, { 'foo' => 'ac' }))
+    assert_equal(1.0 / 3, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'abc' }))
+
+    assert_equal(0.5, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'a', 'bar' => 'b' }))
   end
 
   sig { void }
@@ -90,7 +96,7 @@ class TestLoCha < Test::Unit::TestCase
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'highway' => 'a' })
     assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
 
-    before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'highway' => 'b' })
+    before, after = build_objects(before_tags: { 'foo' => 'a' }, after_tags: { 'foo' => 'b' })
     assert_equal(LoCha.conflate(before, after), [[before[0], after[0], after[0]]])
 
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'building' => 'b' })

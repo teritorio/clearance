@@ -19,7 +19,22 @@ module LoCha
       tags_b: T::Hash[String, String],
     ).returns(Float)
   }
-  def self.key_val_distance(tags_a, tags_b)
+  def self.key_val_main_distance(tags_a, tags_b)
+    return 0.0 if tags_a.empty? && tags_b.empty?
+    return 1.0 if tags_a.empty? || tags_b.empty?
+
+    ka = tags_a.collect { |k, v| "#{k}=#{v}" }
+    kb = tags_b.collect { |k, v| "#{k}=#{v}" }
+    1 - (ka & kb).size.to_f / (ka | kb).size
+  end
+
+  sig {
+    params(
+      tags_a: T::Hash[String, String],
+      tags_b: T::Hash[String, String],
+    ).returns(Float)
+  }
+  def self.key_val_fuzzy_distance(tags_a, tags_b)
     return 0.0 if tags_a.empty? && tags_b.empty?
     return 1.0 if tags_a.empty? || tags_b.empty?
 
@@ -42,9 +57,9 @@ module LoCha
     }
 
     # Main tags
-    key_val_distance(T.must(a)[0] || {}, T.must(b)[0] || {}) / 2 +
+    key_val_main_distance(T.must(a)[0] || {}, T.must(b)[0] || {}) / 2 +
       # Other tags
-      key_val_distance(T.must(a)[1] || {}, T.must(b)[1] || {}) / 2
+      key_val_fuzzy_distance(T.must(a)[1] || {}, T.must(b)[1] || {}) / 2
   end
 
   sig {
