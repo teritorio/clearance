@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  script:
+    volumes:
+      - ./:/srv/app
+
+  api:
+    volumes:
+      - ./:/srv/app
