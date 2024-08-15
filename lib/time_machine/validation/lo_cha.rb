@@ -6,6 +6,7 @@ require 'levenshtein'
 require 'set'
 require 'rgeo'
 require 'rgeo/geo_json'
+require 'rgeo/proj4'
 require './lib/time_machine/validation/changes_db'
 
 module LoCha
@@ -140,14 +141,20 @@ module LoCha
       after: Validation::OSMChangeProperties,
       demi_distance: Float,
       geom_cache: T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry],
+      geo_factory: T.untyped,
+      projection: T.untyped,
     ).returns(T.nilable([Float, Float, Float]))
   }
-  def self.vect_dist(before, after, demi_distance, geom_cache)
+  def self.vect_dist(before, after, demi_distance, geom_cache, geo_factory, projection)
     t_dist = tags_distance(before['tags'], after['tags'])
     return unless t_dist < 0.5
 
     g_dist = geom_distance(before['geom'], after['geom'], demi_distance, lambda { |geom|
-      geom_cache[geom] ||= RGeo::GeoJSON.decode(geom)
+      geom_cache[geom] ||= RGeo::Feature.cast(
+        RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
+        project: true,
+        factory: projection,
+      )
       geom_cache[geom]
     })
     return if g_dist.nil?
@@ -163,16 +170,19 @@ module LoCha
     params(
       befores: T::Array[Validation::OSMChangeProperties],
       afters: T::Array[Validation::OSMChangeProperties],
+      local_srid: Integer,
       demi_distance: Float,
-    ).returns(Conflations)
+    ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
   }
-  def self.conflate(befores, afters, demi_distance)
+  def self.conflate_matrix(befores, afters, local_srid, demi_distance)
     distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
     min = 3.0
     geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
+    geo_factory = RGeo::Geos.factory(srid: 4326)
+    projection = RGeo::Geos.factory(srid: local_srid)
     befores.each{ |b|
       afters.each{ |a|
-        v = vect_dist(b, a, demi_distance, geom_cache)
+        v = vect_dist(b, a, demi_distance, geom_cache, geo_factory, projection)
         if !v.nil?
           distance_matrix[[b, a]] = v
           s = v.sum
@@ -180,6 +190,20 @@ module LoCha
         end
       }
     }
+
+    distance_matrix
+  end
+
+  sig {
+    params(
+      befores: T::Array[Validation::OSMChangeProperties],
+      afters: T::Array[Validation::OSMChangeProperties],
+      local_srid: Integer,
+      demi_distance: Float,
+    ).returns(Conflations)
+  }
+  def self.conflate(befores, afters, local_srid, demi_distance)
+    distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
 
     afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
     paired = T.let([], Conflations)

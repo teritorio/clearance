@@ -7,6 +7,7 @@ RUN apk add --no-cache --virtual \
         libbz2 \
         libpq-dev \
         postgresql-dev \
+        proj-dev \
         ruby-dev \
         ruby-json
 

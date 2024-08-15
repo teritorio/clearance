@@ -282,6 +282,8 @@ GEM
     rgeo (3.0.1)
     rgeo-geojson (2.1.1)
       rgeo (>= 1.0.0)
+    rgeo-proj4 (4.0.0)
+      rgeo (~> 3.0.0)
     rice (4.3.1)
     rubocop (1.63.5)
       json (~> 2.3)
@@ -408,6 +410,7 @@ DEPENDENCIES
   rbi
   rego
   rgeo-geojson
+  rgeo-proj4
   rubocop
   rubocop-rails
   rubocop-rake

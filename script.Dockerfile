@@ -11,6 +11,7 @@ RUN apt update -y && apt install -y \
     libgeos-dev \
     libosmium2-dev \
     libpq-dev \
+    libproj-dev \
     libprotozero-dev \
     osmium-tool \
     osmosis \
