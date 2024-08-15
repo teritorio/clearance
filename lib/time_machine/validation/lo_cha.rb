@@ -136,6 +136,31 @@ module LoCha
 
   sig {
     params(
+      before: Validation::OSMChangeProperties,
+      after: Validation::OSMChangeProperties,
+      demi_distance: Float,
+      geom_cache: T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry],
+    ).returns(T.nilable([Float, Float, Float]))
+  }
+  def self.vect_dist(before, after, demi_distance, geom_cache)
+    t_dist = tags_distance(before['tags'], after['tags'])
+    return unless t_dist < 0.5
+
+    g_dist = geom_distance(before['geom'], after['geom'], demi_distance, lambda { |geom|
+      geom_cache[geom] ||= RGeo::GeoJSON.decode(geom)
+      geom_cache[geom]
+    })
+    return if g_dist.nil?
+
+    [
+      t_dist,
+      g_dist,
+      (before['objtype'] == after['objtype'] && before['id'] == after['id'] ? 0.0 : 0.000001),
+    ]
+  end
+
+  sig {
+    params(
       befores: T::Array[Validation::OSMChangeProperties],
       afters: T::Array[Validation::OSMChangeProperties],
       demi_distance: Float,
@@ -147,21 +172,11 @@ module LoCha
     geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
     befores.each{ |b|
       afters.each{ |a|
-        t_dist = tags_distance(b['tags'], a['tags'])
-        if t_dist < 0.5
-          g_dist = geom_distance(b['geom'], a['geom'], demi_distance, lambda { |geom|
-            geom_cache[geom] ||= RGeo::GeoJSON.decode(geom)
-            geom_cache[geom]
-          })
-          if !g_dist.nil?
-            v = distance_matrix[[b, a]] = [
-              t_dist,
-              g_dist,
-              (b['objtype'] == a['objtype'] && b['id'] == a['id'] ? 0.0 : 0.000001),
-            ]
-            s = v.sum
-            min = s if s < min
-          end
+        v = vect_dist(b, a, demi_distance, geom_cache)
+        if !v.nil?
+          distance_matrix[[b, a]] = v
+          s = v.sum
+          min = s if s < min
         end
       }
     }
