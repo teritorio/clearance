@@ -145,8 +145,8 @@ module LoCha
     distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
     min = 3.0
     geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
-    befores.collect{ |b|
-      afters.collect{ |a|
+    befores.each{ |b|
+      afters.each{ |a|
         t_dist = tags_distance(b['tags'], a['tags'])
         if t_dist < 0.5
           g_dist = geom_distance(b['geom'], a['geom'], demi_distance, lambda { |geom|
@@ -163,7 +163,7 @@ module LoCha
             min = s if s < min
           end
         end
-      }.compact
+      }
     }
 
     afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
