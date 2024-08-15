@@ -18,10 +18,10 @@ module LoCha
     params(
       tags_a: T::Hash[String, String],
       tags_b: T::Hash[String, String],
-    ).returns(Float)
+    ).returns(T.nilable(Float))
   }
   def self.key_val_main_distance(tags_a, tags_b)
-    return 0.0 if tags_a.empty? && tags_b.empty?
+    return nil if tags_a.empty? && tags_b.empty?
     return 1.0 if tags_a.empty? || tags_b.empty?
 
     ka = tags_a.collect { |k, v| "#{k}=#{v}" }
@@ -50,7 +50,7 @@ module LoCha
     params(
       tags_a: T::Hash[String, String],
       tags_b: T::Hash[String, String],
-    ).returns(Float)
+    ).returns(T.nilable(Float))
   }
   def self.tags_distance(tags_a, tags_b)
     a, b = [tags_a, tags_b].collect{ |tags|
@@ -58,9 +58,11 @@ module LoCha
     }
 
     # Main tags
-    key_val_main_distance(T.must(a)[0] || {}, T.must(b)[0] || {}) / 2 +
-      # Other tags
-      key_val_fuzzy_distance(T.must(a)[1] || {}, T.must(b)[1] || {}) / 2
+    d_main = key_val_main_distance(T.must(a)[0] || {}, T.must(b)[0] || {})
+    return if d_main.nil?
+
+    # Other tags
+    (d_main + key_val_fuzzy_distance(T.must(a)[1] || {}, T.must(b)[1] || {})) / 2
   end
 
   sig {
@@ -147,7 +149,7 @@ module LoCha
   }
   def self.vect_dist(before, after, demi_distance, geom_cache, geo_factory, projection)
     t_dist = tags_distance(before['tags'], after['tags'])
-    return unless t_dist < 0.5
+    return if t_dist.nil? || t_dist >= 0.5
 
     g_dist = geom_distance(before['geom'], after['geom'], demi_distance, lambda { |geom|
       geom_cache[geom] ||= RGeo::Feature.cast(

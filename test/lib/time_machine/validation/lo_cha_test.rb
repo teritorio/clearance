@@ -14,13 +14,14 @@ class TestLoCha < Test::Unit::TestCase
 
   sig { void }
   def test_key_val_main_distance
-    assert_equal(0.0, LoCha.key_val_main_distance({}, {}))
+    assert_equal(nil, LoCha.key_val_main_distance({}, {}))
     assert_equal(0.0, LoCha.key_val_main_distance({ 'foo' => 'bar' }, { 'foo' => 'bar' }))
-    assert_equal(1.0, LoCha.key_val_main_distance({ 'foo' => 'bar' }, {}))
-    assert_equal(1.0, LoCha.key_val_main_distance({}, { 'foo' => 'bar' }))
+    assert_equal(0.0, LoCha.key_val_main_distance({ 'highway' => 'bar' }, { 'highway' => 'bar' }))
+    assert_equal(1.0, LoCha.key_val_main_distance({ 'highway' => 'bar' }, {}))
+    assert_equal(1.0, LoCha.key_val_main_distance({}, { 'highway' => 'bar' }))
 
-    assert_equal(1.0, LoCha.key_val_main_distance({ 'foo' => 'a' }, { 'foo' => 'b' }))
-    assert_equal(1.0, LoCha.key_val_main_distance({ 'foo' => 'a' }, { 'foo' => 'ab' }))
+    assert_equal(1.0, LoCha.key_val_main_distance({ 'highway' => 'a' }, { 'highway' => 'b' }))
+    assert_equal(1.0, LoCha.key_val_main_distance({ 'highway' => 'a' }, { 'highway' => 'ab' }))
   end
 
   sig { void }
@@ -36,7 +37,7 @@ class TestLoCha < Test::Unit::TestCase
   sig { void }
   def test_tags_distance
     assert_equal(0.0, LoCha.tags_distance({ 'highway' => 'a' }, { 'highway' => 'a' }))
-    assert_equal(0.0, LoCha.tags_distance({ 'foo' => 'a' }, { 'foo' => 'a' }))
+    assert_equal(0.0, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'highway' => 'a', 'foo' => 'a' }))
     assert_equal(0.0, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'highway' => 'a', 'foo' => 'a' }))
     assert_equal(0.5, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'leisure' => 'a', 'foo' => 'a' }))
     assert_equal(0.5, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'foo' => 'a' }))
@@ -52,8 +53,8 @@ class TestLoCha < Test::Unit::TestCase
     ).returns([T::Array[Validation::OSMChangeProperties], T::Array[Validation::OSMChangeProperties]])
   }
   def build_objects(
-    before_tags: {},
-    after_tags: {},
+    before_tags: { 'highway' => 'a' },
+    after_tags: { 'highway' => 'a' },
     before_geom: '{"type":"Point","coordinates":[0,0]}',
     after_geom: '{"type":"Point","coordinates":[0,0]}'
   )
@@ -99,7 +100,7 @@ class TestLoCha < Test::Unit::TestCase
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'highway' => 'a' })
     assert_equal(LoCha.conflate(before, after, @@srid, @@demi_distance), [[before[0], after[0], after[0]]])
 
-    before, after = build_objects(before_tags: { 'foo' => 'a' }, after_tags: { 'foo' => 'b' })
+    before, after = build_objects(before_tags: { 'highway' => 'a', 'foo' => 'a' }, after_tags: { 'highway' => 'a', 'foo' => 'b' })
     assert_equal(LoCha.conflate(before, after, @@srid, @@demi_distance), [[before[0], after[0], after[0]]])
 
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'building' => 'b' })
@@ -160,6 +161,7 @@ class TestLoCha < Test::Unit::TestCase
   def test_conflate_tags_geom
     srid = 23_031 # UTM zone 31N, 0°E
     demi_distance = 200.0 # m
+
     before, after = build_objects(
       before_tags: { 'amenity' => 'bicycle_parking' },
       before_geom: '{"type":"Point","coordinates":[0, 0]}',
@@ -194,5 +196,21 @@ class TestLoCha < Test::Unit::TestCase
     assert_equal(T.must(conflate_distances.values[0])[0], 0.0)
     assert_equal(T.must(conflate_distances.values[0])[2], 0.0)
     assert_equal(LoCha.conflate(before, after, srid, demi_distance), [[before[0], after[0], after[0]]])
+  end
+
+  sig { void }
+  def test_conflate_no_comparable_tags
+    srid = 23_031 # UTM zone 31N, 0°E
+    demi_distance = 200.0 # m
+
+    before, after = build_objects(
+      before_tags: { 'building' => 'retail' },
+      before_geom: '{"type":"Point","coordinates":[28.10176, -15.44687]}',
+      after_tags: { 'building' => 'yes', 'building:levels' => '13' },
+      after_geom: '{"type":"Point","coordinates":[28.10128, -15.44647]}'
+    )
+    conflate_distances = LoCha.conflate_matrix(before, after, srid, demi_distance)
+    assert_equal(conflate_distances.keys, [])
+    assert_equal(LoCha.conflate(before, after, srid, demi_distance), [[before[0], after[0], nil], [nil, nil, after[0]]])
   end
 end
