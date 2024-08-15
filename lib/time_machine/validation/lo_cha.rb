@@ -93,17 +93,17 @@ module LoCha
       geom_b: T.nilable(T::Hash[String, T.untyped]),
       demi_distance: Float,
       decode: T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry),
-    ).returns(Float)
+    ).returns(T.nilable(Float))
   }
   def self.geom_distance(geom_a, geom_b, demi_distance, decode = ->(geom) { RGeo::GeoJSON.decode(geom) })
-    return 1.0 if geom_a.nil? || geom_b.nil?
+    return nil if geom_a.nil? || geom_b.nil?
     return 0.0 if geom_a == geom_b
 
     begin
       r_geom_a = decode.call(geom_a)
       r_geom_b = decode.call(geom_b)
     rescue StandardError
-      return 1.0
+      return nil
     end
     return 0.0 if r_geom_a.equals?(r_geom_b)
 
@@ -119,7 +119,8 @@ module LoCha
         r_geom_a.sym_difference(r_geom_b).area / r_geom_a.union(r_geom_b).area / 2
       end
     elsif r_geom_a.dimension == 0 && r_geom_b.dimension == 0
-      log_distance(r_geom_a, r_geom_b, demi_distance)
+      d = log_distance(r_geom_a, r_geom_b, demi_distance)
+      d > 0.5 ? nil : d * 2
     else
       0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
     end
@@ -148,16 +149,19 @@ module LoCha
       afters.collect{ |a|
         t_dist = tags_distance(b['tags'], a['tags'])
         if t_dist < 0.5
-          v = distance_matrix[[b, a]] = [
-            t_dist,
-            geom_distance(b['geom'], a['geom'], demi_distance, lambda { |geom|
-              geom_cache[geom] ||= RGeo::GeoJSON.decode(geom)
-              geom_cache[geom]
-            }),
-            (b['objtype'] == a['objtype'] && b['id'] == a['id'] ? 0.0 : 0.000001),
-          ]
-          s = v.sum
-          min = s if s < min
+          g_dist = geom_distance(b['geom'], a['geom'], demi_distance, lambda { |geom|
+            geom_cache[geom] ||= RGeo::GeoJSON.decode(geom)
+            geom_cache[geom]
+          })
+          if !g_dist.nil?
+            v = distance_matrix[[b, a]] = [
+              t_dist,
+              g_dist,
+              (b['objtype'] == a['objtype'] && b['id'] == a['id'] ? 0.0 : 0.000001),
+            ]
+            s = v.sum
+            min = s if s < min
+          end
         end
       }.compact
     }

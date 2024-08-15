@@ -129,7 +129,7 @@ class TestLoCha < Test::Unit::TestCase
   sig { void }
   def test_conflate_geom
     before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[0,1]}')
-    assert_equal(0.5, LoCha.geom_distance(
+    assert_equal(1.0, LoCha.geom_distance(
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
