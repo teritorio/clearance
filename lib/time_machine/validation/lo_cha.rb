@@ -11,7 +11,7 @@ require './lib/time_machine/validation/changes_db'
 module LoCha
   extend T::Sig
 
-  MAIN_TAGS = T.let(Set.new(%w[highway railway waterway aeroway amenity building landuse leisure]), T::Set[String])
+  MAIN_TAGS = T.let(Set.new(%w[highway railway waterway aeroway amenity landuse leisure]), T::Set[String])
 
   sig {
     params(
