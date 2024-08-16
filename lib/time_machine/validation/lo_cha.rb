@@ -95,14 +95,15 @@ module LoCha
       geom_a: T.nilable(T::Hash[String, T.untyped]),
       geom_b: T.nilable(T::Hash[String, T.untyped]),
       demi_distance: Float,
-      decode: T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry),
+      decode: T.nilable(T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry)),
     ).returns(T.nilable(Float))
   }
-  def self.geom_distance(geom_a, geom_b, demi_distance, decode = ->(geom) { RGeo::GeoJSON.decode(geom) })
+  def self.geom_distance(geom_a, geom_b, demi_distance, &decode)
     return nil if geom_a.nil? || geom_b.nil?
     return 0.0 if geom_a == geom_b
 
     begin
+      decode ||= ->(geom) { RGeo::GeoJSON.decode(geom) }
       r_geom_a = decode.call(geom_a)
       r_geom_b = decode.call(geom_b)
     rescue StandardError
@@ -151,14 +152,13 @@ module LoCha
     t_dist = tags_distance(before['tags'], after['tags'])
     return if t_dist.nil? || t_dist >= 0.5
 
-    g_dist = geom_distance(before['geom'], after['geom'], demi_distance, lambda { |geom|
+    g_dist = geom_distance(before['geom'], after['geom'], demi_distance) { |geom|
       geom_cache[geom] ||= RGeo::Feature.cast(
         RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
         project: true,
         factory: projection,
       )
-      geom_cache[geom]
-    })
+    }
     return if g_dist.nil?
 
     [
