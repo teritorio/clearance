@@ -124,8 +124,30 @@ class TestLoCha < Test::Unit::TestCase
     }).compact
     before, after = build_objects(before_tags: bt, after_tags: at)
 
-    assert(LoCha.tags_distance(bt, at) < 0.5)
+    assert(T.must(LoCha.tags_distance(bt, at)) < 0.5)
     assert_equal(LoCha.conflate(before, after, @@srid, @@demi_distance), [[before[0], after[0], after[0]]])
+  end
+
+  sig { void }
+  def test_geom_distance
+    srid = 2154
+    demi_distance = 200.0 # m
+
+    geo_factory = RGeo::Geos.factory(srid: 4326)
+    projection = RGeo::Geos.factory(srid: srid)
+
+    before = { 'type' => 'Point', 'coordinates' => [-1.4865344, 43.5357032] }
+    after = { 'type' => 'Point', 'coordinates' => [-1.4864637, 43.5359501] }
+
+    d = LoCha.geom_distance(before, after, demi_distance) { |geom|
+      RGeo::Feature.cast(
+        RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
+        project: true,
+        factory: projection,
+      )
+    }
+    assert(T.must(d) < 0.5)
+    assert(T.must(d) > 0.0)
   end
 
   sig { void }
