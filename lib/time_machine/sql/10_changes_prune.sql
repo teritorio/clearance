@@ -1,3 +1,7 @@
+do $$ BEGIN
+    RAISE WARNING 'osm_changes count: %', (SELECT COUNT(*) FROM osm_changes);
+END; $$ LANGUAGE plpgsql;
+
 WITH changes_delete_without_base AS (
     SELECT
         changes.objtype,
