@@ -46,6 +46,36 @@ class TestLoCha < Test::Unit::TestCase
 
   sig {
     params(
+      id: Integer,
+      tags: T::Hash[String, String],
+      geom: String,
+    ).returns(Validation::OSMChangeProperties)
+  }
+  def build_object(
+    id: 1,
+    tags: { 'highway' => 'a' },
+    geom: '{"type":"Point","coordinates":[0,0]}'
+  )
+    T.let({
+      'locha_id' => 1,
+      'objtype' => 'n',
+      'id' => id,
+      'geom' => JSON.parse(geom),
+      'geom_distance' => 0,
+      'deleted' => false,
+      'members' => nil,
+      'version' => 1,
+      'changesets' => nil,
+      'username' => 'bob',
+      'created' => 'today',
+      'tags' => tags,
+      'is_change' => false,
+      'group_ids' => nil,
+    }, Validation::OSMChangeProperties)
+  end
+
+  sig {
+    params(
       before_tags: T::Hash[String, String],
       after_tags: T::Hash[String, String],
       before_geom: String,
@@ -58,40 +88,8 @@ class TestLoCha < Test::Unit::TestCase
     before_geom: '{"type":"Point","coordinates":[0,0]}',
     after_geom: '{"type":"Point","coordinates":[0,0]}'
   )
-    before = [T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => JSON.parse(before_geom),
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => before_tags,
-      'is_change' => false,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)]
-
-    after = [T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => JSON.parse(after_geom),
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => after_tags,
-      'is_change' => true,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)]
-
+    before = [build_object(id: 1, tags: before_tags, geom: before_geom)]
+    after = [build_object(id: 1, tags: after_tags, geom: after_geom)]
     [before, after]
   end
 
