@@ -59,7 +59,7 @@ module Validation
     params(
       conn: PG::Connection,
       config: Configuration::Config,
-    ).returns(T::Enumerable[[Integer, T::Array[String], ValidationResult]])
+    ).returns(T::Enumerable[[Integer, T::Array[ValidationLogMatch], ValidationResult]])
   }
   def self.time_machine(conn, config)
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
