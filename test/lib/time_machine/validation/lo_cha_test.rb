@@ -233,4 +233,68 @@ class TestLoCha < Test::Unit::TestCase
     assert_equal(conflate_distances.keys, [])
     assert_equal(LoCha.conflate(before, after, srid, demi_distance), [[before[0], after[0], nil], [nil, nil, after[0]]])
   end
+
+  sig { void }
+  def test_conflate_double
+    srid = 2154
+    demi_distance = 200.0 # m
+
+    before_tags = {
+      'bus' => 'yes',
+      'highway' => 'bus_stop',
+      'name' => 'Guyenne',
+      'operator' => 'Chronoplus',
+      'public_transport' => 'platform',
+    }
+    before = [
+      build_object(id: 1, geom: '{"type":"Point","coordinates":[-1.4865344, 43.5357032]}', tags: before_tags),
+      build_object(id: 2, geom: '{"type":"Point","coordinates":[-1.4864637, 43.5359501]}', tags: before_tags),
+    ]
+
+    after_tags = {
+      'bench' => 'no',
+      'bus' => 'yes',
+      'highway' => 'bus_stop',
+      'name' => 'Guyenne',
+      'network' => 'Txik Txak',
+      'operator' => 'Chronoplus',
+      'public_transport' => 'platform',
+      'shelter' => 'no',
+    }
+    after = [
+      build_object(id: 1, geom: '{"type":"Point","coordinates":[-1.4865344, 43.5357032]}', tags: after_tags),
+      build_object(id: 2, geom: '{"type":"Point","coordinates":[-1.4864637, 43.5359501]}', tags: after_tags),
+    ]
+
+    conflate_distances = LoCha.conflate_matrix(before, after, srid, demi_distance)
+    assert_equal(conflate_distances.keys.size, 4)
+    assert_equal(LoCha.conflate(before, after, srid, demi_distance), [[before[0], after[0], after[0]], [before[1], after[1], after[1]]])
+  end
+
+  sig { void }
+  def test_conflate_polygon
+    srid = 2154
+    demi_distance = 200.0 # m
+
+    geojson = '{"type":"Polygon","coordinates":[[[-1.102128,43.543789],[-1.102262,43.543822],[-1.102333,43.543663],[-1.102197,43.54363],[-1.102128,43.543789]]]}'
+
+    before_tags = {
+      'tourism' => 'information',
+      'opening_hours' => 'Mo-Sa 09:30-13:00,14:30-18:00',
+    }
+    before = [
+      build_object(id: 1, geom: geojson, tags: before_tags),
+    ]
+
+    after_tags = {
+      'tourism' => 'information',
+      'opening_hours' => 'Mo-Sa 09:30-13:00,14:30-18:00; PH 10:00-13:00',
+    }
+    after = [
+      build_object(id: 1, geom: geojson, tags: after_tags),
+    ]
+
+    conflate_distances = LoCha.conflate_matrix(before, after, srid, demi_distance)
+    assert_equal(LoCha.conflate(before, after, srid, demi_distance), [[before[0], after[0], after[0]]])
+  end
 end
