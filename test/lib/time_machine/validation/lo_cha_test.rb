@@ -190,12 +190,43 @@ class TestLoCha < Test::Unit::TestCase
       T.must(after[0])['geom'],
       @@demi_distance
     ))
-    conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
-    puts conflate_distances.inspect
     assert_equal(
       [[before[0], after[0], after[0]]],
       LoCha.conflate(before, after, @@srid, @@demi_distance)
     )
+  end
+
+  sig { void }
+  def test_conflate_deleted
+    tags = { 'highway' => 'residential' }
+    geom = '{"type":"Point","coordinates":[0,0]}'
+    before = [
+      build_object(id: 1, geom: geom, tags: tags),
+    ]
+    after = [
+      build_object(id: 1, geom: geom, tags: tags).merge('deleted' => true),
+      build_object(id: 2, geom: geom, tags: tags),
+    ]
+
+    conflation = LoCha.conflate(before, after, @@srid, @@demi_distance)
+    assert_equal(1, conflation.size, conflation)
+    assert_equal([[before[0], after[0], after[1]]], conflation)
+  end
+
+  sig { void }
+  def test_conflate_semantic_deleted
+    geom = '{"type":"Point","coordinates":[0,0]}'
+    before = [
+      build_object(id: 1, geom: geom, tags: { 'highway' => 'residential' }),
+    ]
+    after = [
+      build_object(id: 1, geom: geom, tags: {}),
+      build_object(id: 2, geom: geom, tags: { 'highway' => 'residential' }),
+    ]
+
+    conflation = LoCha.conflate(before, after, @@srid, @@demi_distance)
+    assert_equal(2, conflation.size, conflation)
+    assert_equal([[before[0], after[0], after[1]], [nil, nil, after[0]]], conflation)
   end
 
   sig { void }

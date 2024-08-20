@@ -206,9 +206,10 @@ module LoCha
     ).returns(Conflations)
   }
   def self.conflate(befores, afters, local_srid, demi_distance)
+    afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
+    afters = afters.select{ |a| !a['deleted'] }
     distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
 
-    afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
     paired = T.let([], Conflations)
     paired_befores = T.let([], T::Array[Validation::OSMChangeProperties])
     paired_afters = T.let([], T::Array[Validation::OSMChangeProperties])
