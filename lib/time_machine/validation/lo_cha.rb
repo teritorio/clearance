@@ -230,7 +230,6 @@ module LoCha
   }
   def self.conflate_matrix(befores, afters, local_srid, demi_distance)
     distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
-    min = 3.0
     geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
     geo_factory = RGeo::Geos.factory(srid: 4326)
     projection = RGeo::Geos.factory(srid: local_srid)
@@ -239,8 +238,6 @@ module LoCha
         v = vect_dist(b, a, demi_distance, geom_cache, geo_factory, projection)
         if !v.nil?
           distance_matrix[[b, a]] = v
-          s = v.sum
-          min = s if s < min
         end
       }
     }
@@ -269,13 +266,7 @@ module LoCha
       befores.delete(key_min[0])
       afters.delete(key_min[1])
 
-      min = 3.0
-      distance_matrix = distance_matrix.select{ |k, v|
-        r = (k & key_min).empty?
-        s = v.sum
-        min = s if s < min
-        r
-      }
+      distance_matrix = distance_matrix.select{ |k, _v| (k & key_min).empty? }
     end
 
     paired +
