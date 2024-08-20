@@ -105,28 +105,52 @@ module LoCha
 
     begin
       decode ||= ->(geom) { RGeo::GeoJSON.decode(geom) }
-      r_geom_a = decode.call(geom_a)
-      r_geom_b = decode.call(geom_b)
+      r_geom_a = T.let(decode.call(geom_a), RGeo::Feature::Geometry)
+      r_geom_b = T.let(decode.call(geom_b), RGeo::Feature::Geometry)
     rescue StandardError
       return nil
     end
     return 0.0 if r_geom_a.equals?(r_geom_b)
 
     if r_geom_a.intersects?(r_geom_b)
-      dim_a = r_geom_a.dimension
-      if dim_a != r_geom_b.dimension ||
-         r_geom_a.buffer(geom_diameter(r_geom_a) * 0.05).contains?(r_geom_b) ||
-         r_geom_b.buffer(geom_diameter(r_geom_b) * 0.05).contains?(r_geom_a)
+      # Compute: 1 - intersection / union
+      # Compute buffered symetrical difference
+      a_over_b = T.let(r_geom_a - r_geom_b.buffer(geom_diameter(r_geom_b) * 0.05), RGeo::Feature::Geometry)
+      b_over_a = T.let(r_geom_b - r_geom_a.buffer(geom_diameter(r_geom_a) * 0.05), RGeo::Feature::Geometry)
+
+      if a_over_b.empty? || b_over_a.empty?
+        # One subpart of the other
         0.0
-      elsif dim_a == 1
-        r_geom_a.sym_difference(r_geom_b).length / r_geom_a.union(r_geom_b).length / 2
-      elsif dim_a == 2
-        r_geom_a.sym_difference(r_geom_b).area / r_geom_a.union(r_geom_b).area / 2
+      else
+        dim_a = a_over_b.dimension
+        dim_b = b_over_a.dimension
+        union = r_geom_a.union(r_geom_b)
+        dim_union = union.dimension
+        if dim_a == 0 && dim_b == 0 && dim_union == 0
+          # Points
+          raise 'Non equal intersecting points, should never happen.'
+        elsif dim_a == 1 && dim_b == 1 && dim_union == 1
+          # Lines
+          (
+            T.cast(a_over_b, RGeo::Feature::LineString).length +
+            T.cast(b_over_a, RGeo::Feature::LineString).length
+          ) / union.length / 2
+        else
+          # dim_a == 2 && dim_b == 2 && dim_union == 2
+          # And fallback, all converted as polygons
+          # Polygons
+          (
+            T.cast(a_over_b, RGeo::Feature::Polygon).area +
+            T.cast(b_over_a, RGeo::Feature::Polygon).area
+          ) / union.area / 2
+        end
       end
     elsif r_geom_a.dimension == 0 && r_geom_b.dimension == 0
+      # Point never intersects
       d = log_distance(r_geom_a, r_geom_b, demi_distance)
       d > 0.5 ? nil : d * 2
     else
+      # Else, use real distance + bias because no intersection
       0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
     end
   end
