@@ -102,10 +102,16 @@ module LoCha
     ).returns(Float)
   }
   def self.exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union, &_block)
+    buffered_distance = (yield(a_over_b) + yield(b_over_a)) / yield(union) / 2
+
+    if r_geom_a.intersection(r_geom_b).dimension < r_geom_a.dimension
+      # Excact distance give a lower dimension geom, use buffered distance
+      return buffered_distance
+    end
+
     exact_a_over_b = r_geom_a - r_geom_b
     exact_b_over_a = r_geom_b - r_geom_a
     exact_distance = (yield(exact_a_over_b) + yield(exact_b_over_a)) / yield(union) / 2
-    buffered_distance = (yield(a_over_b) + yield(b_over_a)) / yield(union) / 2
 
     # Prefer exact distance if it's more than 60% of the buffered distance
     if exact_distance / buffered_distance > 0.6

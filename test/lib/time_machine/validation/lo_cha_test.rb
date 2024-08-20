@@ -174,7 +174,7 @@ class TestLoCha < Test::Unit::TestCase
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
-    assert_equal(0.5, LoCha.geom_distance(
+    assert_equal(0.475, LoCha.geom_distance(
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
