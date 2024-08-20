@@ -93,6 +93,30 @@ module LoCha
 
   sig {
     params(
+      r_geom_a: RGeo::Feature::Geometry,
+      r_geom_b: RGeo::Feature::Geometry,
+      a_over_b: RGeo::Feature::Geometry,
+      b_over_a: RGeo::Feature::Geometry,
+      union: RGeo::Feature::Geometry,
+      _block: T.proc.params(arg0: RGeo::Feature::Geometry).returns(Float),
+    ).returns(Float)
+  }
+  def self.exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union, &_block)
+    exact_a_over_b = r_geom_a - r_geom_b
+    exact_b_over_a = r_geom_b - r_geom_a
+    exact_distance = (yield(exact_a_over_b) + yield(exact_b_over_a)) / yield(union) / 2
+    buffered_distance = (yield(a_over_b) + yield(b_over_a)) / yield(union) / 2
+
+    # Prefer exact distance if it's more than 60% of the buffered distance
+    if exact_distance / buffered_distance > 0.6
+      exact_distance
+    else
+      buffered_distance
+    end
+  end
+
+  sig {
+    params(
       geom_a: T.nilable(T::Hash[String, T.untyped]),
       geom_b: T.nilable(T::Hash[String, T.untyped]),
       demi_distance: Float,
@@ -131,14 +155,11 @@ module LoCha
           raise 'Non equal intersecting points, should never happen.'
         elsif dim_a == 1 && dim_b == 1 && dim_union == 1
           # Lines
-          (
-            T.cast(a_over_b, RGeo::Feature::LineString).length +
-            T.cast(b_over_a, RGeo::Feature::LineString).length
-          ) / union.length / 2
+          exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom| T.unsafe(geom).length }
+        elsif dim_a == 2 && dim_b == 2 && dim_union == 2
+          exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom| T.unsafe(geom).area }
         else
-          # dim_a == 2 && dim_b == 2 && dim_union == 2
           # And fallback, all converted as polygons
-          # Polygons
           (
             T.cast(a_over_b, RGeo::Feature::Polygon).area +
             T.cast(b_over_a, RGeo::Feature::Polygon).area
