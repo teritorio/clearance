@@ -99,14 +99,14 @@ module LoCha
       b_over_a: RGeo::Feature::Geometry,
       union: RGeo::Feature::Geometry,
       _block: T.proc.params(arg0: RGeo::Feature::Geometry).returns(Float),
-    ).returns(Float)
+    ).returns([Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)])
   }
   def self.exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union, &_block)
     buffered_distance = (yield(a_over_b) + yield(b_over_a)) / yield(union) / 2
 
     if r_geom_a.intersection(r_geom_b).dimension < r_geom_a.dimension
       # Excact distance give a lower dimension geom, use buffered distance
-      return buffered_distance
+      return [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? a_over_b : nil]
     end
 
     exact_a_over_b = r_geom_a - r_geom_b
@@ -115,32 +115,32 @@ module LoCha
 
     # Prefer exact distance if it's more than 60% of the buffered distance
     if exact_distance / buffered_distance > 0.6
-      exact_distance
+      [exact_distance, exact_a_over_b.empty? ? nil : exact_a_over_b, exact_b_over_a.nil? ? nil : exact_b_over_a]
     else
-      buffered_distance
+      [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? a_over_b : nil]
     end
   end
 
   sig {
     params(
-      geom_a: T.nilable(T::Hash[String, T.untyped]),
-      geom_b: T.nilable(T::Hash[String, T.untyped]),
+      geom_a: T.nilable(T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry)),
+      geom_b: T.nilable(T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry)),
       demi_distance: Float,
       decode: T.nilable(T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry)),
-    ).returns(T.nilable(Float))
+    ).returns(T.nilable([Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)]))
   }
   def self.geom_distance(geom_a, geom_b, demi_distance, &decode)
     return nil if geom_a.nil? || geom_b.nil?
-    return 0.0 if geom_a == geom_b
+    return [0.0, nil, nil] if geom_a == geom_b
 
     begin
       decode ||= ->(geom) { RGeo::GeoJSON.decode(geom) }
-      r_geom_a = T.let(decode.call(geom_a), RGeo::Feature::Geometry)
-      r_geom_b = T.let(decode.call(geom_b), RGeo::Feature::Geometry)
+      r_geom_a = T.let(geom_a.is_a?(RGeo::Feature::Geometry) ? geom_a : decode.call(geom_a), RGeo::Feature::Geometry)
+      r_geom_b = T.let(geom_b.is_a?(RGeo::Feature::Geometry) ? geom_b : decode.call(geom_b), RGeo::Feature::Geometry)
     rescue StandardError
       return nil
     end
-    return 0.0 if r_geom_a.equals?(r_geom_b)
+    return [0.0, nil, nil] if r_geom_a.equals?(r_geom_b)
 
     if r_geom_a.intersects?(r_geom_b)
       # Compute: 1 - intersection / union
@@ -150,7 +150,7 @@ module LoCha
 
       if a_over_b.empty? || b_over_a.empty?
         # One subpart of the other
-        0.0
+        [0.0, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? nil : b_over_a]
       else
         dim_a = a_over_b.dimension
         dim_b = b_over_a.dimension
@@ -166,19 +166,23 @@ module LoCha
           exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom| T.unsafe(geom).area }
         else
           # And fallback, all converted as polygons
-          (
+          d = (
             T.cast(a_over_b, RGeo::Feature::Polygon).area +
             T.cast(b_over_a, RGeo::Feature::Polygon).area
           ) / union.area / 2
+          [d, a_over_b, b_over_a]
         end
       end
     elsif r_geom_a.dimension == 0 && r_geom_b.dimension == 0
       # Point never intersects
       d = log_distance(r_geom_a, r_geom_b, demi_distance)
-      d > 0.5 ? nil : d * 2
+      if d <= 0.5
+        [d * 2, nil, nil]
+      end
     else
       # Else, use real distance + bias because no intersection
-      0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
+      d = 0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
+      [d, nil, nil]
     end
   end
 
@@ -198,7 +202,7 @@ module LoCha
       geom_cache: T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry],
       geo_factory: T.untyped,
       projection: T.untyped,
-    ).returns(T.nilable([Float, Float, Float]))
+    ).returns(T.nilable([Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]))
   }
   def self.vect_dist(before, after, demi_distance, geom_cache, geo_factory, projection)
     t_dist = tags_distance(before['tags'], after['tags'])
@@ -226,10 +230,10 @@ module LoCha
       afters: T::Enumerable[Validation::OSMChangeProperties],
       local_srid: Integer,
       demi_distance: Float,
-    ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
+    ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
   }
   def self.conflate_matrix(befores, afters, local_srid, demi_distance)
-    distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
+    distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
     geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
     geo_factory = RGeo::Geos.factory(srid: 4326)
     projection = RGeo::Geos.factory(srid: local_srid)
@@ -247,6 +251,53 @@ module LoCha
 
   sig {
     params(
+      befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+      afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+      distance_matrix: T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]],
+      afters_index: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+      local_srid: Integer,
+      demi_distance: Float,
+    ).returns([Conflations, T::Hash[[String, Integer], Validation::OSMChangeProperties], T::Hash[[String, Integer], Validation::OSMChangeProperties]])
+  }
+  def self.conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
+    paired = T.let([], Conflations)
+    until distance_matrix.empty?
+      key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
+      paired << [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
+      befores.delete([key_min[0]['objtype'], key_min[0]['id']])
+      afters.delete([key_min[1]['objtype'], key_min[1]['id']])
+
+      distance_matrix = distance_matrix.select{ |k, _v| (k & key_min).empty? }
+
+      # Add the remaining geom parts to the matrix
+      remaning_before_geom = dist[1][1]
+      remaning_after_geom = dist[1][2]
+      remaning_before = T.let(nil, T.nilable(Validation::OSMChangeProperties))
+      remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
+      if !remaning_before_geom.nil?
+        remaning_before = key_min[0].dup
+        remaning_before['geom'] = remaning_before_geom
+        distance_matrix = distance_matrix.merge(conflate_matrix([remaning_before], afters.values, local_srid, demi_distance))
+      end
+      if !remaning_after_geom.nil?
+        remaning_after = key_min[1].dup
+        remaning_after['geom'] = remaning_after_geom
+        distance_matrix = distance_matrix.merge(conflate_matrix(befores.values, [remaning_after], local_srid, demi_distance))
+      end
+      if !remaning_before.nil? && !remaning_after.nil?
+        distance_matrix = distance_matrix.merge(conflate_matrix(
+          [T.cast(remaning_before, Validation::OSMChangeProperties)],
+          [T.cast(remaning_after, Validation::OSMChangeProperties)],
+          local_srid, demi_distance
+        ))
+      end
+    end
+
+    [paired, befores, afters]
+  end
+
+  sig {
+    params(
       befores: T::Enumerable[Validation::OSMChangeProperties],
       afters: T::Enumerable[Validation::OSMChangeProperties],
       local_srid: Integer,
@@ -255,22 +306,18 @@ module LoCha
   }
   def self.conflate(befores, afters, local_srid, demi_distance)
     afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
-    befores = Set.new(befores)
-    afters = Set.new(afters.select{ |a| !a['deleted'] })
+    afters = afters.select{ |a| !a['deleted'] }
     distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
 
-    paired = T.let([], Conflations)
-    until distance_matrix.empty?
-      key_min = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs.sum }).first
-      paired << [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
-      befores.delete(key_min[0])
-      afters.delete(key_min[1])
+    befores = befores.index_by{ |b| [b['objtype'], b['id']] }
+    afters = afters.index_by{ |a| [a['objtype'], a['id']] }
 
-      distance_matrix = distance_matrix.select{ |k, _v| (k & key_min).empty? }
-    end
+    paired, befores, afters = conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
 
-    paired +
-      befores.collect{ |b| [b, afters_index[[b['objtype'], b['id']]], nil] } +
-      afters.collect{ |a| [nil, nil, a] }
+    T.cast((
+      paired +
+      befores.values.collect{ |b| [b, afters_index[[b['objtype'], b['id']]], nil] } +
+      afters.values.collect{ |a| [nil, nil, a] }
+    ), Conflations)
   end
 end

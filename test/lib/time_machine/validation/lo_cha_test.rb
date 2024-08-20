@@ -156,8 +156,8 @@ class TestLoCha < Test::Unit::TestCase
         factory: projection,
       )
     }
-    assert(T.must(d) < 0.5)
-    assert(T.must(d) > 0.0)
+    assert(T.must(d&.first) < 0.5)
+    assert(T.must(d&.first) > 0.0)
   end
 
   sig { void }
@@ -167,7 +167,7 @@ class TestLoCha < Test::Unit::TestCase
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
-    ))
+    )&.first)
     assert_equal(
       [[before[0], after[0], after[0]]],
       LoCha.conflate(before, after, @@srid, @@demi_distance)
@@ -178,7 +178,7 @@ class TestLoCha < Test::Unit::TestCase
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
-    ))
+    )&.first)
     assert_equal(
       [[before[0], after[0], after[0]]],
       LoCha.conflate(before, after, @@srid, @@demi_distance)
@@ -189,7 +189,7 @@ class TestLoCha < Test::Unit::TestCase
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
-    ))
+    )&.first)
     assert_equal(
       [[before[0], after[0], after[0]]],
       LoCha.conflate(before, after, @@srid, @@demi_distance)
@@ -358,6 +358,28 @@ class TestLoCha < Test::Unit::TestCase
     assert_equal(
       [[before[0], after[0], after[0]]],
       LoCha.conflate(before, after, srid, demi_distance)
+    )
+  end
+
+  sig { void }
+  def test_conflate_splited_way
+    tags = {
+      'highway' => 'residential',
+    }
+    before = [
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags),
+    ]
+    after = [
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags).merge('deleted' => true),
+      build_object(id: 2, geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', tags: tags),
+      build_object(id: 3, geom: '{"type":"LineString","coordinates":[[0,1],[0,2]]}', tags: tags),
+    ]
+
+    conflation = LoCha.conflate(before, after, @@srid, @@demi_distance)
+    assert_equal(2, conflation.size, conflation)
+    assert_equal(
+      [[before[0], after[0], after[1]], [before[0], after[0], after[2]]].collect{ |t| t.pluck('id') },
+      conflation.collect{ |t| t.pluck('id') }
     )
   end
 end
