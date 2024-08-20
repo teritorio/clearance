@@ -195,8 +195,8 @@ module LoCha
 
   sig {
     params(
-      befores: T::Array[Validation::OSMChangeProperties],
-      afters: T::Array[Validation::OSMChangeProperties],
+      befores: T::Enumerable[Validation::OSMChangeProperties],
+      afters: T::Enumerable[Validation::OSMChangeProperties],
       local_srid: Integer,
       demi_distance: Float,
     ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, Float, Float]])
@@ -223,25 +223,24 @@ module LoCha
 
   sig {
     params(
-      befores: T::Array[Validation::OSMChangeProperties],
-      afters: T::Array[Validation::OSMChangeProperties],
+      befores: T::Enumerable[Validation::OSMChangeProperties],
+      afters: T::Enumerable[Validation::OSMChangeProperties],
       local_srid: Integer,
       demi_distance: Float,
     ).returns(Conflations)
   }
   def self.conflate(befores, afters, local_srid, demi_distance)
     afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
-    afters = afters.select{ |a| !a['deleted'] }
+    befores = Set.new(befores)
+    afters = Set.new(afters.select{ |a| !a['deleted'] })
     distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
 
     paired = T.let([], Conflations)
-    paired_befores = T.let([], T::Array[Validation::OSMChangeProperties])
-    paired_afters = T.let([], T::Array[Validation::OSMChangeProperties])
     until distance_matrix.empty?
       key_min = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs.sum }).first
       paired << [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
-      paired_befores << key_min.first
-      paired_afters << key_min.last
+      befores.delete(key_min[0])
+      afters.delete(key_min[1])
 
       min = 3.0
       distance_matrix = distance_matrix.select{ |k, v|
@@ -252,7 +251,8 @@ module LoCha
       }
     end
 
-    paired = T.cast(paired + (befores - paired_befores).collect{ |b| [b, afters_index[[b['objtype'], b['id']]], nil] }, Conflations)
-    T.cast(paired + (afters - paired_afters).collect{ |a| [nil, nil, a] }, Conflations)
+    paired +
+      befores.collect{ |b| [b, afters_index[[b['objtype'], b['id']]], nil] } +
+      afters.collect{ |a| [nil, nil, a] }
   end
 end
