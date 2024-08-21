@@ -39,8 +39,12 @@ class ChangesLogsController < ApplicationController
       render(status: :unauthorized)
       return
     end
+    locha_ids = T.let(params['_json'], T.nilable(T::Array[Integer]))
+    if locha_ids.nil?
+      render(status: :bad_request)
+      return
+    end
 
-    locha_ids = T.let(params['_json'], T::Array[Integer])
     Db::DbConnWrite.conn(project) { |conn|
       Validation.accept_changes(conn, locha_ids, current_user_osm_id.to_i)
     }
