@@ -200,22 +200,13 @@ module LoCha
       before: Validation::OSMChangeProperties,
       after: Validation::OSMChangeProperties,
       demi_distance: Float,
-      geom_cache: T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry],
-      geo_factory: T.untyped,
-      projection: T.untyped,
     ).returns(T.nilable([Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]))
   }
-  def self.vect_dist(before, after, demi_distance, geom_cache, geo_factory, projection)
+  def self.vect_dist(before, after, demi_distance)
     t_dist = tags_distance(before['tags'], after['tags'])
     return if t_dist.nil? || t_dist >= 0.5
 
-    g_dist = geom_distance(before['geom'], after['geom'], demi_distance) { |geom|
-      geom_cache[geom] ||= RGeo::Feature.cast(
-        RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
-        project: true,
-        factory: projection,
-      )
-    }
+    g_dist = geom_distance(before['geom'], after['geom'], demi_distance)
     return if g_dist.nil?
 
     [
@@ -223,6 +214,23 @@ module LoCha
       g_dist,
       (before['objtype'] == after['objtype'] && before['id'] == after['id'] ? 0.0 : 0.000001),
     ]
+  end
+
+  sig {
+    params(
+      geom: T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry),
+      geo_factory: T.untyped,
+      projection: T.untyped,
+    ).returns(RGeo::Feature::Geometry)
+  }
+  def self.cache_geom(geom, geo_factory, projection)
+    return geom if geom.is_a?(RGeo::Feature::Geometry)
+
+    RGeo::Feature.cast(
+      RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
+      project: true,
+      factory: projection,
+    )
   end
 
   sig {
@@ -235,12 +243,13 @@ module LoCha
   }
   def self.conflate_matrix(befores, afters, local_srid, demi_distance)
     distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
-    geom_cache = T.let({}, T::Hash[T::Hash[String, T.untyped], RGeo::Feature::Geometry])
     geo_factory = RGeo::Geos.factory(srid: 4326)
     projection = RGeo::Geos.factory(srid: local_srid)
     befores.each{ |b|
       afters.each{ |a|
-        v = vect_dist(b, a, demi_distance, geom_cache, geo_factory, projection)
+        b['geom'] = cache_geom(b['geom'], geo_factory, projection)
+        a['geom'] = cache_geom(a['geom'], geo_factory, projection)
+        v = vect_dist(b, a, demi_distance)
         if !v.nil?
           distance_matrix[[b, a]] = v
         end
