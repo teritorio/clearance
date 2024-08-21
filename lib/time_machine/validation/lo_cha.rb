@@ -124,23 +124,12 @@ module LoCha
 
   sig {
     params(
-      geom_a: T.nilable(T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry)),
-      geom_b: T.nilable(T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry)),
+      r_geom_a: RGeo::Feature::Geometry,
+      r_geom_b: RGeo::Feature::Geometry,
       demi_distance: Float,
-      decode: T.nilable(T.proc.params(arg0: T::Hash[String, T.untyped]).returns(RGeo::Feature::Geometry)),
     ).returns(T.nilable([Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)]))
   }
-  def self.geom_distance(geom_a, geom_b, demi_distance, &decode)
-    return nil if geom_a.nil? || geom_b.nil?
-    return [0.0, nil, nil] if geom_a == geom_b
-
-    begin
-      decode ||= ->(geom) { RGeo::GeoJSON.decode(geom) }
-      r_geom_a = T.let(geom_a.is_a?(RGeo::Feature::Geometry) ? geom_a : decode.call(geom_a), RGeo::Feature::Geometry)
-      r_geom_b = T.let(geom_b.is_a?(RGeo::Feature::Geometry) ? geom_b : decode.call(geom_b), RGeo::Feature::Geometry)
-    rescue StandardError
-      return nil
-    end
+  def self.geom_distance(r_geom_a, r_geom_b, demi_distance)
     return [0.0, nil, nil] if r_geom_a.equals?(r_geom_b)
 
     if r_geom_a.intersects?(r_geom_b)
@@ -197,27 +186,6 @@ module LoCha
 
   sig {
     params(
-      before: Validation::OSMChangeProperties,
-      after: Validation::OSMChangeProperties,
-      demi_distance: Float,
-    ).returns(T.nilable([Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]))
-  }
-  def self.vect_dist(before, after, demi_distance)
-    t_dist = tags_distance(before['tags'], after['tags'])
-    return if t_dist.nil? || t_dist >= 0.5
-
-    g_dist = geom_distance(before['geom'], after['geom'], demi_distance)
-    return if g_dist.nil?
-
-    [
-      t_dist,
-      g_dist,
-      (before['objtype'] == after['objtype'] && before['id'] == after['id'] ? 0.0 : 0.000001),
-    ]
-  end
-
-  sig {
-    params(
       geom: T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry),
       geo_factory: T.untyped,
       projection: T.untyped,
@@ -247,11 +215,27 @@ module LoCha
     projection = RGeo::Geos.factory(srid: local_srid)
     befores.each{ |b|
       afters.each{ |a|
+        next if b['geom'].nil? && a['geom'].nil?
+
+        t_dist = tags_distance(b['tags'], a['tags'])
+        next if t_dist.nil? || t_dist >= 0.5
+
         b['geom'] = cache_geom(b['geom'], geo_factory, projection)
         a['geom'] = cache_geom(a['geom'], geo_factory, projection)
-        v = vect_dist(b, a, demi_distance)
-        if !v.nil?
-          distance_matrix[[b, a]] = v
+        g_dist = (
+          if b['geom'] == a['geom']
+            [0.0, nil, nil]
+          else
+            geom_distance(b['geom'], a['geom'], demi_distance)
+          end
+        )
+
+        if !g_dist.nil?
+          distance_matrix[[b, a]] = [
+            t_dist,
+            g_dist,
+            (b['objtype'] == a['objtype'] && b['id'] == a['id'] ? 0.0 : 0.000001),
+          ]
         end
       }
     }
