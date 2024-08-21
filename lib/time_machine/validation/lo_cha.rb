@@ -8,6 +8,8 @@ require 'rgeo'
 require 'rgeo/geo_json'
 require 'rgeo/proj4'
 require './lib/time_machine/validation/changes_db'
+require './lib/time_machine/validation/distance_hausdorff'
+
 
 module LoCha
   extend T::Sig
@@ -257,7 +259,16 @@ module LoCha
     paired = T.let([], Conflations)
     until distance_matrix.empty?
       key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
-      paired << [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
+      match = [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
+      match[-1]['geom_distance'] = (
+        if match[0]['geom'].intersects?(match[-1]['geom'])
+          DistanceHausdorff.distance(match[0]['geom'], match[-1]['geom'])
+        else
+          match[0]['geom'].distance(match[-1]['geom'])
+        end
+      )
+      paired << match
+
       befores.delete([key_min[0]['objtype'], key_min[0]['id']])
       afters.delete([key_min[1]['objtype'], key_min[1]['id']])
 

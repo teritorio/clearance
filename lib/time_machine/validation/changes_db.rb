@@ -18,7 +18,7 @@ module Validation
       'objtype' => String,
       'id' => Integer,
       'geom' => T.untyped,
-      'geom_distance' => T.any(Float, Integer),
+      'geom_distance' => T.nilable(T.any(Float, Integer)),
       'deleted' => T::Boolean,
       'members' => T.nilable(T::Array[Integer]),
       'version' => Integer,

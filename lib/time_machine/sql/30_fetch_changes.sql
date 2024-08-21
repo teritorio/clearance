@@ -115,10 +115,6 @@ CREATE OR REPLACE FUNCTION fetch_changes(
                 t.members,
                 t.geom,
                 t.changesets,
-                coalesce(ST_HausdorffDistance(
-                    ST_Transform((first_value(CASE WHEN NOT t.is_change THEN t.geom END) OVER (PARTITION BY t.objtype, t.id ORDER BY t.is_change, t.version, t.deleted)), 2154),
-                    ST_Transform(t.geom, 2154)
-                ), 0) AS geom_distance,
                 t.is_change,
                 (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
             FROM (
