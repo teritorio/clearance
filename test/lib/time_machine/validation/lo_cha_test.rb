@@ -4,6 +4,8 @@
 require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/validation/lo_cha'
+require './lib/time_machine/logical_history/tags'
+require './lib/time_machine/logical_history/geom'
 
 
 class TestLoCha < Test::Unit::TestCase
@@ -11,47 +13,6 @@ class TestLoCha < Test::Unit::TestCase
 
   @@srid = T.let(4326, Integer) # No projection
   @@demi_distance = T.let(1.0, Float) # m
-
-  sig { void }
-  def test_refs
-    assert_equal(LoCha.refs({}), {})
-    assert_equal(LoCha.refs({ 'foo' => 'b' }), {})
-    assert_equal(LoCha.refs({ 'ref:a' => 'a' }), { 'ref:a' => 'a' })
-
-    assert_not_equal(LoCha.refs({ 'ref:a' => 'a' }), { 'ref:a' => 'b' })
-  end
-
-  sig { void }
-  def test_key_val_main_distance
-    assert_equal(nil, LoCha.key_val_main_distance({}, {}))
-    assert_equal(0.0, LoCha.key_val_main_distance({ 'foo' => 'bar' }, { 'foo' => 'bar' }))
-    assert_equal(0.0, LoCha.key_val_main_distance({ 'highway' => 'bar' }, { 'highway' => 'bar' }))
-    assert_equal(1.0, LoCha.key_val_main_distance({ 'highway' => 'bar' }, {}))
-    assert_equal(1.0, LoCha.key_val_main_distance({}, { 'highway' => 'bar' }))
-
-    assert_equal(1.0, LoCha.key_val_main_distance({ 'highway' => 'a' }, { 'highway' => 'b' }))
-    assert_equal(1.0, LoCha.key_val_main_distance({ 'highway' => 'a' }, { 'highway' => 'ab' }))
-  end
-
-  sig { void }
-  def test_key_val_fuzzy_distance
-    assert_equal(0.5, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'b' }))
-    assert_equal(0.25, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'ab' }))
-    assert_equal(0.25, LoCha.key_val_fuzzy_distance({ 'foo' => 'ab' }, { 'foo' => 'ac' }))
-    assert_equal(1.0 / 3, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'abc' }))
-
-    assert_equal(0.5, LoCha.key_val_fuzzy_distance({ 'foo' => 'a' }, { 'foo' => 'a', 'bar' => 'b' }))
-  end
-
-  sig { void }
-  def test_tags_distance
-    assert_equal(0.0, LoCha.tags_distance({ 'highway' => 'a' }, { 'highway' => 'a' }))
-    assert_equal(0.0, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'highway' => 'a', 'foo' => 'a' }))
-    assert_equal(0.0, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'highway' => 'a', 'foo' => 'a' }))
-    assert_equal(0.5, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'leisure' => 'a', 'foo' => 'a' }))
-    assert_equal(0.5, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'foo' => 'a' }))
-    assert_equal(0.25, LoCha.tags_distance({ 'highway' => 'a', 'foo' => 'a', 'bar' => 'b' }, { 'highway' => 'a', 'foo' => 'a' }))
-  end
 
   sig {
     params(
@@ -161,7 +122,7 @@ class TestLoCha < Test::Unit::TestCase
     }).compact
     before, after = build_objects(before_tags: bt, after_tags: at)
 
-    assert(T.must(LoCha.tags_distance(bt, at)) < 0.5)
+    assert(T.must(LogicalHistory::Tags.tags_distance(bt, at)) < 0.5)
     assert_equal(
       [[before[0], after[0], after[0]]],
       LoCha.conflate(before, after, @@srid, @@demi_distance)
@@ -169,33 +130,9 @@ class TestLoCha < Test::Unit::TestCase
   end
 
   sig { void }
-  def test_geom_distance
-    srid = 2154
-    demi_distance = 200.0 # m
-
-    geo_factory = RGeo::Geos.factory(srid: 4326)
-    projection = RGeo::Geos.factory(srid: srid)
-
-    before = RGeo::Feature.cast(
-      RGeo::GeoJSON.decode({ 'type' => 'Point', 'coordinates' => [-1.4865344, 43.5357032] }, geo_factory: geo_factory),
-      project: true,
-      factory: projection,
-    )
-    after = RGeo::Feature.cast(
-      RGeo::GeoJSON.decode({ 'type' => 'Point', 'coordinates' => [-1.4864637, 43.5359501] }, geo_factory: geo_factory),
-      project: true,
-      factory: projection,
-    )
-    d = LoCha.geom_distance(before, after, demi_distance)
-
-    assert(T.must(d&.first) < 0.5)
-    assert(T.must(d&.first) > 0.0)
-  end
-
-  sig { void }
   def test_conflate_geom
     before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[0,1]}')
-    assert_equal(1.0, LoCha.geom_distance(
+    assert_equal(1.0, LogicalHistory::Geom.geom_distance(
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
@@ -206,7 +143,7 @@ class TestLoCha < Test::Unit::TestCase
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
-    assert_equal(0.475, LoCha.geom_distance(
+    assert_equal(0.475, LogicalHistory::Geom.geom_distance(
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
@@ -217,7 +154,7 @@ class TestLoCha < Test::Unit::TestCase
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', after_geom: '{"type":"LineString","coordinates":[[0,2],[0,3]]}')
-    assert_equal(0.75, LoCha.geom_distance(
+    assert_equal(0.75, LogicalHistory::Geom.geom_distance(
       T.must(before[0])['geom'],
       T.must(after[0])['geom'],
       @@demi_distance
@@ -269,7 +206,7 @@ class TestLoCha < Test::Unit::TestCase
       after_tags: { 'amenity' => 'parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0]}'
     )
-    assert_equal(0.5, LoCha.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(0.5, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
     conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(
@@ -283,7 +220,7 @@ class TestLoCha < Test::Unit::TestCase
       after_tags: { 'amenity' => 'bicycle_parking' },
       after_geom: '{"type":"Point","coordinates":[0, 2]}'
     )
-    assert_equal(0.0, LoCha.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
     conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(
@@ -297,7 +234,7 @@ class TestLoCha < Test::Unit::TestCase
       after_tags: { 'amenity' => 'bicycle_parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0.5]}'
     )
-    assert_equal(0.0, LoCha.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
     conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal([[before[0], after[0]]], conflate_distances.keys)
     assert_equal(0.0, T.must(conflate_distances.values[0])[0])
