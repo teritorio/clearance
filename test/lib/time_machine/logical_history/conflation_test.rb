@@ -3,12 +3,13 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './lib/time_machine/validation/lo_cha'
+require './lib/time_machine/logical_history/conflation'
 require './lib/time_machine/logical_history/tags'
 require './lib/time_machine/logical_history/geom'
 
+Conflation = LogicalHistory::Conflation
 
-class TestLoCha < Test::Unit::TestCase
+class TestConflation < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
@@ -68,19 +69,19 @@ class TestLoCha < Test::Unit::TestCase
     before, after = build_objects(before_tags: { 'ref' => 'a' }, after_tags: { 'ref' => 'a' })
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(before_tags: { 'ref' => 'a', 'foo' => 'a' }, after_tags: { 'ref' => 'a', 'foo' => 'b' })
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(before_tags: { 'ref' => 'a' }, after_tags: { 'ref' => 'b' })
     assert_equal(
       [[before[0], after[0], nil], [nil, nil, after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
   end
 
@@ -89,19 +90,19 @@ class TestLoCha < Test::Unit::TestCase
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'highway' => 'a' })
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(before_tags: { 'highway' => 'a', 'foo' => 'a' }, after_tags: { 'highway' => 'a', 'foo' => 'b' })
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(before_tags: { 'highway' => 'a' }, after_tags: { 'building' => 'b' })
     assert_equal(
       [[before[0], after[0], nil], [nil, nil, after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     bt = {
@@ -125,7 +126,7 @@ class TestLoCha < Test::Unit::TestCase
     assert(T.must(LogicalHistory::Tags.tags_distance(bt, at)) < 0.5)
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
   end
 
@@ -139,7 +140,7 @@ class TestLoCha < Test::Unit::TestCase
     )&.first)
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
@@ -150,7 +151,7 @@ class TestLoCha < Test::Unit::TestCase
     )&.first)
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', after_geom: '{"type":"LineString","coordinates":[[0,2],[0,3]]}')
@@ -161,7 +162,7 @@ class TestLoCha < Test::Unit::TestCase
     )&.first)
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
   end
 
@@ -177,7 +178,7 @@ class TestLoCha < Test::Unit::TestCase
       build_object(id: 2, geom: geom, tags: tags),
     ]
 
-    conflation = LoCha.conflate(before, after, @@srid, @@demi_distance)
+    conflation = Conflation.conflate(before, after, @@srid, @@demi_distance)
     assert_equal(1, conflation.size, conflation)
     assert_equal([[before[0], after[0], after[1]]], conflation)
   end
@@ -193,7 +194,7 @@ class TestLoCha < Test::Unit::TestCase
       build_object(id: 2, geom: geom, tags: { 'highway' => 'residential' }),
     ]
 
-    conflation = LoCha.conflate(before, after, @@srid, @@demi_distance)
+    conflation = Conflation.conflate(before, after, @@srid, @@demi_distance)
     assert_equal(2, conflation.size, conflation)
     assert_equal([[before[0], after[0], after[1]], [nil, nil, after[0]]], conflation)
   end
@@ -207,11 +208,11 @@ class TestLoCha < Test::Unit::TestCase
       after_geom: '{"type":"Point","coordinates":[0, 0]}'
     )
     assert_equal(0.5, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
-    conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
+    conflate_distances = Conflation.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(
       [[before[0], after[0], nil], [nil, nil, after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(
@@ -221,11 +222,11 @@ class TestLoCha < Test::Unit::TestCase
       after_geom: '{"type":"Point","coordinates":[0, 2]}'
     )
     assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
-    conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
+    conflate_distances = Conflation.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(
       [[before[0], after[0], nil], [nil, nil, after[0]]],
-      LoCha.conflate(before, after, @@srid, @@demi_distance)
+      Conflation.conflate(before, after, @@srid, @@demi_distance)
     )
 
     before, after = build_objects(
@@ -235,11 +236,11 @@ class TestLoCha < Test::Unit::TestCase
       after_geom: '{"type":"Point","coordinates":[0, 0.5]}'
     )
     assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
-    conflate_distances = LoCha.conflate_matrix(before, after, @@srid, @@demi_distance)
+    conflate_distances = Conflation.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal([[before[0], after[0]]], conflate_distances.keys)
     assert_equal(0.0, T.must(conflate_distances.values[0])[0])
     assert_equal(0.0, T.must(conflate_distances.values[0])[2])
-    assert_equal([[before[0], after[0], after[0]]], LoCha.conflate(before, after, @@srid, @@demi_distance))
+    assert_equal([[before[0], after[0], after[0]]], Conflation.conflate(before, after, @@srid, @@demi_distance))
   end
 
   sig { void }
@@ -253,9 +254,9 @@ class TestLoCha < Test::Unit::TestCase
       after_tags: { 'building' => 'yes', 'building:levels' => '13' },
       after_geom: '{"type":"Point","coordinates":[28.10128, -15.44647]}'
     )
-    conflate_distances = LoCha.conflate_matrix(before, after, srid, demi_distance)
+    conflate_distances = Conflation.conflate_matrix(before, after, srid, demi_distance)
     assert_equal([], conflate_distances.keys)
-    assert_equal([[before[0], after[0], nil], [nil, nil, after[0]]], LoCha.conflate(before, after, srid, demi_distance))
+    assert_equal([[before[0], after[0], nil], [nil, nil, after[0]]], Conflation.conflate(before, after, srid, demi_distance))
   end
 
   sig { void }
@@ -290,11 +291,11 @@ class TestLoCha < Test::Unit::TestCase
       build_object(id: 2, geom: '{"type":"Point","coordinates":[-1.4864637, 43.5359501]}', tags: after_tags),
     ]
 
-    conflate_distances = LoCha.conflate_matrix(before, after, srid, demi_distance)
+    conflate_distances = Conflation.conflate_matrix(before, after, srid, demi_distance)
     assert_equal(4, conflate_distances.keys.size)
     assert_equal(
       [[before[0], after[0], after[0]], [before[1], after[1], after[1]]],
-      LoCha.conflate(before, after, srid, demi_distance)
+      Conflation.conflate(before, after, srid, demi_distance)
     )
   end
 
@@ -323,7 +324,7 @@ class TestLoCha < Test::Unit::TestCase
 
     assert_equal(
       [[before[0], after[0], after[0]]],
-      LoCha.conflate(before, after, srid, demi_distance)
+      Conflation.conflate(before, after, srid, demi_distance)
     )
   end
 
@@ -341,7 +342,7 @@ class TestLoCha < Test::Unit::TestCase
       build_object(id: 3, geom: '{"type":"LineString","coordinates":[[0,1],[0,2]]}', tags: tags),
     ]
 
-    conflation = LoCha.conflate(before, after, @@srid, @@demi_distance)
+    conflation = Conflation.conflate(before, after, @@srid, @@demi_distance)
     assert_equal(2, conflation.size, conflation)
     assert_equal(
       [[before[0], after[0], after[1]], [before[0], after[0], after[2]]].collect{ |t| t.pluck('id') },

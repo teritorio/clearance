@@ -2,8 +2,8 @@
 # typed: strict
 
 require 'sorbet-runtime'
+require './lib/time_machine/logical_history/conflation'
 require './lib/time_machine/validation/changes_db'
-require './lib/time_machine/validation/lo_cha'
 require './lib/time_machine/validation/diff_actions'
 require './lib/time_machine/validators/validator'
 require './lib/time_machine/validation/types'
@@ -67,7 +67,7 @@ module Validation
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |lo_cha|
         befores = lo_cha.collect(&:first).compact
         afters = lo_cha.collect(&:last).compact
-        conflations = LoCha.conflate(befores, afters, config.local_srid, 200.0)
+        conflations = LogicalHistory::Conflation.conflate(befores, afters, config.local_srid, 200.0)
 
         conflations.each{ |conflation|
           matches = [conflation[0], conflation[-1]].compact.collect{ |object|

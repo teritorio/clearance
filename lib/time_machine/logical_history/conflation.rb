@@ -14,7 +14,7 @@ require './lib/time_machine/logical_history/tags'
 require './lib/time_machine/logical_history/geom'
 
 
-module LoCha
+module LogicalHistory::Conflation
   extend T::Sig
 
   Conflations = T.type_alias {
