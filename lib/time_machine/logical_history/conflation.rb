@@ -123,6 +123,47 @@ module LogicalHistory
 
     sig {
       params(
+        key_min: [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
+        befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+        afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+        dist_geom: [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)],
+      ).returns(T::Array[[
+        T::Array[Validation::OSMChangeProperties],
+        T::Array[Validation::OSMChangeProperties]
+      ]])
+    }
+    def self.remaining_parts(key_min, befores, afters, dist_geom)
+      parts = T.let([], T::Array[[
+        T::Array[Validation::OSMChangeProperties],
+        T::Array[Validation::OSMChangeProperties]
+      ]])
+
+      remaning_before_geom = dist_geom[1]
+      remaning_after_geom = dist_geom[2]
+      remaning_before = T.let(nil, T.nilable(Validation::OSMChangeProperties))
+      remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
+      if !T.unsafe(remaning_before_geom).nil?
+        remaning_before = key_min[0].dup
+        remaning_before['geom'] = remaning_before_geom
+        parts << [[remaning_before], afters.values]
+      end
+      if !T.unsafe(remaning_after_geom).nil?
+        remaning_after = key_min[1].dup
+        remaning_after['geom'] = remaning_after_geom
+        parts << [befores.values, [remaning_after]]
+      end
+      if !remaning_before.nil? && !remaning_after.nil?
+        parts << [
+          [T.cast(remaning_before, Validation::OSMChangeProperties)],
+          [T.cast(remaning_after, Validation::OSMChangeProperties)]
+        ]
+      end
+
+      parts
+    end
+
+    sig {
+      params(
         befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
         afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
         distance_matrix: T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]],
@@ -151,27 +192,9 @@ module LogicalHistory
         distance_matrix = distance_matrix.select{ |k, _v| (k & key_min).empty? }
 
         # Add the remaining geom parts to the matrix
-        remaning_before_geom = dist[1][1]
-        remaning_after_geom = dist[1][2]
-        remaning_before = T.let(nil, T.nilable(Validation::OSMChangeProperties))
-        remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
-        if !T.unsafe(remaning_before_geom).nil?
-          remaning_before = key_min[0].dup
-          remaning_before['geom'] = remaning_before_geom
-          distance_matrix = distance_matrix.merge(conflate_matrix([remaning_before], afters.values, local_srid, demi_distance))
-        end
-        if !T.unsafe(remaning_after_geom).nil?
-          remaning_after = key_min[1].dup
-          remaning_after['geom'] = remaning_after_geom
-          distance_matrix = distance_matrix.merge(conflate_matrix(befores.values, [remaning_after], local_srid, demi_distance))
-        end
-        if !remaning_before.nil? && !remaning_after.nil?
-          distance_matrix = distance_matrix.merge(conflate_matrix(
-            [T.cast(remaning_before, Validation::OSMChangeProperties)],
-            [T.cast(remaning_after, Validation::OSMChangeProperties)],
-            local_srid, demi_distance
-          ))
-        end
+        remaining_parts(key_min, befores, afters, dist[1]).each{ |parts|
+          distance_matrix = distance_matrix.merge(conflate_matrix(parts[0], parts[1], local_srid, demi_distance))
+        }
       end
 
       [paired, befores, afters]
