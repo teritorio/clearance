@@ -247,8 +247,8 @@ module LoCha
 
   sig {
     params(
-      befores: T::Enumerable[Validation::OSMChangeProperties],
-      afters: T::Enumerable[Validation::OSMChangeProperties],
+      befores: T::Array[Validation::OSMChangeProperties],
+      afters: T::Array[Validation::OSMChangeProperties],
       local_srid: Integer,
       demi_distance: Float,
     ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
@@ -267,7 +267,10 @@ module LoCha
         b['geom'] = cache_geom(b['geom'], geo_factory, projection)
         a['geom'] = cache_geom(a['geom'], geo_factory, projection)
         g_dist = (
-          if b['geom'] == a['geom']
+          if b['geom'] == a['geom'] || (b['geom'].dimension == 2 && a['geom'].dimension == 2 && befores.size == 1 && afters.size == 1)
+            # Same geom
+            # or
+            # Geom distance does not matter on 1x1 matrix, fast return
             [0.0, nil, nil]
           else
             geom_distance(b['geom'], a['geom'], demi_distance)
