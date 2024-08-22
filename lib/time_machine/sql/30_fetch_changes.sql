@@ -175,6 +175,7 @@ FROM
 ),
 locha AS (
 SELECT
+    geom,
     coalesce(
         -- Equivalent to ST_ClusterWithinWin
         ST_ClusterDBSCAN(geom, distance, 0) OVER (),
@@ -193,14 +194,38 @@ ORDER BY
     p[-1]->>'version',
     p[-1]->>'deleted'
 ),
-g AS(
+locha_size AS (
 SELECT
     locha_id,
-    (hashtext(string_agg(key, ',')))::bigint AS hash_keys
+    count(*) AS size
 FROM
     locha
 GROUP BY
-    locha.locha_id
+    locha_id
+),
+locha_split AS (
+SELECT
+    -- Max 300 objects (think about nodes), max radius
+    ST_ClusterKMeans(geom, (size / 300)::integer, distance*20) OVER (PARTITION BY locha_id) AS cluster_id,
+    locha_id,
+    objtype,
+    id,
+    key,
+    p
+FROM
+    locha
+    JOIN locha_size USING (locha_id)
+),
+g AS(
+SELECT
+    cluster_id,
+    locha_id,
+    (hashtext(string_agg(key, ',')))::bigint AS hash_keys
+FROM
+    locha_split
+GROUP BY
+    cluster_id,
+    locha_id
 )
 SELECT
     hash_keys AS locha_id,
@@ -208,9 +233,10 @@ SELECT
     id,
     p
 FROM
-    locha
+    locha_split
     JOIN g ON
-        g.locha_id = locha.locha_id
+        g.cluster_id = locha_split.cluster_id AND
+        g.locha_id = locha_split.locha_id
 ORDER BY
     hash_keys
 ;
