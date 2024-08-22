@@ -156,20 +156,37 @@ CREATE OR REPLACE FUNCTION fetch_locha_changes(
     p jsonb
 ) AS $$
 WITH
+rings AS (
+SELECT
+    objtype,
+    id,
+    ST_Transform(
+        CASE
+            WHEN ST_dimension(geom) = 2 THEN
+                (SELECT ST_Union(ring.geom) FROM ST_DumpRings(geom) AS ring)
+            ELSE
+                geom
+        END,
+        proj
+    ) AS geom,
+    p
+FROM
+    fetch_changes(group_id_polys)
+),
 locha AS (
 SELECT
     coalesce(
         -- Equivalent to ST_ClusterWithinWin
-        ST_ClusterDBSCAN(ST_Transform(geom, proj), distance, 0) OVER (),
+        ST_ClusterDBSCAN(geom, distance, 0) OVER (),
         -- Negative value to avoid colision with cluster id
         -1 * row_number() OVER ()
-     ) AS locha_id,
+    ) AS locha_id,
     objtype,
     id,
     objtype || '|' || id || '|' || (p[-1]->>'version') || '|' || (p[-1]->>'deleted') || '|' AS key,
     p
 FROM
-    fetch_changes(group_id_polys)
+    rings
 ORDER BY
     objtype,
     id,
