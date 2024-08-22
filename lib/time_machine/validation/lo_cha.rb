@@ -192,7 +192,7 @@ module LoCha
     ).returns(RGeo::Feature::Geometry)
   }
   def self.cache_geom(geom, geo_factory, projection)
-    return geom if geom.is_a?(RGeo::Feature::Geometry)
+    return T.cast(geom, RGeo::Feature::Geometry) if T.unsafe(geom).respond_to?(:geometry_type) # is_a?(RGeo::Feature::Geometry)
 
     RGeo::Feature.cast(
       RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
@@ -268,12 +268,12 @@ module LoCha
       remaning_after_geom = dist[1][2]
       remaning_before = T.let(nil, T.nilable(Validation::OSMChangeProperties))
       remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
-      if !remaning_before_geom.nil?
+      if !T.unsafe(remaning_before_geom).nil?
         remaning_before = key_min[0].dup
         remaning_before['geom'] = remaning_before_geom
         distance_matrix = distance_matrix.merge(conflate_matrix([remaning_before], afters.values, local_srid, demi_distance))
       end
-      if !remaning_after_geom.nil?
+      if !T.unsafe(remaning_after_geom).nil?
         remaning_after = key_min[1].dup
         remaning_after['geom'] = remaning_after_geom
         distance_matrix = distance_matrix.merge(conflate_matrix(befores.values, [remaning_after], local_srid, demi_distance))
