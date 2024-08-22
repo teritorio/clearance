@@ -1,6 +1,6 @@
 projects/*
 cache/*
-log*
+./log*
 tmp/
 .env
 sorbet/
