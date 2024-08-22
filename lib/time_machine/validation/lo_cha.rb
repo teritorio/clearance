@@ -20,6 +20,15 @@ module LoCha
 
   sig {
     params(
+      tags: T::Hash[String, String],
+    ).returns(T::Hash[String, String])
+  }
+  def self.refs(tags)
+    tags.select{ |k, _v| k == 'ref' || k.start_with?('ref:') }
+  end
+
+  sig {
+    params(
       tags_a: T::Hash[String, String],
       tags_b: T::Hash[String, String],
     ).returns(T.nilable(Float))
@@ -205,6 +214,39 @@ module LoCha
 
   sig {
     params(
+      befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+      afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+      afters_index: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+    ).returns([Conflations, T::Hash[[String, Integer], Validation::OSMChangeProperties], T::Hash[[String, Integer], Validation::OSMChangeProperties]])
+  }
+  def self.conflate_by_refs(befores, afters, afters_index)
+    befores_refs = befores.values.group_by{ |b| refs(b['tags']) }
+    befores_refs.delete({})
+    befores_refs = befores_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
+    afters_refs = afters.values.group_by{ |a| refs(a['tags']) }
+    afters_refs.delete({})
+    afters_refs = afters_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
+
+    uniq_befores_refs = befores_refs.keys
+    uniq_afters_refs = afters_refs.keys
+
+    conflate = (uniq_befores_refs & uniq_afters_refs).collect{ |ref|
+      before_key = [T.must(befores_refs[ref])['objtype'], T.must(befores_refs[ref])['id']]
+      befores.delete(before_key)
+      afters.delete([T.must(afters_refs[ref])['objtype'], T.must(afters_refs[ref])['id']])
+
+      [
+        befores_refs[ref],
+        afters_index[before_key],
+        afters_refs[ref]
+      ]
+    }
+
+    [conflate, befores, afters]
+  end
+
+  sig {
+    params(
       befores: T::Enumerable[Validation::OSMChangeProperties],
       afters: T::Enumerable[Validation::OSMChangeProperties],
       local_srid: Integer,
@@ -312,15 +354,18 @@ module LoCha
   def self.conflate(befores, afters, local_srid, demi_distance)
     afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
     afters = afters.select{ |a| !a['deleted'] }
-    distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
 
     befores = befores.index_by{ |b| [b['objtype'], b['id']] }
     afters = afters.index_by{ |a| [a['objtype'], a['id']] }
 
-    paired, befores, afters = conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
+    paired_by_refs, befores, afters = conflate_by_refs(befores, afters, afters_index)
+
+    distance_matrix = conflate_matrix(befores.values, afters.values, local_srid, demi_distance)
+    paired_by_distance, befores, afters = conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
 
     T.cast((
-      paired +
+      paired_by_refs +
+      paired_by_distance +
       befores.values.collect{ |b| [b, afters_index[[b['objtype'], b['id']]], nil] } +
       afters.values.collect{ |a| [nil, nil, a] }
     ), Conflations)

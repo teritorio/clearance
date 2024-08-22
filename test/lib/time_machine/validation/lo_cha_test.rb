@@ -13,6 +13,15 @@ class TestLoCha < Test::Unit::TestCase
   @@demi_distance = T.let(1.0, Float) # m
 
   sig { void }
+  def test_refs
+    assert_equal(LoCha.refs({}), {})
+    assert_equal(LoCha.refs({ 'foo' => 'b' }), {})
+    assert_equal(LoCha.refs({ 'ref:a' => 'a' }), { 'ref:a' => 'a' })
+
+    assert_not_equal(LoCha.refs({ 'ref:a' => 'a' }), { 'ref:a' => 'b' })
+  end
+
+  sig { void }
   def test_key_val_main_distance
     assert_equal(nil, LoCha.key_val_main_distance({}, {}))
     assert_equal(0.0, LoCha.key_val_main_distance({ 'foo' => 'bar' }, { 'foo' => 'bar' }))
@@ -91,6 +100,27 @@ class TestLoCha < Test::Unit::TestCase
     before = [build_object(id: 1, tags: before_tags, geom: before_geom)]
     after = [build_object(id: 1, tags: after_tags, geom: after_geom)]
     [before, after]
+  end
+
+  sig { void }
+  def test_conflate_refs
+    before, after = build_objects(before_tags: { 'ref' => 'a' }, after_tags: { 'ref' => 'a' })
+    assert_equal(
+      [[before[0], after[0], after[0]]],
+      LoCha.conflate(before, after, @@srid, @@demi_distance)
+    )
+
+    before, after = build_objects(before_tags: { 'ref' => 'a', 'foo' => 'a' }, after_tags: { 'ref' => 'a', 'foo' => 'b' })
+    assert_equal(
+      [[before[0], after[0], after[0]]],
+      LoCha.conflate(before, after, @@srid, @@demi_distance)
+    )
+
+    before, after = build_objects(before_tags: { 'ref' => 'a' }, after_tags: { 'ref' => 'b' })
+    assert_equal(
+      [[before[0], after[0], nil], [nil, nil, after[0]]],
+      LoCha.conflate(before, after, @@srid, @@demi_distance)
+    )
   end
 
   sig { void }
