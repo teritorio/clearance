@@ -8,9 +8,11 @@ EXTRACTS=${@:-http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm
 
 echo $EXTRACTS
 
-LOCK=projects/${PROJECT}/lock
-touch $LOCK
-exec 8>$LOCK;
+exec {LOCK_FD}> ${PROJECT}/lock
+if ! flock --nonblock $LOCK_FD; then
+    echo "${PROJECT} already locked, abort"
+    exit 1
+fi
 
 for EXTRACT in $EXTRACTS; do
     EXTRACT_STATE=${EXTRACT/.osm.pbf/.state.txt}

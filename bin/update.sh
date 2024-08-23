@@ -70,12 +70,11 @@ for PROJECT in $PROJECTS; do
 
     PROJECT_NAME=$(basename "$PROJECT")
 
-    LOCK=${PROJECT}/lock
-    exec 8>$LOCK;
-
-    if flock -n -x 8; then
+    exec {LOCK_FD}> ${PROJECT}/lock
+    if flock --nonblock $LOCK_FD; then
         project ${PROJECT} || echo "${PROJECT} Update failed ($?)"
     else
-        echo "${PROJECT} Update already locked"
+        echo "${PROJECT} already locked, skip"
     fi
+    exec {LOCK_FD}>&-
 done
