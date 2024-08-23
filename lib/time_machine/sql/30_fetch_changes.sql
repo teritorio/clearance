@@ -173,12 +173,22 @@ SELECT
 FROM
     fetch_changes(group_id_polys)
 ),
+ring_snap AS (
+SELECT
+    rings.objtype,
+    rings.id,
+    rings.geom,
+    ST_SnapToGrid(ST_Centroid(geom), distance * 100) AS snap_geom,
+    rings.p
+FROM
+    rings
+),
 locha AS (
 SELECT
     geom,
     coalesce(
         -- Equivalent to ST_ClusterWithinWin
-        ST_ClusterDBSCAN(geom, distance, 0) OVER (),
+        ST_ClusterDBSCAN(geom, distance, 0) OVER (PARTITION BY snap_geom),
         -- Negative value to avoid colision with cluster id
         -1 * row_number() OVER ()
     ) AS locha_id,
@@ -187,7 +197,7 @@ SELECT
     objtype || '|' || id || '|' || (p[-1]->>'version') || '|' || (p[-1]->>'deleted') || '|' AS key,
     p
 FROM
-    rings
+    ring_snap AS rings
 ORDER BY
     objtype,
     id,
