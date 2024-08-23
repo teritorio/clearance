@@ -12,7 +12,8 @@ class Project < ActiveFile::Base
     end
 
     def load_file
-      Dir.glob('*', base: 'projects/').collect{ |project|
+      Dir.glob('*/', base: 'projects/').collect{ |project|
+        project = project[..-2]
         c = ::Configuration.load("projects/#{project}/config.yaml")
         date_last_update = Osm::StateFile.from_file("projects/#{project}/export/state.txt")
 
