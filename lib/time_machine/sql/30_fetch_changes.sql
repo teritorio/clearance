@@ -131,7 +131,7 @@ CREATE OR REPLACE FUNCTION fetch_changes(
         s.objtype,
         s.id,
         ST_Union(s.geom) AS geom,
-        json_agg(row_to_json(s)::jsonb - 'objtype' - 'id')::jsonb AS p
+        jsonb_agg(row_to_json(s)::jsonb - 'objtype' - 'id') AS p
     FROM
         state AS s
     GROUP BY
