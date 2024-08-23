@@ -206,7 +206,7 @@ GROUP BY
 locha_split AS (
 SELECT
     -- Max 300 objects (think about nodes), max radius
-    ST_ClusterKMeans(geom, (size / 300)::integer, distance*20) OVER (PARTITION BY locha_id) AS cluster_id,
+    ST_ClusterKMeans(geom, ceil(size::float / 300)::integer, distance*20) OVER (PARTITION BY locha.locha_id) AS cluster_id,
     locha_id,
     objtype,
     id,
@@ -220,7 +220,7 @@ g AS(
 SELECT
     cluster_id,
     locha_id,
-    (hashtext(string_agg(key, ',')))::bigint AS hash_keys
+    (hashtext(string_agg(key, ',')))::integer AS hash_keys
 FROM
     locha_split
 GROUP BY
