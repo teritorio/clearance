@@ -32,7 +32,7 @@ module Validators
       ).void
     }
     def apply(before, after, diff)
-      return if !before || !(diff.attribs['geom_distance'] || diff.attribs['members'])
+      return if !before || ((!diff.attribs['geom_distance'] || diff.attribs['geom_distance'] == 0) && !diff.attribs['members'])
 
       if @dist.nil?
         assign_action(diff.attribs['geom_distance'] || []) if diff.attribs['geom_distance']

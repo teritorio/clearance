@@ -184,6 +184,7 @@ module LogicalHistory
             match[0]['geom'].distance(match[-1]['geom'])
           end
         )
+        match[-1]['geom_distance'] = nil if match[-1]['geom_distance'] == 0
         paired << match
 
         befores.delete([key_min[0]['objtype'], key_min[0]['id']])
