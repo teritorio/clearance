@@ -177,13 +177,7 @@ module LogicalHistory
       until distance_matrix.empty?
         key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
         match = [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
-        match[-1]['geom_distance'] = (
-          if match[0]['geom'].intersects?(match[-1]['geom'])
-            DistanceHausdorff.distance(match[0]['geom'], match[-1]['geom'])
-          else
-            match[0]['geom'].distance(match[-1]['geom'])
-          end
-        )
+        match[-1]['geom_distance'] = match[0]['geom'].distance(match[-1]['geom'])
         match[-1]['geom_distance'] = nil if match[-1]['geom_distance'] == 0
         paired << match
 
