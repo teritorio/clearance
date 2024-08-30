@@ -31,16 +31,20 @@ module LogicalHistory
         geom: T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry),
         geo_factory: T.untyped,
         projection: T.untyped,
-      ).returns(RGeo::Feature::Geometry)
+      ).returns(T.nilable(RGeo::Feature::Geometry))
     }
     def self.cache_geom(geom, geo_factory, projection)
       return T.cast(geom, RGeo::Feature::Geometry) if T.unsafe(geom).respond_to?(:geometry_type) # is_a?(RGeo::Feature::Geometry)
 
-      RGeo::Feature.cast(
-        RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
-        project: true,
-        factory: projection,
-      )
+      begin
+        RGeo::Feature.cast(
+          RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
+          project: true,
+          factory: projection,
+        )
+      rescue RGeo::Error::InvalidGeometry
+        nil
+      end
     end
 
     sig {
@@ -90,13 +94,15 @@ module LogicalHistory
       projection = RGeo::Geos.factory(srid: local_srid)
       befores.each{ |b|
         afters.each{ |a|
-          next if b['geom'].nil? && a['geom'].nil?
+          next if b['geom'].nil? || a['geom'].nil?
 
           t_dist = LogicalHistory::Tags.tags_distance(b['tags'], a['tags'])
           next if t_dist.nil? || t_dist >= 0.5
 
           b['geom'] = cache_geom(b['geom'], geo_factory, projection)
           a['geom'] = cache_geom(a['geom'], geo_factory, projection)
+          next if b['geom'].nil? || a['geom'].nil?
+
           g_dist = (
             if b['geom'] == a['geom'] || (b['geom'].dimension == 2 && a['geom'].dimension == 2 && befores.size == 1 && afters.size == 1)
               # Same geom
