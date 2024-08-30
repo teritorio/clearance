@@ -2,6 +2,7 @@ do $$ BEGIN
     RAISE WARNING 'osm_changes count: %', (SELECT COUNT(*) FROM osm_changes);
 END; $$ LANGUAGE plpgsql;
 
+-- Remove from osm_changes all changes that are not yet in osm_base
 WITH changes_delete_without_base AS (
     SELECT
         changes.objtype,

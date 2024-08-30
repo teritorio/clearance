@@ -18,6 +18,7 @@ WHERE
     (:polygon IS NOT NULL AND NOT ST_Intersects(clip.geom, osm_changes_geom.geom))
 ;
 
+-- Select only changes not linked to objects of interest
 DROP TABLE IF EXISTS changes_update;
 CREATE TEMP TABLE changes_update AS
 WITH
@@ -36,17 +37,19 @@ base_update AS (
         osm_base,
         clip
     WHERE
-        osm_base.geom IS NULL OR
-        NOT (:osm_filter_tags) OR
-        (:polygon IS NOT NULL AND NOT ST_Intersects(clip.geom, osm_base.geom))
+        osm_base.geom IS NOT NULL AND
+        (:osm_filter_tags) AND
+        (:polygon IS NULL OR ST_Intersects(clip.geom, osm_base.geom))
 )
 SELECT DISTINCT ON (changes.objtype, changes.id)
     changes.*
 FROM
-    base_update AS base
-    JOIN tmp_changes AS changes ON
-        changes.objtype = base.objtype AND
-        changes.id = base.id
+    tmp_changes AS changes
+    LEFT JOIN base_update AS base ON
+        base.objtype = changes.objtype AND
+        base.id = changes.id
+WHERE
+    base.objtype IS NULL
 ORDER BY
     changes.objtype,
     changes.id,
