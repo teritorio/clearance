@@ -23,6 +23,51 @@ CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
 ;
 
 CREATE OR REPLACE VIEW osm_changes_geom_ways AS
+WITH
+t AS (
+  SELECT DISTINCT ON (
+    osm_changes.objtype,
+    osm_changes.id,
+    osm_changes.version,
+    osm_changes.deleted,
+    way_nodes.index
+  )
+    osm_changes.objtype,
+    osm_changes.id,
+    osm_changes.version,
+    osm_changes.deleted,
+    osm_changes.changeset_id,
+    osm_changes.created,
+    osm_changes.uid,
+    osm_changes.username,
+    osm_changes.tags,
+    osm_changes.nodes,
+    osm_changes.members,
+    way_nodes.index,
+    coalesce(nodes_change.lon, nodes.lon) AS lon,
+    coalesce(nodes_change.lat, nodes.lat) AS lat,
+    osm_changes.nodes[1] = osm_changes.nodes[array_length(osm_changes.nodes, 1)] AS is_closed
+  FROM
+    osm_changes
+    LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
+    LEFT JOIN osm_base AS nodes ON
+      nodes.objtype = 'n' AND
+      nodes.id = way_nodes.node_id
+    LEFT JOIN osm_changes AS nodes_change ON
+      nodes_change.objtype = 'n' AND
+      nodes_change.id = way_nodes.node_id
+  WHERE
+    osm_changes.objtype = 'w'
+  ORDER BY
+    osm_changes.objtype,
+    osm_changes.id,
+    osm_changes.version,
+    osm_changes.deleted,
+    way_nodes.index,
+    coalesce(nodes_change.version, nodes.version) DESC NULLS LAST,
+    nodes_change.deleted DESC
+),
+with_geom AS (
   SELECT
     objtype,
     id,
@@ -37,51 +82,15 @@ CREATE OR REPLACE VIEW osm_changes_geom_ways AS
     NULL::real as lat,
     nodes,
     members,
-    ST_MakeLine(
-      ST_SetSRID(ST_MakePoint(lon, lat), 4326) ORDER BY index
-    ) AS geom
-  FROM (
-    SELECT DISTINCT ON (
-      osm_changes.objtype,
-      osm_changes.id,
-      osm_changes.version,
-      osm_changes.deleted,
-      way_nodes.index
-    )
-      osm_changes.objtype,
-      osm_changes.id,
-      osm_changes.version,
-      osm_changes.deleted,
-      osm_changes.changeset_id,
-      osm_changes.created,
-      osm_changes.uid,
-      osm_changes.username,
-      osm_changes.tags,
-      osm_changes.nodes,
-      osm_changes.members,
-      way_nodes.index,
-      coalesce(nodes_change.lon, nodes.lon) AS lon,
-      coalesce(nodes_change.lat, nodes.lat) AS lat
-    FROM
-      osm_changes
-      LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-      LEFT JOIN osm_base AS nodes ON
-        nodes.objtype = 'n' AND
-        nodes.id = way_nodes.node_id
-      LEFT JOIN osm_changes AS nodes_change ON
-        nodes_change.objtype = 'n' AND
-        nodes_change.id = way_nodes.node_id
-    WHERE
-      osm_changes.objtype = 'w'
-    ORDER BY
-      osm_changes.objtype,
-      osm_changes.id,
-      osm_changes.version,
-      osm_changes.deleted,
-      way_nodes.index,
-      coalesce(nodes_change.version, nodes.version) DESC NULLS LAST,
-      nodes_change.deleted DESC
-    ) AS t
+    ST_SetSRID(ST_MakeLine(
+      ST_MakePoint(lon, lat) ORDER BY index
+    ), 4326) AS geom,
+    is_closed
+  FROM
+    t
+  WHERE
+    lon IS NOT NULL AND
+    lat IS NOT NULL
   GROUP BY
     objtype,
     id,
@@ -93,7 +102,32 @@ CREATE OR REPLACE VIEW osm_changes_geom_ways AS
     username,
     tags,
     nodes,
-    members
+    members,
+    is_closed
+)
+SELECT
+  objtype,
+  id,
+  version,
+  deleted,
+  changeset_id,
+  created,
+  uid,
+  username,
+  tags,
+  lon,
+  lat,
+  nodes,
+  members,
+  CASE
+    -- Force initialy closed ways to be closed
+    WHEN is_closed AND NOT ST_IsClosed(geom) THEN
+      ST_AddPoint(geom, ST_PointN(geom, 1))
+    ELSE
+      geom
+  END AS geom
+FROM
+  with_geom
 ;
 
 CREATE OR REPLACE VIEW osm_changes_geom_relations AS
