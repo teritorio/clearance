@@ -22,6 +22,6 @@ module Osm
     response = cache.get(url)
     raise [response.error, url].join(' ') if !response.success?
 
-    JSON.parse(response.content)['elements'][0].except('type')
+    JSON.parse(response.content)['changeset']
   end
 end
