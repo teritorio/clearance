@@ -97,7 +97,7 @@ module LogicalHistory
           next if b['geom'].nil? || a['geom'].nil?
 
           t_dist = LogicalHistory::Tags.tags_distance(b['tags'], a['tags'])
-          next if t_dist.nil? || t_dist >= 0.5
+          next if t_dist.nil?
 
           b['geom'] = cache_geom(b['geom'], geo_factory, projection)
           a['geom'] = cache_geom(a['geom'], geo_factory, projection)

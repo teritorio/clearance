@@ -18,12 +18,14 @@ class TestConflation < Test::Unit::TestCase
   sig {
     params(
       id: Integer,
+      version: Integer,
       tags: T::Hash[String, String],
       geom: String,
     ).returns(Validation::OSMChangeProperties)
   }
   def build_object(
     id: 1,
+    version: 1,
     tags: { 'highway' => 'a' },
     geom: '{"type":"Point","coordinates":[0,0]}'
   )
@@ -35,7 +37,7 @@ class TestConflation < Test::Unit::TestCase
       'geom_distance' => 0,
       'deleted' => false,
       'members' => nil,
-      'version' => 1,
+      'version' => version,
       'changesets' => nil,
       'username' => 'bob',
       'created' => 'today',
@@ -207,7 +209,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0]}'
     )
-    assert_equal(0.5, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(nil, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
     conflate_distances = Conflation.conflate_matrix(before, after, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(

@@ -57,7 +57,7 @@ module LogicalHistory
 
       # Main tags
       d_main = key_val_main_distance(T.must(a)[0] || {}, T.must(b)[0] || {})
-      return if d_main.nil?
+      return if d_main.nil? || d_main >= 1.0
 
       # Other tags
       (d_main + key_val_fuzzy_distance(T.must(a)[1] || {}, T.must(b)[1] || {})) / 2

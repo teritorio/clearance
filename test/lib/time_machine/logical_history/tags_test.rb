@@ -37,8 +37,8 @@ class TestTags < Test::Unit::TestCase
     assert_equal(0.0, Tags.tags_distance({ 'highway' => 'a' }, { 'highway' => 'a' }))
     assert_equal(0.0, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'highway' => 'a', 'foo' => 'a' }))
     assert_equal(0.0, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'highway' => 'a', 'foo' => 'a' }))
-    assert_equal(0.5, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'leisure' => 'a', 'foo' => 'a' }))
-    assert_equal(0.5, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'foo' => 'a' }))
+    assert_equal(nil, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'leisure' => 'a', 'foo' => 'a' }))
+    assert_equal(nil, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a' }, { 'foo' => 'a' }))
     assert_equal(0.25, Tags.tags_distance({ 'highway' => 'a', 'foo' => 'a', 'bar' => 'b' }, { 'highway' => 'a', 'foo' => 'a' }))
   end
 end
