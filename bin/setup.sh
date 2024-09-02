@@ -8,7 +8,7 @@ EXTRACTS=${@:-http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm
 
 echo $EXTRACTS
 
-exec {LOCK_FD}> ${PROJECT}/lock
+exec {LOCK_FD}> projects/${PROJECT}/lock
 if ! flock --nonblock $LOCK_FD; then
     echo "${PROJECT} already locked, abort"
     exit 1
