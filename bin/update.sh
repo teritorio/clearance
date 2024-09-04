@@ -30,6 +30,7 @@ function project() {
     cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
 
     echo "# Merge Updates"
+    [ -n "$(find ${IMPORT} -name diff-*.osc.xml.bz2 -print -quit)" ] && \
     [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
     osmosis \
         `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` \
