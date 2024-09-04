@@ -19,7 +19,7 @@ class TestTags < Test::Unit::TestCase
     assert_equal(1.0, Tags.key_val_main_distance({}, { 'highway' => 'bar' }))
 
     assert_equal(1.0, Tags.key_val_main_distance({ 'highway' => 'a' }, { 'highway' => 'b' }))
-    assert_equal(1.0, Tags.key_val_main_distance({ 'highway' => 'a' }, { 'highway' => 'ab' }))
+    assert_equal(0.5, Tags.key_val_main_distance({ 'highway' => 'primary' }, { 'highway' => 'secondary' }))
   end
 
   sig { void }

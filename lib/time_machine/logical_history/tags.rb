@@ -12,6 +12,27 @@ module LogicalHistory
     # Exluding "building[:*]"
     MAIN_TAGS = T.let(Set.new(['aerialway', 'aeroway', 'amenity', 'barrier', 'boundary', 'craft', 'disc_golf', 'entrance', 'emergency', 'geological', 'highway', 'historic', 'landuse', 'leisure', 'man_made', 'military', 'natural', 'office', 'place', 'power', 'public_transport', 'railway', 'route', 'shop', 'sport', 'tourism', 'waterway', 'mountain_pass', 'traffic_sign', 'golf', 'piste:type', 'junction', 'healthcare', 'health_facility:type', 'indoor', 'club', 'seamark:type', 'attraction', 'information', 'advertising', 'ford', 'cemetery', 'area:highway', 'checkpoint', 'telecom', 'airmark']), T::Set[String])
 
+    # nil means any value in in the class
+    MAIN_TAGS_CLASS_OF_VALUES = T.let({
+      'barrier' => nil,
+      'boundary' => nil,
+
+      'craft' => nil,
+      'shop' => nil,
+      'office' => nil,
+      'sport' => nil,
+
+      'highway' => %w[motorway trunk primary secondary tertiary unclassified residential motorway_link trunk_link primary_link secondary_link tertiary_link living_street service pedestrian track bus_guideway escape raceway road busway footway bridleway steps corridor path via_ferrata],
+      'railway' => %w[abandoned construction disused funicular light_rail miniature monorail narrow_gauge preserved rail subway tram],
+      'waterway' => %w[river riverbank stream tidal_channel flowline canal pressurised drain ditch],
+      'landuse' => nil,
+
+      'entrance' => nil,
+      'place' => nil,
+      'junction' => nil,
+      'ford' => nil,
+    }, T::Hash[String, T.nilable(T::Array[String])])
+
     sig {
       params(
         tags_a: T::Hash[String, String],
@@ -22,9 +43,17 @@ module LogicalHistory
       return nil if tags_a.empty? && tags_b.empty?
       return 1.0 if tags_a.empty? || tags_b.empty?
 
-      ka = tags_a.collect { |k, v| "#{k}=#{v}" }
-      kb = tags_b.collect { |k, v| "#{k}=#{v}" }
-      1 - (ka & kb).size.to_f / (ka | kb).size
+      keys = (tags_a.keys + tags_b.keys).uniq
+      keys.sum(0.0) { |key|
+        if tags_a[key] == tags_b[key]
+          0.0
+        elsif tags_a.key?(key) && tags_b.key?(key) && MAIN_TAGS_CLASS_OF_VALUES.key?(key) && MAIN_TAGS_CLASS_OF_VALUES[key].nil? || (MAIN_TAGS_CLASS_OF_VALUES[key]&.include?(tags_a[key]) && MAIN_TAGS_CLASS_OF_VALUES[key]&.include?(tags_b[key]))
+          # Same key with values in the same range class
+          0.5
+        else
+          1.0
+        end
+      } / keys.size
     end
 
     sig {
