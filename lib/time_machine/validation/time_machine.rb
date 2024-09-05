@@ -70,13 +70,13 @@ module Validation
         conflations = LogicalHistory::Conflation.conflate(befores, afters, config.local_srid, 200.0)
 
         conflations.each{ |conflation|
-          matches = [conflation[0], conflation[-1]].compact.collect{ |object|
+          matches = [conflation.before, conflation.after].compact.collect{ |object|
             config.osm_tags_matches.match(object['tags'])
           }.flatten(1).uniq.collect{ |overpass, match|
             ValidationLogMatch.new(
               sources: match.sources&.compact || [],
               selectors: [overpass],
-              user_groups: match.user_groups.intersection(conflation.compact.pluck('group_ids').flatten.uniq),
+              user_groups: match.user_groups.intersection(conflation.to_a.compact.collect(&:group_ids).flatten.uniq),
               name: match.name,
               icon: match.icon,
             )
@@ -86,10 +86,9 @@ module Validation
             !match.user_groups&.empty?
           }
           validators = matching_group ? config.validators : accept_all_validators
-          before, before_at_now, after = conflation
-          validation_result = object_validation(validators, before, before_at_now, after)
+          validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
           yielder << [
-            T.must(before || after)['locha_id'],
+            T.must(conflation.before || conflation.after)['locha_id'],
             matches,
             validation_result
           ]

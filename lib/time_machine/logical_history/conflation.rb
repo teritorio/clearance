@@ -18,13 +18,33 @@ module LogicalHistory
   module Conflation
     extend T::Sig
 
-    Conflations = T.type_alias {
-      T::Array[[
-        T.nilable(Validation::OSMChangeProperties),
-        T.nilable(Validation::OSMChangeProperties),
-        T.nilable(Validation::OSMChangeProperties)
-      ]]
-    }
+    class Conflation < T::InexactStruct
+      const :before, Validation::OSMChangeProperties
+      const :before_at_now, Validation::OSMChangeProperties
+      const :after, Validation::OSMChangeProperties
+
+      extend T::Sig
+      sig { returns(T::Array[Validation::OSMChangeProperties]) }
+      def to_a
+        [before, before_at_now, after]
+      end
+    end
+
+    Conflations = T.type_alias { T::Array[Conflation] }
+
+    class ConflationNilable < T::InexactStruct
+      const :before, T.nilable(Validation::OSMChangeProperties)
+      const :before_at_now, T.nilable(Validation::OSMChangeProperties)
+      const :after, T.nilable(Validation::OSMChangeProperties)
+
+      extend T::Sig
+      sig { returns(T::Array[T.nilable(Validation::OSMChangeProperties)]) }
+      def to_a
+        [before, before_at_now, after]
+      end
+    end
+
+    ConflationsNilable = T.type_alias { T::Array[ConflationNilable] }
 
     sig {
       params(
@@ -70,11 +90,11 @@ module LogicalHistory
         befores.delete(before_key)
         afters.delete([T.must(afters_refs[ref])['objtype'], T.must(afters_refs[ref])['id']])
 
-        [
-          befores_refs[ref],
-          afters_index[before_key],
-          afters_refs[ref]
-        ]
+        Conflation.new(
+          before: T.must(befores_refs[ref]),
+          before_at_now: T.must(afters_index[before_key]),
+          after: T.must(afters_refs[ref]),
+        )
       }
 
       [conflate, befores, afters]
@@ -182,9 +202,13 @@ module LogicalHistory
       paired = T.let([], Conflations)
       until distance_matrix.empty?
         key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
-        match = [key_min[0], afters_index[[key_min[0]['objtype'], key_min[0]['id']]], key_min[1]]
-        match[-1]['geom_distance'] = match[0]['geom'].distance(match[-1]['geom'])
-        match[-1]['geom_distance'] = nil if match[-1]['geom_distance'] == 0
+        match = Conflation.new(
+          before: key_min[0],
+          before_at_now: T.must(afters_index[[key_min[0]['objtype'], key_min[0]['id']]]),
+          after: key_min[1]
+        )
+        match.after['geom_distance'] = match.before['geom'].distance(match.after['geom'])
+        match.after['geom_distance'] = nil if match.after['geom_distance'] == 0
         paired << match
 
         befores.delete([key_min[0]['objtype'], key_min[0]['id']])
@@ -207,7 +231,7 @@ module LogicalHistory
         afters: T::Enumerable[Validation::OSMChangeProperties],
         local_srid: Integer,
         demi_distance: Float,
-      ).returns(Conflations)
+      ).returns(ConflationsNilable)
     }
     def self.conflate(befores, afters, local_srid, demi_distance)
       afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
@@ -221,12 +245,10 @@ module LogicalHistory
       distance_matrix = conflate_matrix(befores.values, afters.values, local_srid, demi_distance)
       paired_by_distance, befores, afters = conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
 
-      T.cast((
-        paired_by_refs +
-        paired_by_distance +
-        befores.values.collect{ |b| [b, afters_index[[b['objtype'], b['id']]], nil] } +
-        afters.values.collect{ |a| [nil, nil, a] }
-      ), Conflations)
+      T.cast(paired_by_refs, T::Array[ConflationNilable]) +
+        T.cast(paired_by_distance, T::Array[ConflationNilable]) +
+        befores.values.collect{ |b| ConflationNilable.new(before: b, before_at_now: afters_index[[b['objtype'], b['id']]]) } +
+        afters.values.collect{ |a| ConflationNilable.new(after: a) }
     end
   end
 end
