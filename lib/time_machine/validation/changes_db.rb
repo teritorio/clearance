@@ -28,6 +28,18 @@ module Validation
     const :tags, T::Hash[String, String]
     const :is_change, T::Boolean
     const :group_ids, T.nilable(T::Array[String])
+
+    extend T::Sig
+
+    sig { params(other: OSMChangeProperties).returns(T::Boolean) }
+    def eql?(other)
+      objtype == other.objtype && id == other.id && geom == other.geom
+    end
+
+    sig { returns(Integer) }
+    def hash
+      [objtype, id, geom].hash
+    end
   end
 
   sig {
