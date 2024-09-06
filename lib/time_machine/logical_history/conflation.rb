@@ -102,29 +102,50 @@ module LogicalHistory
 
     sig {
       params(
-        befores: T::Set[Validation::OSMChangeProperties],
-        afters: T::Set[Validation::OSMChangeProperties],
+        befores: T::Enumerable[Validation::OSMChangeProperties],
+        afters: T::Enumerable[Validation::OSMChangeProperties],
         local_srid: Integer,
         demi_distance: Float,
-      ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
+      ).returns([
+        T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]],
+        T::Set[Validation::OSMChangeProperties],
+        T::Set[Validation::OSMChangeProperties],
+      ])
     }
     def self.conflate_matrix(befores, afters, local_srid, demi_distance)
       distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
       geo_factory = RGeo::Geos.factory(srid: 4326)
       projection = RGeo::Geos.factory(srid: local_srid)
-      befores.each{ |b|
-        afters.each{ |a|
-          next if b.geom.nil? || a.geom.nil?
+
+      b_arr = befores.to_a
+      a_arr = afters.to_a
+      b_geos_cached = T.let([], T::Array[T::Boolean])
+      a_geos_cached = T.let([], T::Array[T::Boolean])
+      0.upto(b_arr.length - 1).each{ |b_i|
+        b = T.must(b_arr[b_i])
+        next if b.geom.nil?
+
+        0.upto(a_arr.length - 1).each{ |a_i|
+          a = T.must(a_arr[a_i])
+          next if a.geom.nil?
 
           t_dist = LogicalHistory::Tags.tags_distance(b.tags, a.tags)
           next if t_dist.nil?
 
-          b.geos ||= cache_geom(b.geom, geo_factory, projection)
-          a.geos ||= cache_geom(a.geom, geo_factory, projection)
-          next if T.unsafe(b.geos).nil? || T.unsafe(a.geos).nil?
+          if T.unsafe(b.geos).nil? && !b_geos_cached[b_i]
+            b_geos_cached[b_i] = true
+            b = b_arr[b_i] = b.with(geos: cache_geom(b.geom, geo_factory, projection))
+          end
+          next if T.unsafe(b.geos).nil?
+
+          if T.unsafe(a.geos).nil? && !a_geos_cached[a_i]
+            a_geos_cached[a_i] = true
+            a = a_arr[a_i] = a.with(geos: cache_geom(a.geom, geo_factory, projection))
+          end
+          next if T.unsafe(a.geos).nil?
 
           g_dist = (
-            if b.geos == a.geos || (b.geos&.dimension == 2 && a.geos&.dimension == 2 && befores.size == 1 && afters.size == 1)
+            if b.geos == a.geos || (b.geos&.dimension == 2 && a.geos&.dimension == 2 && b_arr.size == 1 && a_arr.size == 1)
               # Same geom
               # or
               # Geom distance does not matter on 1x1 matrix, fast return
@@ -144,7 +165,7 @@ module LogicalHistory
         }
       }
 
-      distance_matrix
+      [distance_matrix, b_arr.to_set, a_arr.to_set]
     end
 
     sig {
@@ -169,13 +190,11 @@ module LogicalHistory
       remaning_before = T.let(nil, T.nilable(Validation::OSMChangeProperties))
       remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
       if !T.unsafe(remaning_before_geom).nil?
-        remaning_before = key_min[0].dup
-        remaning_before.geos = remaning_before_geom
+        remaning_before = key_min[0].with(geos: remaning_before_geom)
         parts << [[remaning_before], afters]
       end
       if !T.unsafe(remaning_after_geom).nil?
-        remaning_after = key_min[1].dup
-        remaning_after.geos = remaning_after_geom
+        remaning_after = key_min[1].with(geos: remaning_after_geom)
         parts << [befores, [remaning_after]]
       end
       if !remaning_before.nil? && !remaning_after.nil?
@@ -202,7 +221,7 @@ module LogicalHistory
       ])
     }
     def self.conflate_core(befores, afters, afters_index, local_srid, demi_distance)
-      distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
+      distance_matrix, befores, afters = conflate_matrix(befores, afters, local_srid, demi_distance)
 
       paired = T.let([], Conflations)
       until distance_matrix.empty? || befores.empty? || afters.empty?
@@ -229,11 +248,13 @@ module LogicalHistory
           new_afters = new_afters.merge(parts[1])
         }
 
-        # Si before ou efter est vide il faut arrpeter
+        distance_matrix_nb_na, new_befores, new_afters = conflate_matrix(new_befores, new_afters, local_srid, demi_distance)
+        distance_matrix_nb_a, new_befores, afters = conflate_matrix(new_befores, afters, local_srid, demi_distance)
+        distance_matrix_b_na, befores, new_afters = conflate_matrix(befores, new_afters, local_srid, demi_distance)
         distance_matrix = distance_matrix.merge(
-          conflate_matrix(new_befores, new_afters, local_srid, demi_distance),
-          conflate_matrix(new_befores, afters, local_srid, demi_distance),
-          conflate_matrix(befores, new_afters, local_srid, demi_distance),
+          distance_matrix_nb_na,
+          distance_matrix_nb_a,
+          distance_matrix_b_na,
         )
         befores = befores.merge(new_befores)
         afters = afters.merge(new_afters)

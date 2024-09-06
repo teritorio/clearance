@@ -17,7 +17,7 @@ module Validation
     const :objtype, String
     const :id, Integer
     const :geom, String
-    prop :geos, T.nilable(RGeo::Feature::Geometry)
+    const :geos, T.nilable(RGeo::Feature::Geometry)
     prop :geom_distance, T.nilable(T.any(Float, Integer))
     const :deleted, T::Boolean
     const :members, T.nilable(T::Array[Integer])
@@ -33,12 +33,12 @@ module Validation
 
     sig { params(other: OSMChangeProperties).returns(T::Boolean) }
     def eql?(other)
-      objtype == other.objtype && id == other.id && geom == other.geom
+      objtype == other.objtype && id == other.id && (geos || geom) == (other.geos || other.geom)
     end
 
     sig { returns(Integer) }
     def hash
-      [objtype, id, geom].hash
+      [objtype, id, geos&.as_text || geom].hash
     end
   end
 
