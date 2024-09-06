@@ -69,16 +69,20 @@ module LogicalHistory
 
     sig {
       params(
-        befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
-        afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+        befores: T::Set[Validation::OSMChangeProperties],
+        afters: T::Set[Validation::OSMChangeProperties],
         afters_index: T::Hash[[String, Integer], Validation::OSMChangeProperties],
-      ).returns([Conflations, T::Hash[[String, Integer], Validation::OSMChangeProperties], T::Hash[[String, Integer], Validation::OSMChangeProperties]])
+      ).returns([
+        Conflations,
+        T::Set[Validation::OSMChangeProperties],
+        T::Set[Validation::OSMChangeProperties],
+      ])
     }
     def self.conflate_by_refs(befores, afters, afters_index)
-      befores_refs = befores.values.group_by{ |b| LogicalHistory::Refs.refs(b['tags']) }
+      befores_refs = befores.group_by{ |b| LogicalHistory::Refs.refs(b['tags']) }
       befores_refs.delete({})
       befores_refs = befores_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
-      afters_refs = afters.values.group_by{ |a| LogicalHistory::Refs.refs(a['tags']) }
+      afters_refs = afters.group_by{ |a| LogicalHistory::Refs.refs(a['tags']) }
       afters_refs.delete({})
       afters_refs = afters_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
 
@@ -86,10 +90,10 @@ module LogicalHistory
       uniq_afters_refs = afters_refs.keys
 
       conflate = (uniq_befores_refs & uniq_afters_refs).collect{ |ref|
-        before_key = [T.must(befores_refs[ref])['objtype'], T.must(befores_refs[ref])['id']]
-        befores.delete(before_key)
-        afters.delete([T.must(afters_refs[ref])['objtype'], T.must(afters_refs[ref])['id']])
+        befores.delete(T.must(befores_refs[ref]))
+        afters.delete(T.must(afters_refs[ref]))
 
+        before_key = [T.must(befores_refs[ref])['objtype'], T.must(befores_refs[ref])['id']]
         Conflation.new(
           before: T.must(befores_refs[ref]),
           before_at_now: T.must(afters_index[before_key]),
@@ -102,8 +106,8 @@ module LogicalHistory
 
     sig {
       params(
-        befores: T::Array[Validation::OSMChangeProperties],
-        afters: T::Array[Validation::OSMChangeProperties],
+        befores: T::Set[Validation::OSMChangeProperties],
+        afters: T::Set[Validation::OSMChangeProperties],
         local_srid: Integer,
         demi_distance: Float,
       ).returns(T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
@@ -150,18 +154,18 @@ module LogicalHistory
     sig {
       params(
         key_min: [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
-        befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
-        afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
+        befores: T::Set[Validation::OSMChangeProperties],
+        afters: T::Set[Validation::OSMChangeProperties],
         dist_geom: [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)],
       ).returns(T::Array[[
-        T::Array[Validation::OSMChangeProperties],
-        T::Array[Validation::OSMChangeProperties]
+        T::Enumerable[Validation::OSMChangeProperties],
+        T::Enumerable[Validation::OSMChangeProperties]
       ]])
     }
     def self.remaining_parts(key_min, befores, afters, dist_geom)
       parts = T.let([], T::Array[[
-        T::Array[Validation::OSMChangeProperties],
-        T::Array[Validation::OSMChangeProperties]
+        T::Enumerable[Validation::OSMChangeProperties],
+        T::Enumerable[Validation::OSMChangeProperties]
       ]])
 
       remaning_before_geom = dist_geom[1]
@@ -171,12 +175,12 @@ module LogicalHistory
       if !T.unsafe(remaning_before_geom).nil?
         remaning_before = key_min[0].dup
         remaning_before['geom'] = remaning_before_geom
-        parts << [[remaning_before], afters.values]
+        parts << [[remaning_before], afters]
       end
       if !T.unsafe(remaning_after_geom).nil?
         remaning_after = key_min[1].dup
         remaning_after['geom'] = remaning_after_geom
-        parts << [befores.values, [remaning_after]]
+        parts << [befores, [remaning_after]]
       end
       if !remaning_before.nil? && !remaning_after.nil?
         parts << [
@@ -190,15 +194,20 @@ module LogicalHistory
 
     sig {
       params(
-        befores: T::Hash[[String, Integer], Validation::OSMChangeProperties],
-        afters: T::Hash[[String, Integer], Validation::OSMChangeProperties],
-        distance_matrix: T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]],
+        befores: T::Set[Validation::OSMChangeProperties],
+        afters: T::Set[Validation::OSMChangeProperties],
         afters_index: T::Hash[[String, Integer], Validation::OSMChangeProperties],
         local_srid: Integer,
         demi_distance: Float,
-      ).returns([Conflations, T::Hash[[String, Integer], Validation::OSMChangeProperties], T::Hash[[String, Integer], Validation::OSMChangeProperties]])
+      ).returns([
+        Conflations,
+        T::Set[Validation::OSMChangeProperties],
+        T::Set[Validation::OSMChangeProperties],
+      ])
     }
-    def self.conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
+    def self.conflate_core(befores, afters, afters_index, local_srid, demi_distance)
+      distance_matrix = conflate_matrix(befores, afters, local_srid, demi_distance)
+
       paired = T.let([], Conflations)
       until distance_matrix.empty? || befores.empty? || afters.empty?
         key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
@@ -211,23 +220,27 @@ module LogicalHistory
         match.after['geom_distance'] = nil if match.after['geom_distance'] == 0
         paired << match
 
-        befores.delete([key_min[0]['objtype'], key_min[0]['id']])
-        afters.delete([key_min[1]['objtype'], key_min[1]['id']])
+        befores.delete(key_min[0])
+        afters.delete(key_min[1])
 
         distance_matrix = distance_matrix.select{ |k, _v| (k & key_min).empty? }
 
         # Add the remaining geom parts to the matrix
-        new_befores = T.let([], T::Array[Validation::OSMChangeProperties])
-        new_afters = T.let([], T::Array[Validation::OSMChangeProperties])
+        new_befores = T.let(Set.new, T::Set[Validation::OSMChangeProperties])
+        new_afters = T.let(Set.new, T::Set[Validation::OSMChangeProperties])
         remaining_parts(key_min, befores, afters, dist[1]).each{ |parts|
-          new_befores += parts[0]
-          new_afters += parts[1]
+          new_befores = new_befores.merge(parts[0])
+          new_afters = new_afters.merge(parts[1])
         }
+
+        # Si before ou efter est vide il faut arrpeter
         distance_matrix = distance_matrix.merge(
           conflate_matrix(new_befores, new_afters, local_srid, demi_distance),
-          conflate_matrix(new_befores, afters.values, local_srid, demi_distance),
-          conflate_matrix(befores.values, new_afters, local_srid, demi_distance),
+          conflate_matrix(new_befores, afters, local_srid, demi_distance),
+          conflate_matrix(befores, new_afters, local_srid, demi_distance),
         )
+        befores = befores.merge(new_befores)
+        afters = afters.merge(new_afters)
       end
 
       [paired, befores, afters]
@@ -243,20 +256,16 @@ module LogicalHistory
     }
     def self.conflate(befores, afters, local_srid, demi_distance)
       afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
-      afters = afters.select{ |a| !a['deleted'] }
-
-      befores = befores.index_by{ |b| [b['objtype'], b['id']] }
-      afters = afters.index_by{ |a| [a['objtype'], a['id']] }
+      befores = befores.to_set
+      afters = afters.select{ |a| !a['deleted'] }.to_set
 
       paired_by_refs, befores, afters = conflate_by_refs(befores, afters, afters_index)
-
-      distance_matrix = conflate_matrix(befores.values, afters.values, local_srid, demi_distance)
-      paired_by_distance, befores, afters = conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
+      paired_by_distance, befores, afters = conflate_core(befores, afters, afters_index, local_srid, demi_distance)
 
       T.cast(paired_by_refs, T::Array[ConflationNilable]) +
         T.cast(paired_by_distance, T::Array[ConflationNilable]) +
-        befores.values.collect{ |b| ConflationNilable.new(before: b, before_at_now: afters_index[[b['objtype'], b['id']]]) } +
-        afters.values.collect{ |a| ConflationNilable.new(after: a) }
+        befores.collect{ |b| ConflationNilable.new(before: b, before_at_now: afters_index[[b['objtype'], b['id']]]) } +
+        afters.collect{ |a| ConflationNilable.new(after: a) }
     end
   end
 end
