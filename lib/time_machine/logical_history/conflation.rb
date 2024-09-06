@@ -200,7 +200,7 @@ module LogicalHistory
     }
     def self.conflate_core(befores, afters, distance_matrix, afters_index, local_srid, demi_distance)
       paired = T.let([], Conflations)
-      until distance_matrix.empty?
+      until distance_matrix.empty? || befores.empty? || afters.empty?
         key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
         match = Conflation.new(
           before: key_min[0],
@@ -217,9 +217,17 @@ module LogicalHistory
         distance_matrix = distance_matrix.select{ |k, _v| (k & key_min).empty? }
 
         # Add the remaining geom parts to the matrix
+        new_befores = T.let([], T::Array[Validation::OSMChangeProperties])
+        new_afters = T.let([], T::Array[Validation::OSMChangeProperties])
         remaining_parts(key_min, befores, afters, dist[1]).each{ |parts|
-          distance_matrix = distance_matrix.merge(conflate_matrix(parts[0], parts[1], local_srid, demi_distance))
+          new_befores += parts[0]
+          new_afters += parts[1]
         }
+        distance_matrix = distance_matrix.merge(
+          conflate_matrix(new_befores, new_afters, local_srid, demi_distance),
+          conflate_matrix(new_befores, afters.values, local_srid, demi_distance),
+          conflate_matrix(befores.values, new_afters, local_srid, demi_distance),
+        )
       end
 
       [paired, befores, afters]
