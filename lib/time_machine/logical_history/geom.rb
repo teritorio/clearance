@@ -58,9 +58,9 @@ module LogicalHistory
 
       # Prefer exact distance if it's more than 60% of the buffered distance
       if exact_distance / buffered_distance > 0.6
-        [exact_distance, exact_a_over_b.empty? ? nil : exact_a_over_b, exact_b_over_a.nil? ? nil : exact_b_over_a]
+        [exact_distance, exact_a_over_b.empty? ? nil : exact_a_over_b, exact_b_over_a.empty? ? nil : exact_b_over_a]
       else
-        [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? a_over_b : nil]
+        [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? b_over_a : nil]
       end
     end
 
