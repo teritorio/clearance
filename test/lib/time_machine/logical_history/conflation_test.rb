@@ -147,7 +147,7 @@ class TestConflation < Test::Unit::TestCase
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
-    assert_equal(0.475, LogicalHistory::Geom.geom_distance(
+    assert_equal(0.5, LogicalHistory::Geom.geom_distance(
       T.must(before[0]&.geos),
       T.must(after[0]&.geos),
       @@demi_distance
@@ -354,8 +354,8 @@ class TestConflation < Test::Unit::TestCase
     conflations = Conflation.conflate(before, after, @@srid, @@demi_distance)
     assert_equal(2, conflations.size, conflations)
     assert_equal(
-      [[before[0], after[0], after[1]], [before[0], after[0], after[2]]].collect{ |t| t.pluck('id') },
-      conflations.collect(&:to_a).collect{ |t| t.pluck('id') }
+      [[before[0], after[0], after[1]], [before[0], after[0], after[2]]].collect{ |t| t.collect(&:id) },
+      conflations.collect(&:to_a).collect{ |t| t.collect{ |k| k&.id } }
     )
   end
 end

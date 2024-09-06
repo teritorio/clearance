@@ -74,7 +74,16 @@ module LogicalHistory
     def self.geom_distance(r_geom_a, r_geom_b, demi_distance)
       return [0.0, nil, nil] if r_geom_a.equals?(r_geom_b)
 
-      if r_geom_a.intersects?(r_geom_b)
+      if r_geom_a.dimension == 0 && r_geom_b.dimension == 0
+        # Point never intersects, unless they are the same
+        d = log_distance(r_geom_a, r_geom_b, demi_distance)
+        return d <= 0.5 ? [d * 2, nil, nil] : nil
+      end
+
+      intersection = r_geom_a.intersection(r_geom_b)
+
+      # Ensure inner intersection (crossing) not just touching
+      if !intersection.empty? && intersection.dimension == r_geom_a.dimension && intersection.dimension == r_geom_b.dimension
         # Compute: 1 - intersection / union
         # Compute buffered symetrical difference
         a_over_b = T.let(r_geom_a - r_geom_b.buffer(geom_diameter(r_geom_b) * 0.05), RGeo::Feature::Geometry)
@@ -82,7 +91,11 @@ module LogicalHistory
 
         if a_over_b.empty? || b_over_a.empty?
           # One subpart of the other
-          [0.0, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? nil : b_over_a]
+          union = r_geom_a.union(r_geom_b)
+          parts = exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom|
+            intersection.dimension == 1 ? T.unsafe(geom).length : T.unsafe(geom).area
+          }
+          [0.0, parts[1], parts[2]]
         else
           dim_a = a_over_b.dimension
           dim_b = b_over_a.dimension
@@ -97,19 +110,8 @@ module LogicalHistory
           elsif dim_a == 2 && dim_b == 2 && dim_union == 2
             exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom| T.unsafe(geom).area }
           else
-            # And fallback, all converted as polygons
-            d = (
-              T.cast(a_over_b, RGeo::Feature::Polygon).area +
-              T.cast(b_over_a, RGeo::Feature::Polygon).area
-            ) / union.area / 2
-            [d, a_over_b, b_over_a]
+            raise 'Diff dimension geom should not happen.'
           end
-        end
-      elsif r_geom_a.dimension == 0 && r_geom_b.dimension == 0
-        # Point never intersects
-        d = log_distance(r_geom_a, r_geom_b, demi_distance)
-        if d <= 0.5
-          [d * 2, nil, nil]
         end
       else
         # Else, use real distance + bias because no intersection
