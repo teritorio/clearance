@@ -34,8 +34,8 @@ module Validators
     }
     def apply(before, after, diff)
       matcheses = (
-        (before && @osm_tags_matches.match_with_extra(before['tags']) || []) +
-        @osm_tags_matches.match_with_extra(after&.dig('tags') || {})
+        (before && @osm_tags_matches.match_with_extra(before.tags) || []) +
+        @osm_tags_matches.match_with_extra(after&.tags || {})
       ).group_by(&:first).select{ |key, _match|
         diff.tags.key?(key)
       }

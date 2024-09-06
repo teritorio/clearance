@@ -29,22 +29,22 @@ class TestConflation < Test::Unit::TestCase
     tags: { 'highway' => 'a' },
     geom: '{"type":"Point","coordinates":[0,0]}'
   )
-    T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => id,
-      'geom' => RGeo::GeoJSON.decode(JSON.parse(geom)),
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => version,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => tags,
-      'is_change' => false,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+    Validation::OSMChangeProperties.new(
+        locha_id: 1,
+        objtype: 'n',
+        id: id,
+        geom: RGeo::GeoJSON.decode(JSON.parse(geom)),
+        geom_distance: 0,
+        deleted: false,
+        members: nil,
+        version: version,
+        changesets: nil,
+        username: 'bob',
+        created: 'today',
+        tags: tags,
+        is_change: false,
+        group_ids: nil,
+      )
   end
 
   sig {
@@ -136,8 +136,8 @@ class TestConflation < Test::Unit::TestCase
   def test_conflate_geom
     before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[0,1]}')
     assert_equal(1.0, LogicalHistory::Geom.geom_distance(
-      T.must(before[0])['geom'],
-      T.must(after[0])['geom'],
+      T.must(before[0]).geom,
+      T.must(after[0]).geom,
       @@demi_distance
     )&.first)
     assert_equal(
@@ -147,8 +147,8 @@ class TestConflation < Test::Unit::TestCase
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
     assert_equal(0.475, LogicalHistory::Geom.geom_distance(
-      T.must(before[0])['geom'],
-      T.must(after[0])['geom'],
+      T.must(before[0]).geom,
+      T.must(after[0]).geom,
       @@demi_distance
     )&.first)
     assert_equal(
@@ -158,8 +158,8 @@ class TestConflation < Test::Unit::TestCase
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', after_geom: '{"type":"LineString","coordinates":[[0,2],[0,3]]}')
     assert_equal(0.75, LogicalHistory::Geom.geom_distance(
-      T.must(before[0])['geom'],
-      T.must(after[0])['geom'],
+      T.must(before[0]).geom,
+      T.must(after[0]).geom,
       @@demi_distance
     )&.first)
     assert_equal(
@@ -176,7 +176,7 @@ class TestConflation < Test::Unit::TestCase
       build_object(id: 1, geom: geom, tags: tags),
     ]
     after = [
-      build_object(id: 1, geom: geom, tags: tags).merge('deleted' => true),
+      build_object(id: 1, geom: geom, tags: tags).with(deleted: true),
       build_object(id: 2, geom: geom, tags: tags),
     ]
 
@@ -209,7 +209,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0]}'
     )
-    assert_equal(nil, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(nil, LogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
     conflate_distances = Conflation.conflate_matrix(before.to_set, after.to_set, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(
@@ -223,7 +223,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'bicycle_parking' },
       after_geom: '{"type":"Point","coordinates":[0, 2]}'
     )
-    assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
     conflate_distances = Conflation.conflate_matrix(before.to_set, after.to_set, @@srid, @@demi_distance)
     assert_equal({}, conflate_distances)
     assert_equal(
@@ -237,7 +237,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'bicycle_parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0.5]}'
     )
-    assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0])['tags'], T.must(after[0])['tags']))
+    assert_equal(0.0, LogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
     conflate_distances = Conflation.conflate_matrix(before.to_set, after.to_set, @@srid, @@demi_distance)
     assert_equal([[before[0], after[0]]], conflate_distances.keys)
     assert_equal(0.0, T.must(conflate_distances.values[0])[0])
@@ -339,7 +339,7 @@ class TestConflation < Test::Unit::TestCase
       build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags),
     ]
     after = [
-      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags).merge('deleted' => true),
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags).with(deleted: true),
       build_object(id: 2, geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', tags: tags),
       build_object(id: 3, geom: '{"type":"LineString","coordinates":[[0,1],[0,2]]}', tags: tags),
     ]

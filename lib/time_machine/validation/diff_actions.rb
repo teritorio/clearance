@@ -50,12 +50,12 @@ module Validation
     # - nodes
     # - lat
     # - lon
-    %w[deleted members geom_distance].each { |attrib|
-      diff_attribs[attrib] = [] if before&.dig(attrib) != after&.dig(attrib)
+    %i[deleted members geom_distance].each { |attrib|
+      diff_attribs[attrib.to_s] = [] if before&.send(attrib) != after&.send(attrib)
     }
 
-    ((before&.dig('tags')&.keys || []) + (after&.dig('tags')&.keys || [])).uniq.each{ |tag|
-      diff_tags[tag] = [] if before&.dig('tags', tag) != after&.dig('tags', tag)
+    ((before&.tags&.keys || []) + (after&.tags&.keys || [])).uniq.each{ |tag|
+      diff_tags[tag] = [] if (before&.tags || tag) != (after&.tags || tag)
     }
 
     DiffActions.new(attribs: diff_attribs, tags: diff_tags)

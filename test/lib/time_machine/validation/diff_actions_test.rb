@@ -28,43 +28,43 @@ class TestValidation < Test::Unit::TestCase
     'tags' => {},
   }, Osm::Changeset)
 
-  @@fixture_node_a = T.let({
-    'locha_id' => 1,
-    'objtype' => 'n',
-    'id' => 1,
-    'geom' => nil,
-    'geom_distance' => 0,
-    'deleted' => false,
-    'members' => nil,
-    'version' => 1,
-    'changesets' => [@@fixture_changeset1],
-    'username' => 'bob',
-    'created' => 'today',
-    'tags' => T.let({
+  @@fixture_node_a = T.let(Validation::OSMChangeProperties.new(
+    locha_id: 1,
+    objtype: 'n',
+    id: 1,
+    geom: nil,
+    geom_distance: 0,
+    deleted: false,
+    members: nil,
+    version: 1,
+    changesets: [@@fixture_changeset1],
+    username: 'bob',
+    created: 'today',
+    tags: T.let({
       'foo' => 'bar',
     }, T::Hash[String, String]),
-    'is_change' => false,
-    'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+    is_change: false,
+    group_ids: nil,
+  ), Validation::OSMChangeProperties)
 
-  @@fixture_node_b = T.let({
-    'locha_id' => 1,
-    'objtype' => 'n',
-    'id' => 1,
-    'geom' => 'Point(1 1)',
-    'geom_distance' => 1,
-    'deleted' => false,
-    'members' => nil,
-    'version' => 2,
-    'changesets' => [@@fixture_changeset1],
-    'username' => 'bob',
-    'created' => 'today',
-    'tags' => {
+  @@fixture_node_b = T.let(Validation::OSMChangeProperties.new(
+    locha_id: 1,
+    objtype: 'n',
+    id: 1,
+    geom: 'Point(1 1)',
+    geom_distance: 1,
+    deleted: false,
+    members: nil,
+    version: 2,
+    changesets: [@@fixture_changeset1],
+    username: 'bob',
+    created: 'today',
+    tags: {
       'bar' => 'foo',
     },
-    'is_change' => true,
-    'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+    is_change: true,
+    group_ids: nil,
+  ), Validation::OSMChangeProperties)
 
   sig { void }
   def test_diff_osm_object_same

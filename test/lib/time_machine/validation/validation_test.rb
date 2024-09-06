@@ -27,54 +27,54 @@ class TestValidation < Test::Unit::TestCase
     'tags' => {},
   }, Osm::Changeset)
 
-  @@fixture_node_a = T.let({
-    'locha_id' => 1,
-    'objtype' => 'n',
-    'id' => 1,
-    'geom' => nil,
-    'geom_distance' => 0,
-    'deleted' => false,
-    'members' => nil,
-    'version' => 1,
-    'changesets' => [@@fixture_changeset1],
-    'username' => 'bob',
-    'created' => 'today',
-    'tags' => T.let({
+  @@fixture_node_a = Validation::OSMChangeProperties.new(
+    locha_id: 1,
+    objtype: 'n',
+    id: 1,
+    geom: 'Point(-1 -1)',
+    geom_distance: 0,
+    deleted: false,
+    members: nil,
+    version: 1,
+    changesets: [@@fixture_changeset1],
+    username: 'bob',
+    created: 'today',
+    tags: T.let({
       'foo' => 'bar',
     }, T::Hash[String, String]),
-    'is_change' => false,
-    'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+    is_change: false,
+    group_ids: nil,
+  )
 
-  @@fixture_node_b = T.let({
-    'locha_id' => 1,
-    'objtype' => 'n',
-    'id' => 1,
-    'geom' => 'Point(1 1)',
-    'geom_distance' => 1,
-    'deleted' => false,
-    'members' => nil,
-    'version' => 2,
-    'changesets' => [@@fixture_changeset1],
-    'username' => 'bob',
-    'created' => 'today',
-    'tags' => {
+  @@fixture_node_b = Validation::OSMChangeProperties.new(
+    locha_id: 1,
+    objtype: 'n',
+    id: 1,
+    geom: 'Point(1 1)',
+    geom_distance: 1,
+    deleted: false,
+    members: nil,
+    version: 2,
+    changesets: [@@fixture_changeset1],
+    username: 'bob',
+    created: 'today',
+    tags: {
       'bar' => 'foo',
     },
-    'is_change' => true,
-    'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+    is_change: true,
+    group_ids: nil,
+  )
 
   sig { void }
   def test_object_validation_before
     validation = Validation.object_validation([], @@fixture_node_a, @@fixture_node_a, nil)
     validation_result = Validation::ValidationResult.new(
       action: nil,
-      before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a['objtype'], id: @@fixture_node_a['id'], version: @@fixture_node_a['version'], deleted: @@fixture_node_a['deleted'] }),
-      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a['objtype'], id: @@fixture_node_a['id'], version: @@fixture_node_a['version'], deleted: @@fixture_node_a['deleted'] }),
+      before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
+      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
       sementic_deletetion: true,
-      changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
-      created: @@fixture_node_a['created'],
+      changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
+      created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
         attribs: {
           'deleted' => [],
@@ -92,10 +92,10 @@ class TestValidation < Test::Unit::TestCase
     validation_result = Validation::ValidationResult.new(
       action: nil,
       before_object: nil,
-      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b['objtype'], id: @@fixture_node_b['id'], version: @@fixture_node_b['version'], deleted: @@fixture_node_b['deleted'] }),
+      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b.objtype, id: @@fixture_node_b.id, version: @@fixture_node_b.version, deleted: @@fixture_node_b.deleted }),
       sementic_deletetion: false,
-      changeset_ids: @@fixture_node_b['changesets'].pluck('id'),
-      created: @@fixture_node_b['created'],
+      changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
+      created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom' => [] },
         tags: { 'bar' => [] },
@@ -106,15 +106,15 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation_same
-    b = @@fixture_node_a.merge({ 'is_change' => true })
+    b = @@fixture_node_a.with(is_change: true)
     validation = Validation.object_validation([], @@fixture_node_a, b, b)
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
-      before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a['objtype'], id: @@fixture_node_a['id'], version: @@fixture_node_a['version'], deleted: @@fixture_node_a['deleted'] }),
-      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a['objtype'], id: @@fixture_node_a['id'], version: @@fixture_node_a['version'], deleted: @@fixture_node_a['deleted'] }),
+      before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
+      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
       sementic_deletetion: false,
-      changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
-      created: @@fixture_node_a['created'],
+      changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
+      created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
         attribs: {},
         tags: {},
@@ -128,11 +128,11 @@ class TestValidation < Test::Unit::TestCase
     validation = Validation.object_validation([], @@fixture_node_a, @@fixture_node_a, @@fixture_node_b)
     validation_result = Validation::ValidationResult.new(
       action: nil,
-      before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a['objtype'], id: @@fixture_node_a['id'], version: @@fixture_node_a['version'], deleted: @@fixture_node_a['deleted'] }),
-      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b['objtype'], id: @@fixture_node_b['id'], version: @@fixture_node_b['version'], deleted: @@fixture_node_b['deleted'] }),
+      before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
+      after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b.objtype, id: @@fixture_node_b.id, version: @@fixture_node_b.version, deleted: @@fixture_node_b.deleted }),
       sementic_deletetion: false,
-      changeset_ids: @@fixture_node_a['changesets'].pluck('id'),
-      created: @@fixture_node_b['created'],
+      changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
+      created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
         attribs: { 'geom' => [] },
         tags: { 'foo' => [], 'bar' => [] },
@@ -156,11 +156,11 @@ class TestValidation < Test::Unit::TestCase
       )]
       validation_result = Validation::ValidationResult.new(
         action: action || 'reject',
-        before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a['objtype'], id: @@fixture_node_a['id'], version: @@fixture_node_a['version'], deleted: @@fixture_node_a['deleted'] }),
-        after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b['objtype'], id: @@fixture_node_b['id'], version: @@fixture_node_b['version'], deleted: @@fixture_node_b['deleted'] }),
+        before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
+        after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b.objtype, id: @@fixture_node_b.id, version: @@fixture_node_b.version, deleted: @@fixture_node_b.deleted }),
         sementic_deletetion: false,
-        changeset_ids: @@fixture_node_b['changesets'].pluck('id'),
-        created: @@fixture_node_b['created'],
+        changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
+        created: @@fixture_node_b.created,
         diff: Validation::DiffActions.new(
           attribs: { 'geom' => validated },
           tags: { 'foo' => validated, 'bar' => validated },

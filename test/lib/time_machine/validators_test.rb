@@ -63,24 +63,24 @@ class TestUserList < Test::Unit::TestCase
       action: action,
     )]
 
-    after = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(0 0)',
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(0 0)',
+      geom_distance: 0,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'foo' => 'barbar',
       },
-      'is_change' => true,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: true,
+      group_ids: nil,
+    )
 
     diff = Validation.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
@@ -128,26 +128,26 @@ class TestTagsChanges < Test::Unit::TestCase
       action: 'reject',
     )]
 
-    after = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(0 0)',
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(0 0)',
+      geom_distance: 0,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'shop' => 'florist',
         'phone' => '+48',
         'foo' => 'bar',
       },
-      'is_change' => true,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: true,
+      group_ids: nil,
+    )
 
     diff = Validation.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
@@ -191,24 +191,24 @@ class TestGeomNewObject < Test::Unit::TestCase
       action: 'accept',
     )]
 
-    after = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(0 0)',
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(0 0)',
+      geom_distance: 0,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'shop' => 'florist',
       },
-      'is_change' => false,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: false,
+      group_ids: nil,
+    )
 
     diff = Validation.diff_osm_object(nil, after)
     validator.apply(nil, after, diff)
@@ -241,43 +241,43 @@ class TestGeomChanges < Test::Unit::TestCase
       action: 'accept',
     )]
 
-    before = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(10 10)',
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    before = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(10 10)',
+      geom_distance: 0,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'shop' => 'florist',
       },
-      'is_change' => false,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: false,
+      group_ids: nil,
+    )
 
-    after = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(0 0)',
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(0 0)',
+      geom_distance: 0,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'shop' => 'florist',
       },
-      'is_change' => true,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: true,
+      group_ids: nil,
+    )
 
     diff = Validation.diff_osm_object(before, after)
     diff.attribs['geom_distance'] = []
@@ -309,43 +309,43 @@ class TestGeomChanges < Test::Unit::TestCase
       options: { 'dist' => 10 },
     )]
 
-    before = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(10 10)',
-      'geom_distance' => 0,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    before = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(10 10)',
+      geom_distance: 0,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'shop' => 'florist',
       },
-      'is_change' => false,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: false,
+      group_ids: nil,
+    )
 
-    after = T.let({
-      'locha_id' => 1,
-      'objtype' => 'n',
-      'id' => 1,
-      'geom' => 'Point(0 0)',
-      'geom_distance' => 10,
-      'deleted' => false,
-      'members' => nil,
-      'version' => 1,
-      'changesets' => nil,
-      'username' => 'bob',
-      'created' => 'today',
-      'tags' => {
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: 'Point(0 0)',
+      geom_distance: 10,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: 'today',
+      tags: {
         'shop' => 'florist',
       },
-      'is_change' => true,
-      'group_ids' => nil,
-    }, Validation::OSMChangeProperties)
+      is_change: true,
+      group_ids: nil,
+    )
 
     diff = Validation.diff_osm_object(before, after)
     diff.attribs['geom_distance'] = []

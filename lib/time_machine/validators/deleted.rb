@@ -19,7 +19,7 @@ module Validators
       ).void
     }
     def apply(_before, after, diff)
-      return if !after.nil? && !after['deleted']
+      return if !after.nil? && !after.deleted
 
       diff.attribs.each_value { |action|
         assign_action(action)

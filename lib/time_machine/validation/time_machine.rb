@@ -44,13 +44,13 @@ module Validation
 
     ValidationResult.new(
       action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
-      before_object: before.nil? ? nil : Osm::ObjectChangeId.new(objtype: before['objtype'], id: before['id'], version: before['version'], deleted: before['deleted']),
+      before_object: before.nil? ? nil : Osm::ObjectChangeId.new(objtype: before.objtype, id: before.id, version: before.version, deleted: before.deleted),
       after_object: T.must(after.nil? ?
-        before_at_now.nil? ? nil : Osm::ObjectChangeId.new(objtype: before_at_now['objtype'], id: before_at_now['id'], version: before_at_now['version'], deleted: before_at_now['deleted']) :
-        Osm::ObjectChangeId.new(objtype: after['objtype'], id: after['id'], version: after['version'], deleted: after['deleted'])),
+        before_at_now.nil? ? nil : Osm::ObjectChangeId.new(objtype: before_at_now.objtype, id: before_at_now.id, version: before_at_now.version, deleted: before_at_now.deleted) :
+        Osm::ObjectChangeId.new(objtype: after.objtype, id: after.id, version: after.version, deleted: after.deleted)),
       sementic_deletetion: after.nil?,
-      changeset_ids: T.must(after || before_at_now)['changesets']&.pluck('id'),
-      created: T.must(after || before_at_now)['created'],
+      changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
+      created: T.must(after || before_at_now).created,
       diff: diff,
     )
   end
@@ -71,7 +71,7 @@ module Validation
 
         conflations.each{ |conflation|
           matches = [conflation.before, conflation.after].compact.collect{ |object|
-            config.osm_tags_matches.match(object['tags'])
+            config.osm_tags_matches.match(object.tags)
           }.flatten(1).uniq.collect{ |overpass, match|
             ValidationLogMatch.new(
               sources: match.sources&.compact || [],
@@ -88,7 +88,7 @@ module Validation
           validators = matching_group ? config.validators : accept_all_validators
           validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
           yielder << [
-            T.must(conflation.before || conflation.after)['locha_id'],
+            T.must(conflation.before || conflation.after).locha_id,
             matches,
             validation_result
           ]

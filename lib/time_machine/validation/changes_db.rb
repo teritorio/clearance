@@ -12,24 +12,22 @@ require 'webcache'
 module Validation
   extend T::Sig
 
-  OSMChangeProperties = T.type_alias {
-    {
-      'locha_id' => Integer,
-      'objtype' => String,
-      'id' => Integer,
-      'geom' => T.untyped,
-      'geom_distance' => T.nilable(T.any(Float, Integer)),
-      'deleted' => T::Boolean,
-      'members' => T.nilable(T::Array[Integer]),
-      'version' => Integer,
-      'changesets' => T.nilable(T::Array[Osm::Changeset]),
-      'username' => String,
-      'created' => String,
-      'tags' => T::Hash[String, String],
-      'is_change' => T::Boolean,
-      'group_ids' => T.nilable(T::Array[String]),
-    }
-  }
+  class OSMChangeProperties < T::Struct
+    const :locha_id, Integer
+    const :objtype, String
+    const :id, Integer
+    prop :geom, T.untyped
+    prop :geom_distance, T.nilable(T.any(Float, Integer))
+    const :deleted, T::Boolean
+    const :members, T.nilable(T::Array[Integer])
+    const :version, Integer
+    const :changesets, T.nilable(T::Array[Osm::Changeset])
+    const :username, String
+    const :created, String
+    const :tags, T::Hash[String, String]
+    const :is_change, T::Boolean
+    const :group_ids, T.nilable(T::Array[String])
+  end
 
   sig {
     params(
@@ -56,8 +54,8 @@ module Validation
         end
 
         ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'] }
-        before = osm_change_object['p'][0]['is_change'] ? nil : T.let(osm_change_object['p'][0].merge(ids), OSMChangeProperties)
-        after = T.let(osm_change_object['p'][-1].merge(ids), OSMChangeProperties)
+        before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
+        after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
         results << [before, after]
         last_locha_id = osm_change_object['locha_id']
       }

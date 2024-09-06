@@ -79,10 +79,10 @@ module LogicalHistory
       ])
     }
     def self.conflate_by_refs(befores, afters, afters_index)
-      befores_refs = befores.group_by{ |b| LogicalHistory::Refs.refs(b['tags']) }
+      befores_refs = befores.group_by{ |b| LogicalHistory::Refs.refs(b.tags) }
       befores_refs.delete({})
       befores_refs = befores_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
-      afters_refs = afters.group_by{ |a| LogicalHistory::Refs.refs(a['tags']) }
+      afters_refs = afters.group_by{ |a| LogicalHistory::Refs.refs(a.tags) }
       afters_refs.delete({})
       afters_refs = afters_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
 
@@ -93,7 +93,7 @@ module LogicalHistory
         befores.delete(T.must(befores_refs[ref]))
         afters.delete(T.must(afters_refs[ref]))
 
-        before_key = [T.must(befores_refs[ref])['objtype'], T.must(befores_refs[ref])['id']]
+        before_key = [T.must(befores_refs[ref]).objtype, T.must(befores_refs[ref]).id]
         Conflation.new(
           before: T.must(befores_refs[ref]),
           before_at_now: T.must(afters_index[before_key]),
@@ -118,23 +118,23 @@ module LogicalHistory
       projection = RGeo::Geos.factory(srid: local_srid)
       befores.each{ |b|
         afters.each{ |a|
-          next if b['geom'].nil? || a['geom'].nil?
+          next if b.geom.nil? || a.geom.nil?
 
-          t_dist = LogicalHistory::Tags.tags_distance(b['tags'], a['tags'])
+          t_dist = LogicalHistory::Tags.tags_distance(b.tags, a.tags)
           next if t_dist.nil?
 
-          b['geom'] = cache_geom(b['geom'], geo_factory, projection)
-          a['geom'] = cache_geom(a['geom'], geo_factory, projection)
-          next if b['geom'].nil? || a['geom'].nil?
+          b.geom = cache_geom(b.geom, geo_factory, projection)
+          a.geom = cache_geom(a.geom, geo_factory, projection)
+          next if b.geom.nil? || a.geom.nil?
 
           g_dist = (
-            if b['geom'] == a['geom'] || (b['geom'].dimension == 2 && a['geom'].dimension == 2 && befores.size == 1 && afters.size == 1)
+            if b.geom == a.geom || (b.geom.dimension == 2 && a.geom.dimension == 2 && befores.size == 1 && afters.size == 1)
               # Same geom
               # or
               # Geom distance does not matter on 1x1 matrix, fast return
               [0.0, nil, nil]
             else
-              LogicalHistory::Geom.geom_distance(b['geom'], a['geom'], demi_distance)
+              LogicalHistory::Geom.geom_distance(b.geom, a.geom, demi_distance)
             end
           )
 
@@ -142,7 +142,7 @@ module LogicalHistory
             distance_matrix[[b, a]] = [
               t_dist,
               g_dist,
-              (b['objtype'] == a['objtype'] && b['id'] == a['id'] ? 0.0 : 0.000001),
+              (b.objtype == a.objtype && b.id == a.id ? 0.0 : 0.000001),
             ]
           end
         }
@@ -174,18 +174,18 @@ module LogicalHistory
       remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
       if !T.unsafe(remaning_before_geom).nil?
         remaning_before = key_min[0].dup
-        remaning_before['geom'] = remaning_before_geom
+        remaning_before.geom = remaning_before_geom
         parts << [[remaning_before], afters]
       end
       if !T.unsafe(remaning_after_geom).nil?
         remaning_after = key_min[1].dup
-        remaning_after['geom'] = remaning_after_geom
+        remaning_after.geom = remaning_after_geom
         parts << [befores, [remaning_after]]
       end
       if !remaning_before.nil? && !remaning_after.nil?
         parts << [
-          [T.cast(remaning_before, Validation::OSMChangeProperties)],
-          [T.cast(remaning_after, Validation::OSMChangeProperties)]
+          [remaning_before],
+          [remaning_after]
         ]
       end
 
@@ -213,11 +213,11 @@ module LogicalHistory
         key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
         match = Conflation.new(
           before: key_min[0],
-          before_at_now: T.must(afters_index[[key_min[0]['objtype'], key_min[0]['id']]]),
+          before_at_now: T.must(afters_index[[key_min[0].objtype, key_min[0].id]]),
           after: key_min[1]
         )
-        match.after['geom_distance'] = match.before['geom'].distance(match.after['geom'])
-        match.after['geom_distance'] = nil if match.after['geom_distance'] == 0
+        match.after.geom_distance = match.before.geom.distance(match.after.geom)
+        match.after.geom_distance = nil if match.after.geom_distance == 0
         paired << match
 
         befores.delete(key_min[0])
@@ -255,16 +255,16 @@ module LogicalHistory
       ).returns(ConflationsNilable)
     }
     def self.conflate(befores, afters, local_srid, demi_distance)
-      afters_index = afters.index_by{ |a| [a['objtype'], a['id']] }
+      afters_index = afters.index_by{ |a| [a.objtype, a.id] }
       befores = befores.to_set
-      afters = afters.select{ |a| !a['deleted'] }.to_set
+      afters = afters.select{ |a| !a.deleted }.to_set
 
       paired_by_refs, befores, afters = conflate_by_refs(befores, afters, afters_index)
       paired_by_distance, befores, afters = conflate_core(befores, afters, afters_index, local_srid, demi_distance)
 
       T.cast(paired_by_refs, T::Array[ConflationNilable]) +
         T.cast(paired_by_distance, T::Array[ConflationNilable]) +
-        befores.collect{ |b| ConflationNilable.new(before: b, before_at_now: afters_index[[b['objtype'], b['id']]]) } +
+        befores.collect{ |b| ConflationNilable.new(before: b, before_at_now: afters_index[[b.objtype, b.id]]) } +
         afters.collect{ |a| ConflationNilable.new(after: a) }
     end
   end

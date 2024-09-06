@@ -32,7 +32,7 @@ module Validators
       ).void
     }
     def apply(_before, after, diff)
-      return if after.nil? || @list.exclude?(after['username'])
+      return if after.nil? || @list.exclude?(after.username)
 
       (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)

@@ -37,9 +37,9 @@ module Validators
       if @dist.nil?
         assign_action(diff.attribs['geom_distance'] || []) if diff.attribs['geom_distance']
         assign_action(diff.attribs['members'] || []) if diff.attribs['members']
-      elsif !after.nil? && after['geom_distance']
-        dist = after['geom_distance']
-        return if !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
+      elsif !after.nil? && after.geom_distance
+        dist = after.geom_distance
+        return if dist.nil? || !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
 
         assign_action(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
       end
