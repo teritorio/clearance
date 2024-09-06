@@ -358,4 +358,49 @@ class TestConflation < Test::Unit::TestCase
       conflations.collect(&:to_a).collect{ |t| t.collect{ |k| k&.id } }
     )
   end
+
+  sig { void }
+  def test_conflate_merge_duplicate
+    before = [
+      build_object(
+        id: 1,
+        geom: '{"type": "LineString", "coordinates": [[-1.421862006187439, 43.72491455078125], [-1.421954035758972, 43.72502899169922], [-1.422500014305115, 43.72486877441406], [-1.422412037849426, 43.72471237182617], [-1.421862006187439, 43.72491455078125]]}',
+        tags: { 'amenity' => 'parking' }
+      ),
+    ]
+    after = [
+      build_object(
+        id: 1,
+        geom: '{"type": "LineString", "coordinates": [[-1.421862006187439, 43.72491455078125], [-1.421954035758972, 43.72502899169922], [-1.422500014305115, 43.72486877441406], [-1.422412037849426, 43.72471237182617], [-1.422093033790588, 43.724788665771484], [-1.422013998031616, 43.72474670410156], [-1.421862006187439, 43.72491455078125]]}',
+        tags: { 'fee' => 'no', 'access' => 'yes', 'amenity' => 'parking', 'parking' => 'surface' }
+      )
+    ]
+
+    conflation = Conflation.conflate(before, after, @@srid, @@demi_distance)
+    assert_equal(1, conflation.size, conflation)
+    assert_equal(
+      [[before[0], after[0], after[0]]].collect{ |t| t.collect(&:id) },
+      conflation.collect(&:to_a).collect{ |t| t.collect{ |k| k&.id } }
+    )
+  end
+
+  sig { void }
+  def test_conflate_merge_remeaning
+    tags = {
+      'highway' => 'residential',
+    }
+    before = [
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags),
+    ]
+    after = [
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', tags: tags),
+    ]
+
+    conflations = Conflation.conflate(before, after, @@srid, @@demi_distance)
+    assert_equal(1, conflations.size, conflations)
+    assert_equal(
+      [[before[0], after[0], after[0]]].collect{ |t| t.collect(&:id) },
+      conflations.collect(&:to_a).collect{ |t| t.collect{ |k| k&.id } }
+    )
+  end
 end

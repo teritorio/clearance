@@ -19,9 +19,9 @@ module LogicalHistory
     extend T::Sig
 
     class Conflation < T::InexactStruct
-      const :before, Validation::OSMChangeProperties
-      const :before_at_now, Validation::OSMChangeProperties
-      const :after, Validation::OSMChangeProperties
+      prop :before, Validation::OSMChangeProperties
+      prop :before_at_now, Validation::OSMChangeProperties
+      prop :after, Validation::OSMChangeProperties
 
       extend T::Sig
       sig { returns(T::Array[Validation::OSMChangeProperties]) }
@@ -33,9 +33,9 @@ module LogicalHistory
     Conflations = T.type_alias { T::Array[Conflation] }
 
     class ConflationNilable < T::InexactStruct
-      const :before, T.nilable(Validation::OSMChangeProperties)
-      const :before_at_now, T.nilable(Validation::OSMChangeProperties)
-      const :after, T.nilable(Validation::OSMChangeProperties)
+      prop :before, T.nilable(Validation::OSMChangeProperties)
+      prop :before_at_now, T.nilable(Validation::OSMChangeProperties)
+      prop :after, T.nilable(Validation::OSMChangeProperties)
 
       extend T::Sig
       sig { returns(T::Array[T.nilable(Validation::OSMChangeProperties)]) }
@@ -265,6 +265,57 @@ module LogicalHistory
 
     sig {
       params(
+        paired: Conflations,
+      ).returns(Conflations)
+    }
+    def self.conflate_uniq(paired)
+      # Make conflation (before, after) uniq
+      paired.group_by{ |p|
+        [p.before.objtype, p.before.id, p.after.objtype, p.after.id]
+      }.values.collect{ |group|
+        # Merge geometry parts with same before and after objects
+        T.must(group.reduce{ |sum, conflate|
+          sum.before = sum.before.with(geos: T.must(sum.before.geos).union(conflate.before.geos))
+          sum.after = sum.after.with(geos: T.must(sum.after.geos).union(conflate.after.geos))
+          sum
+        })
+      }
+    end
+
+    sig {
+      params(
+        paireds: Conflations,
+        remeainings: T::Enumerable[Validation::OSMChangeProperties],
+        key: Symbol,
+        block: T.proc.params(c: Conflation).returns(Validation::OSMChangeProperties)
+      ).returns([Conflations, T::Enumerable[Validation::OSMChangeProperties]])
+    }
+    def self.conflate_merge_remaning_parts(paireds, remeainings, key, &block)
+      # puts paireds.inspect
+      # puts remeainings.to_a.inspect
+
+      paired_index = paireds.group_by{ |p|
+        o = block.call(p)
+        [o.objtype, o.id]
+      }.select { |_key, group| group.size == 1 }.transform_values(&:first)
+      remeainings = remeainings.select { |b|
+        paired = paired_index[[b.objtype, b.id]]
+        if paired.nil?
+          true
+        else
+          # Merge remaining geom with already conflated main part
+          p = block.call(paired)
+          union = p.with(geos: T.must(p.geos).union(b.geos))
+          paired.send("#{key}=", union)
+          false
+        end
+      }
+
+      [paireds, remeainings]
+    end
+
+    sig {
+      params(
         befores: T::Enumerable[Validation::OSMChangeProperties],
         afters: T::Enumerable[Validation::OSMChangeProperties],
         local_srid: Integer,
@@ -278,6 +329,11 @@ module LogicalHistory
 
       paired_by_refs, befores, afters = conflate_by_refs(befores, afters, afters_index)
       paired_by_distance, befores, afters = conflate_core(befores, afters, afters_index, local_srid, demi_distance)
+
+      paired_by_distance = conflate_uniq(paired_by_distance)
+
+      paired_by_distance, befores = conflate_merge_remaning_parts(paired_by_distance, befores, :before, &:before)
+      paired_by_distance, afters = conflate_merge_remaning_parts(paired_by_distance, afters, :after, &:after)
 
       T.cast(paired_by_refs, T::Array[ConflationNilable]) +
         T.cast(paired_by_distance, T::Array[ConflationNilable]) +
