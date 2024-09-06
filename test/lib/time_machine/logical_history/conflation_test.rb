@@ -33,7 +33,8 @@ class TestConflation < Test::Unit::TestCase
         locha_id: 1,
         objtype: 'n',
         id: id,
-        geom: RGeo::GeoJSON.decode(JSON.parse(geom)),
+        geom: '',
+        geos: RGeo::GeoJSON.decode(JSON.parse(geom)),
         geom_distance: 0,
         deleted: false,
         members: nil,
@@ -136,8 +137,8 @@ class TestConflation < Test::Unit::TestCase
   def test_conflate_geom
     before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[0,1]}')
     assert_equal(1.0, LogicalHistory::Geom.geom_distance(
-      T.must(before[0]).geom,
-      T.must(after[0]).geom,
+      T.must(before[0]&.geos),
+      T.must(after[0]&.geos),
       @@demi_distance
     )&.first)
     assert_equal(
@@ -147,8 +148,8 @@ class TestConflation < Test::Unit::TestCase
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
     assert_equal(0.475, LogicalHistory::Geom.geom_distance(
-      T.must(before[0]).geom,
-      T.must(after[0]).geom,
+      T.must(before[0]&.geos),
+      T.must(after[0]&.geos),
       @@demi_distance
     )&.first)
     assert_equal(
@@ -158,8 +159,8 @@ class TestConflation < Test::Unit::TestCase
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', after_geom: '{"type":"LineString","coordinates":[[0,2],[0,3]]}')
     assert_equal(0.75, LogicalHistory::Geom.geom_distance(
-      T.must(before[0]).geom,
-      T.must(after[0]).geom,
+      T.must(before[0]&.geos),
+      T.must(after[0]&.geos),
       @@demi_distance
     )&.first)
     assert_equal(

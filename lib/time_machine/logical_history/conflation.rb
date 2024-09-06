@@ -48,23 +48,19 @@ module LogicalHistory
 
     sig {
       params(
-        geom: T.any(T::Hash[String, T.untyped], RGeo::Feature::Geometry),
+        geom: T.any(String, T::Hash[String, T.untyped]),
         geo_factory: T.untyped,
         projection: T.untyped,
       ).returns(T.nilable(RGeo::Feature::Geometry))
     }
     def self.cache_geom(geom, geo_factory, projection)
-      return T.cast(geom, RGeo::Feature::Geometry) if T.unsafe(geom).respond_to?(:geometry_type) # is_a?(RGeo::Feature::Geometry)
-
-      begin
-        RGeo::Feature.cast(
-          RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
-          project: true,
-          factory: projection,
-        )
-      rescue RGeo::Error::InvalidGeometry
-        nil
-      end
+      RGeo::Feature.cast(
+        RGeo::GeoJSON.decode(geom, geo_factory: geo_factory),
+        project: true,
+        factory: projection,
+      )
+    rescue RGeo::Error::InvalidGeometry
+      nil
     end
 
     sig {
@@ -123,18 +119,18 @@ module LogicalHistory
           t_dist = LogicalHistory::Tags.tags_distance(b.tags, a.tags)
           next if t_dist.nil?
 
-          b.geom = cache_geom(b.geom, geo_factory, projection)
-          a.geom = cache_geom(a.geom, geo_factory, projection)
-          next if b.geom.nil? || a.geom.nil?
+          b.geos ||= cache_geom(b.geom, geo_factory, projection)
+          a.geos ||= cache_geom(a.geom, geo_factory, projection)
+          next if T.unsafe(b.geos).nil? || T.unsafe(a.geos).nil?
 
           g_dist = (
-            if b.geom == a.geom || (b.geom.dimension == 2 && a.geom.dimension == 2 && befores.size == 1 && afters.size == 1)
+            if b.geos == a.geos || (b.geos&.dimension == 2 && a.geos&.dimension == 2 && befores.size == 1 && afters.size == 1)
               # Same geom
               # or
               # Geom distance does not matter on 1x1 matrix, fast return
               [0.0, nil, nil]
             else
-              LogicalHistory::Geom.geom_distance(b.geom, a.geom, demi_distance)
+              LogicalHistory::Geom.geom_distance(T.must(b.geos), T.must(a.geos), demi_distance)
             end
           )
 
@@ -174,12 +170,12 @@ module LogicalHistory
       remaning_after = T.let(nil, T.nilable(Validation::OSMChangeProperties))
       if !T.unsafe(remaning_before_geom).nil?
         remaning_before = key_min[0].dup
-        remaning_before.geom = remaning_before_geom
+        remaning_before.geos = remaning_before_geom
         parts << [[remaning_before], afters]
       end
       if !T.unsafe(remaning_after_geom).nil?
         remaning_after = key_min[1].dup
-        remaning_after.geom = remaning_after_geom
+        remaning_after.geos = remaning_after_geom
         parts << [befores, [remaning_after]]
       end
       if !remaning_before.nil? && !remaning_after.nil?
@@ -216,7 +212,7 @@ module LogicalHistory
           before_at_now: T.must(afters_index[[key_min[0].objtype, key_min[0].id]]),
           after: key_min[1]
         )
-        match.after.geom_distance = match.before.geom.distance(match.after.geom)
+        match.after.geom_distance = match.before.geos&.distance(match.after.geos)
         match.after.geom_distance = nil if match.after.geom_distance == 0
         paired << match
 
