@@ -286,6 +286,46 @@ module LogicalHistory
 
     sig {
       params(
+        paired: ConflationsNilable,
+      ).returns(ConflationsNilable)
+    }
+    def self.conflate_merge_deleted_created(paired)
+      # Conflate of same object, vN -> nil + nil -> vM => vN -> vM
+      deleted = paired.select{ |p|
+        p.after.nil?
+      }.group_by{ |p|
+        [p.before&.objtype, p.before&.id]
+      }.select { |_key, group|
+        group.size == 1
+      }.transform_values{ |p| T.must(p.first) }
+
+      created = paired.select{ |p|
+        p.before.nil?
+      }.group_by{ |p|
+        [p.after&.objtype, p.after&.id]
+      }.select { |_key, group|
+        group.size == 1
+      }.transform_values{ |p| T.must(p.first) }
+
+      puts [deleted, created].inspect
+
+      match = Set.new(deleted.keys & created.keys)
+
+      merged = Set.new
+      deleted_created = match.collect{ |key|
+        merged << deleted[key]
+        merged << created[key]
+        T.must(deleted[key]).after = T.must(created[key]&.after)
+        T.must(deleted[key])
+      }
+
+      paired = paired.select{ |p| !merged.include?(p) }
+
+      paired + deleted_created
+    end
+
+    sig {
+      params(
         paireds: Conflations,
         remeainings: T::Enumerable[Validation::OSMChangeProperties],
         key: Symbol,
@@ -343,6 +383,19 @@ module LogicalHistory
         befores.collect{ |b| ConflationNilableOnly.new(before: b, before_at_now: afters_index[[b.objtype, b.id]]) } +
         afters.collect{ |a| ConflationNilableOnly.new(after: a) }
       )
+    end
+
+    sig {
+      params(
+        befores: T::Enumerable[Validation::OSMChangeProperties],
+        afters: T::Enumerable[Validation::OSMChangeProperties],
+        local_srid: Integer,
+        demi_distance: Float,
+      ).returns(ConflationsNilable)
+    }
+    def self.conflate_with_simplification(befores, afters, local_srid, demi_distance)
+      paired = conflate(befores, afters, local_srid, demi_distance)
+      conflate_merge_deleted_created(paired)
     end
   end
 end

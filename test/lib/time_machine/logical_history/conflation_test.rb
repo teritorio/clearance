@@ -403,4 +403,22 @@ class TestConflation < Test::Unit::TestCase
       conflations.collect(&:to_a).collect{ |t| t.collect{ |k| k&.id } }
     )
   end
+
+  sig { void }
+  def test_conflate_merge_deleted_created
+    before = [
+      build_object(id: 1, geom: '{"type":"Point","coordinates":[[0,0]]}', tags: { 'amenity' => 'a' }),
+    ]
+    after = [
+      build_object(id: 1, geom: '{"type":"Point","coordinates":[[0,0]]}', tags: { 'amenity' => 'b' }),
+    ]
+
+    conflations = Conflation.conflate_with_simplification(before, after, @@srid, @@demi_distance)
+    puts conflations.inspect
+    assert_equal(1, conflations.size, conflations)
+    assert_equal(
+      [[before[0], after[0], after[0]]].collect{ |t| t.collect(&:id) },
+      conflations.collect(&:to_a).collect{ |t| t.collect{ |k| k&.id } }
+    )
+  end
 end

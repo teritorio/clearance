@@ -67,7 +67,7 @@ module Validation
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |lo_cha|
         befores = lo_cha.collect(&:first).compact
         afters = lo_cha.collect(&:last).compact
-        conflations = LogicalHistory::Conflation.conflate(befores, afters, config.local_srid, 200.0)
+        conflations = LogicalHistory::Conflation.conflate_with_simplification(befores, afters, config.local_srid, 200.0)
 
         conflations.each{ |conflation|
           matches = [conflation.before, conflation.after].compact.collect{ |object|
