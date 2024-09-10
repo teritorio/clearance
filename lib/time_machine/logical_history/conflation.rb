@@ -32,7 +32,7 @@ module LogicalHistory
 
     Conflations = T.type_alias { T::Array[Conflation] }
 
-    class ConflationNilable < T::InexactStruct
+    class ConflationNilableOnly < T::InexactStruct
       prop :before, T.nilable(Validation::OSMChangeProperties)
       prop :before_at_now, T.nilable(Validation::OSMChangeProperties)
       prop :after, T.nilable(Validation::OSMChangeProperties)
@@ -43,6 +43,8 @@ module LogicalHistory
         [before, before_at_now, after]
       end
     end
+
+    ConflationNilable = T.type_alias { T.any(Conflation, ConflationNilableOnly) }
 
     ConflationsNilable = T.type_alias { T::Array[ConflationNilable] }
 
@@ -335,10 +337,12 @@ module LogicalHistory
       paired_by_distance, befores = conflate_merge_remaning_parts(paired_by_distance, befores, :before, &:before)
       paired_by_distance, afters = conflate_merge_remaning_parts(paired_by_distance, afters, :after, &:after)
 
-      T.cast(paired_by_refs, T::Array[ConflationNilable]) +
-        T.cast(paired_by_distance, T::Array[ConflationNilable]) +
-        befores.collect{ |b| ConflationNilable.new(before: b, before_at_now: afters_index[[b.objtype, b.id]]) } +
-        afters.collect{ |a| ConflationNilable.new(after: a) }
+      (
+        paired_by_refs +
+        paired_by_distance +
+        befores.collect{ |b| ConflationNilableOnly.new(before: b, before_at_now: afters_index[[b.objtype, b.id]]) } +
+        afters.collect{ |a| ConflationNilableOnly.new(after: a) }
+      )
     end
   end
 end
