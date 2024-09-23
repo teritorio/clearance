@@ -307,8 +307,6 @@ module LogicalHistory
         group.size == 1
       }.transform_values{ |p| T.must(p.first) }
 
-      puts [deleted, created].inspect
-
       match = Set.new(deleted.keys & created.keys)
 
       merged = Set.new
@@ -333,9 +331,6 @@ module LogicalHistory
       ).returns([Conflations, T::Enumerable[Validation::OSMChangeProperties]])
     }
     def self.conflate_merge_remaning_parts(paireds, remeainings, key, &block)
-      # puts paireds.inspect
-      # puts remeainings.to_a.inspect
-
       paired_index = paireds.group_by{ |p|
         o = block.call(p)
         [o.objtype, o.id]
