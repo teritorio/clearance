@@ -326,4 +326,4 @@ WHERE
   osm_base.id = a.id
 ;
 
-CREATE INDEX osm_base_idx_geom ON osm_base USING gist(geom);
+CREATE INDEX IF NOT EXISTS osm_base_idx_geom ON osm_base USING gist(geom);
