@@ -153,7 +153,11 @@ module LogicalHistory
               # Geom distance does not matter on 1x1 matrix, fast return
               [0.0, nil, nil]
             else
-              LogicalHistory::Geom.geom_distance(T.must(b.geos), T.must(a.geos), demi_distance)
+              begin
+                LogicalHistory::Geom.geom_distance(T.must(b.geos), T.must(a.geos), demi_distance)
+              rescue RGeo::Error::InvalidGeometry
+                next
+              end
             end
           )
 
