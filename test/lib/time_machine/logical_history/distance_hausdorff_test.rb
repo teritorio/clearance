@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './lib/time_machine/validation/distance_hausdorff'
+require './lib/time_machine/logical_history/distance_hausdorff'
 
 
 class TestDistanceHausdorff < Test::Unit::TestCase
