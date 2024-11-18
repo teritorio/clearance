@@ -10,12 +10,14 @@ WHERE
 
 INSERT INTO
     osm_base
-SELECT
+SELECT DISTINCT ON (objtype, id)
     objtype, id, version, changeset_id, created, uid, username, tags, lon, lat, nodes, members
 FROM
     :changes_source AS changes
 WHERE
     NOT changes.deleted
+ORDER BY
+    objtype, id, version
 ON CONFLICT (id, objtype) DO
 UPDATE
 SET
@@ -36,7 +38,7 @@ SET
 
 INSERT INTO
     osm_changes_applyed
-SELECT
+SELECT DISTINCT ON (id, objtype, version, deleted)
     changes.*
 FROM
     osm_changes AS changes
@@ -45,6 +47,8 @@ FROM
         update.id = changes.id AND
         update.version = changes.version AND
         update.deleted = changes.deleted
+ORDER BY
+    changes.objtype, changes.id, changes.version, changes.deleted
 -- FIXME rather than check for conflicts on each, better validate data by lochas and do not re-insert objects changed only by transitivity.
 ON CONFLICT ON CONSTRAINT osm_changes_applyed_pkey
 DO NOTHING
