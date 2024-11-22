@@ -1,0 +1,73 @@
+title:
+  en: Emergency
+  fr: secours
+  de: Schutz & Rettung
+  es: Emergencia
+description:
+  en: Emergency.
+  fr: secours.
+  de: Schutz & Rettung.
+  es: Emergencia.
+main_contacts: [frodrigo] # Set your own OSM username, has validation right on all groups
+project_tags: [emergency]
+# Set a projection relative to the data location. Should be in meter unit.
+# If you don't know the projection, set the corresponding UTM Zone ESRID code from
+local_srid: 2056
+locha_cluster_distance: 100
+
+validators:
+  geom_new:
+    instance: Validators::GeomNewObject
+    action: accept # accept geometry of new objects
+
+  geom_changes_insignificant:
+    instance: Validators::GeomChanges
+    dist: -1 # 1 meter, write as negative number
+    action: accept
+
+  geom_changes_significant:
+    instance: Validators::GeomChanges
+    # dist: 20
+    dist: 2 # 2 meters, write as positive number
+    action: reject
+
+  geom_changes:
+    instance: Validators::GeomChanges
+    action: accept
+
+  tags_changes_significant:
+    instance: Validators::TagsChanges
+    reject: tags_changes_significant
+    accept: tags_changes_non_significant
+
+  user_white_list:
+    instance: Validators::UserList
+    description: Changes by white listed user
+    list: # OSM username you trust, always consider changing safe
+      - davidfaure_bot
+      - b-jazz-bot
+    action_force: accept
+
+  user_black_list:
+    instance: Validators::UserList
+    description: Changes black listed user
+    list: # OSM username you don't trust, always consider changing unsafe
+      - 666
+    action: reject
+
+  deleted:
+    action_force: reject # always consider deletion as unsafe
+
+user_groups:
+  # Track the OSM tags on an area
+  zurich:
+    title:
+      en: Zürich
+      fr: Zurich
+      de: Zürich
+      es: Zúrich
+    # Use the boundary polygon defined by the corresponding OSM relation id
+    polygon: https://polygons.openstreetmap.fr/get_geojson.py?id=1682248&params=0.020000-0.005000-0.005000
+    # Tags definition in the siblings export directory
+    osm_tags: https://clearance.teritorio.xyz/api/0.1/emergency/extract/emergency.osm_tags.json
+    users: [] # OSM usernames, validation right on this group

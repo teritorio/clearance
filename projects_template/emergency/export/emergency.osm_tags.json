@@ -1,0 +1,53 @@
+[
+  {
+    "select": [
+      "[amenity=hospital]"
+    ],
+    "interest": {
+      "name": null,
+      "emergency": null
+    }
+  },
+  {
+    "select": [
+      "[amenity=fire_station]"
+    ],
+    "interest": {
+      "name": null
+    }
+  },
+  {
+    "select": [
+      "[emergency=ambulance_station]"
+    ],
+    "interest": {
+      "name": null
+    }
+  },
+  {
+    "select": [
+      "[amenity=police]"
+    ],
+    "interest": {
+      "name": null
+    }
+  },
+  {
+    "select": [
+      "[aeroway=helipad]"
+    ]
+  },
+  {
+    "select": [
+      "[emergency=access_point]"
+    ]
+  },
+  {
+    "select": [
+      "[emergency=fire_hydrant]"
+    ],
+    "interest": {
+      "ref": null
+    }
+  }
+]
