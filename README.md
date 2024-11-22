@@ -151,7 +151,7 @@ The idea is to group changes locally to make contextual validation. It allows de
 
 ## Roadmap
 LoCha v1
-  * Clustering strategy (mix with topological and buffer, configurable by feature type)
+  * Clustering distance configurable by feature type
   * LoCha splitting strategy on large cluster
   * Support Large object changes:  admin relation, large landuses, rivers
 
@@ -167,7 +167,6 @@ Validators implementation
     * Final state validation: not validating changes but targeted state using external rules set like MapCSS JSOM/osmose validation
 
 Validation evaluation
-  * OSM object independent validation: support splited, merged, redraw objects, spatial dimension changes (requires LoCha)
   * score: implement a global score rather than just negative / neutral / positive
 
 UI / UX
