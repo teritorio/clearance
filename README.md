@@ -6,66 +6,86 @@
 
 Online demo : https://clearance-dev.teritorio.xyz
 
-## Build
+## Install
+
+### Build
 ```
 docker compose --profile "*" build
 ```
 
-## Setup
+### Setup
+Copy the configuration file and adapt it.
+```
+cp .env.template .env
+```
+
+Set a private random value for the `SECRET_KEY_BASE` key.
+
+To log into Clearance (to manually validate changes), an OpenStreetMap user is required. Register your Clearance instance as an OAuth 2.0 application on https://www.openstreetmap.org/oauth2/applications.
+
+1. The redirect URL should be `https://[your Clearance backend, could be 127.0.0.1:9000]/users/auth/osm_oauth2/callback`. Only "Read user preferences" permission is required.
+2. Fill in the values of `OSM_OAUTH2_ID`, `OSM_OAUTH2_SECRET`, `OSM_OAUTH2_REDIRECT` (your Clearance Frontend, could be `http://127.0.0.1:3000/`) in your `.env` file.
+
+### Start
 ```
 docker compose up -d postgres
 ```
 
-Enter postgres with
+If required, you can enter into the Postgres shell with:
 ```
 docker compose exec -u postgres postgres psql
 ```
 
-```
-docker compose run --rm api bundle exec rails db:migrate
-```
-
+### Update
 After code update, update the database schema:
 ```
+docker compose run --rm api bundle exec rails db:migrate
 docker compose run --rm script ./bin/update-schema.sh
-```
-
-Run update script from cron:
-```
-*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
 ```
 
 ## Projects
 
 ### Configure
-
-Create at least one project inside `projects` from template directory.
-Adjust `config.yaml`
+Create at least one project inside `projects` from the `projects_template` directory.
+Adjust the `config.yaml` and the `export*.osm_tags.json` files.
 
 ### Init
-
+Set up the initial OSM extract in the database. Use the project directory name from `projects` and one or more URLs to OSM PBF extracts.
 ```
-docker compose run --rm script ./bin/setup.sh small_poi http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
-```
-
-Optionaly, dump the first extract.
-```
-docker compose run --rm script ./bin/dump.sh projects/small_poi
+docker compose run --rm script ./bin/setup.sh emergency http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
 ```
 
-### Update
+Note: PBFs from Geofabrik have daily diffs, while OSM-FR have minutely updates.
 
-The update should be done by the cron. But can also be run manualy.
-Get Update, Import and Generate Validation report in database
+If you plan to use extract and diff from Clearance, dump the first extract. In all cases, you can use the Overpass-like API.
 ```
-docker compose run --rm script ./bin/update.sh projects/small_poi
+docker compose run --rm script ./bin/dump.sh projects/emergency
 ```
+
+### Data Update
+The update should be done by a cron job but can also be run manually.
+Get Update, Import, and Generate Validation report in the database:
+```
+# All projects
+docker compose run --rm script ./bin/update.sh
+
+# Only one project
+docker compose run --rm script ./bin/update.sh projects/emergency
+```
+
+Run update for all projects from cron every 2 minutes:
+```
+*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
+```
+
+Note 1: If you use only Geofabrik, set a daily cron, check the hour of Geofabrik diff release.
+
+Note 2: To lower CPU usage, you can lower the update frequency. It is not required to run it every minute.
 
 ### Drop
-
 Drop a project.
 ```
-docker compose run --rm script ./bin/drop.sh projects/small_poi
+docker compose run --rm script ./bin/drop.sh projects/emergency
 ```
 
 ## Dev
