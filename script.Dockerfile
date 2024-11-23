@@ -38,6 +38,4 @@ RUN bundle install
 
 ADD . ./
 
-EXPOSE 9000
-
 RUN apt install -y python-is-python3 python3-pyosmium
