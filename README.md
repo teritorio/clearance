@@ -28,8 +28,8 @@ Set a private random value for the `SECRET_KEY_BASE` key.
 
 To log into Clearance (to manually validate changes), an OpenStreetMap user is required. Register your Clearance instance as an OAuth 2.0 application on https://www.openstreetmap.org/oauth2/applications.
 
-1. The redirect URL should be `https://[your Clearance backend, could be 127.0.0.1:9000]/users/auth/osm_oauth2/callback`. Only "Read user preferences" permission is required.
-2. Fill in the values of `OSM_OAUTH2_ID`, `OSM_OAUTH2_SECRET`, `OSM_OAUTH2_REDIRECT` (your Clearance Frontend, could be `http://127.0.0.1:3000/`) in your `.env` file.
+1. The redirect URL should be `https://[your Clearance backend, could be 127.0.0.1:8000]/users/auth/osm_oauth2/callback`. Only "Read user preferences" permission is required.
+2. Fill in the values of `OSM_OAUTH2_ID`, `OSM_OAUTH2_SECRET`, `OSM_OAUTH2_REDIRECT` (your Clearance Frontend, could be `http://127.0.0.1:8000/`) in your `.env` file.
 
 ### Start
 ```

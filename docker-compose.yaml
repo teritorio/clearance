@@ -40,8 +40,6 @@ services:
       - OSM_OAUTH2_REDIRECT=${OSM_OAUTH2_REDIRECT}
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
       - SENTRY_DSN_API=${SENTRY_DSN_API}
-    ports:
-      - ${API_PORT:-9000}:9000
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./cache:/cache
@@ -59,19 +57,20 @@ services:
       - API=${PUBLIC_URL}
       - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND}
       - NUXT_PUBLIC_SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
-    ports:
-      - ${FRONTEND_PORT:-3000}:3000
     depends_on:
       - api
     restart: unless-stopped
 
-  download:
+  reverse-proxy:
     image: nginx
     ports:
-      - ${DOWNLOAD_PORT:-8000}:80
+      - ${NGINX_PORT:-8000}:80
     volumes:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./projects:/projects
+    depends_on:
+      - api
+      - frontend
     restart: unless-stopped
 
 volumes:

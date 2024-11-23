@@ -8,3 +8,9 @@ services:
   api:
     volumes:
       - ./:/srv/app
+    ports:
+      - 9000:9000
+
+  frontend:
+    ports:
+      - 3000:3000
