@@ -1,5 +1,6 @@
 .git
 .vscode
+.env
 cache/
 docker/
 frontend/
