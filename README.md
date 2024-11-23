@@ -8,6 +8,11 @@ Online demo : https://clearance-dev.teritorio.xyz
 
 ## Install
 
+Ensure git submodule is ready
+```
+git submodule update
+```
+
 ### Build
 ```
 docker compose --profile "*" build

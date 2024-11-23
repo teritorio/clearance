@@ -52,6 +52,19 @@ services:
     command: bundle exec rails server --binding=0.0.0.0 --port 9000
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: frontend
+    environment:
+      - API=${PUBLIC_URL}
+      - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND}
+      - NUXT_PUBLIC_SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    ports:
+      - ${FRONTEND_PORT:-3000}:3000
+    depends_on:
+      - api
+    restart: unless-stopped
+
   download:
     image: nginx
     ports:
