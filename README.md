@@ -10,6 +10,7 @@ Online demo : https://clearance-dev.teritorio.xyz
 
 Ensure git submodule is ready
 ```
+git submodule init
 git submodule update
 ```
 
