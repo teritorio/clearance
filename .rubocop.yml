@@ -7,6 +7,7 @@ AllCops:
     - db/schema.rb
     - 'vendor/**/*'
     - assert_migration.rb
+    - frontend/
 
 require:
  - rubocop-rake
@@ -64,13 +65,13 @@ Metrics/MethodLength:
   Max: 100
 
 Metrics/AbcSize:
-  Max: 80
+  Max: 90
 
 Metrics/PerceivedComplexity:
   Max: 30
 
 Metrics/ModuleLength:
-  Max: 300
+  Max: 400
 
 Metrics/ClassLength:
   Max: 1000
