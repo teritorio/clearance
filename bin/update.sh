@@ -61,21 +61,28 @@ function project() {
     cp ${IMPORT}/state.txt /${PROJECT}/export/state.txt
 }
 
+exec {G_LOCK_FD}> projects/lock
+if flock --nonblock $G_LOCK_FD; then
 
-for PROJECT in $PROJECTS; do
-    echo
-    echo $PROJECT
-    echo
-    IMPORT=${PROJECT}/import
-    CONFIG=${PROJECT}/conf.yaml
+    for PROJECT in $PROJECTS; do
+        echo
+        echo $PROJECT
+        echo
+        IMPORT=${PROJECT}/import
+        CONFIG=${PROJECT}/conf.yaml
 
-    PROJECT_NAME=$(basename "$PROJECT")
+        PROJECT_NAME=$(basename "$PROJECT")
 
-    exec {LOCK_FD}> ${PROJECT}/lock
-    if flock --nonblock $LOCK_FD; then
-        project ${PROJECT} || echo "${PROJECT} Update failed ($?)"
-    else
-        echo "${PROJECT} already locked, skip"
-    fi
-    exec {LOCK_FD}>&-
-done
+        exec {LOCK_FD}> ${PROJECT}/lock
+        if flock --nonblock $LOCK_FD; then
+            project ${PROJECT} || echo "${PROJECT} Update failed ($?)"
+        else
+            echo "${PROJECT} already locked, skip"
+        fi
+        exec {LOCK_FD}>&-
+    done
+
+else
+    echo "crom already locked"
+fi
+exec {G_LOCK_FD}>&-
