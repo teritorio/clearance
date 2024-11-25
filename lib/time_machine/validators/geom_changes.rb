@@ -8,19 +8,19 @@ require './lib/time_machine/validators/validator'
 module Validators
   extend T::Sig
 
-  class GeomChanges < Validator
+  class GeomChanges < ValidatorDual
     sig {
       params(
         id: String,
         osm_tags_matches: Osm::TagsMatches,
+        accept: String,
+        reject: String,
         dist: T.nilable(T.any(Float, Integer)),
-        action: T.nilable(Validation::ActionType),
-        action_force: T.nilable(Validation::ActionType),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, dist: nil, action: nil, action_force: nil, description: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
+    def initialize(id:, osm_tags_matches:, accept:, reject:, dist: nil, description: nil)
+      super(id: id, osm_tags_matches: osm_tags_matches, accept: accept, reject: reject, description: description)
       @dist = dist
     end
 
@@ -35,13 +35,17 @@ module Validators
       return if !before || ((!diff.attribs['geom_distance'] || diff.attribs['geom_distance'] == 0) && !diff.attribs['members'])
 
       if @dist.nil?
-        assign_action(diff.attribs['geom_distance'] || []) if diff.attribs['geom_distance']
-        assign_action(diff.attribs['members'] || []) if diff.attribs['members']
+        assign_action_accept(diff.attribs['geom_distance'] || []) if diff.attribs['geom_distance']
+        assign_action_accept(diff.attribs['members'] || []) if diff.attribs['members']
       elsif !after.nil? && after.geom_distance
         dist = after.geom_distance
-        return if dist.nil? || !(@dist < 0 && dist < @dist.abs) && !(@dist > 0 && dist > @dist)
+        return if dist.nil?
 
-        assign_action(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
+        if dist < @dist
+          assign_action_accept(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
+        else
+          assign_action_reject(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
+        end
       end
     end
   end

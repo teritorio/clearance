@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/geom_changes'
 require './lib/time_machine/validators/tags_changes'
 require './lib/time_machine/validators/user_list'
 require './lib/time_machine/validation/time_machine'
@@ -234,7 +235,7 @@ class TestGeomChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: nil, action: 'accept')
+    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: nil, reject: 'geom_changes_significant', accept: 'geom_changes_insignificant')
     validation_action_accept = [Validation::Action.new(
       validator_id: id,
       description: nil,
@@ -301,7 +302,7 @@ class TestGeomChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: 1, action: 'accept')
+    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: 1, reject: 'geom_changes_significant', accept: 'geom_changes_insignificant')
     validation_action_accept = [Validation::Action.new(
       validator_id: id,
       description: nil,

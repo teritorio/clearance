@@ -45,21 +45,12 @@ validators:
     instance: Validators::GeomNewObject
     action: accept
 
-  # Accept geometry changes with small distance changes
+  # Geometry changes threshold
   geom_changes_insignificant:
     instance: Validators::GeomChanges
-    dist: -1 # 1 meter, write as negative number
-    action: accept
-
-  # Reject geometry changes with large distance changes
-  geom_changes_significant:
-    instance: Validators::GeomChanges
-    dist: 2 # 2 meters, write as positive number
-    action: reject
-
-  geom_changes:
-    instance: Validators::GeomChanges
-    action: accept
+    dist: 2 # 2 meters
+    reject: geom_changes_significant
+    accept: geom_changes_insignificant
 
   # Core validator, does not change
   tags_changes_significant:
