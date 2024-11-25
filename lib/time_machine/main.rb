@@ -51,7 +51,7 @@ OptionParser.new { |opts|
 }.parse!
 
 
-class Main
+class MainMain
   extend T::Sig
   sig {
     params(
@@ -106,7 +106,7 @@ class Main
 end
 
 begin
-  Main.main(@options)
+  MainMain.main(@options)
 rescue StandardError => e
   Sentry.capture_exception(e)
   raise
