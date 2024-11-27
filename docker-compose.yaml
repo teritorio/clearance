@@ -53,10 +53,10 @@ services:
   frontend:
     build:
       context: frontend
-      args:
-        - API=${PUBLIC_URL}/api/0.1
-        - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND}
-        - NUXT_PUBLIC_SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    environment:
+      - NUXT_PUBLIC_API=${PUBLIC_URL}/api/0.1
+      - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND}
+      - NUXT_PUBLIC_SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
     depends_on:
       - api
     restart: unless-stopped
