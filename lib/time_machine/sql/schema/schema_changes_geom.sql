@@ -152,8 +152,19 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
         )
     )) AS geom
   FROM
-    osm_changes
-    LEFT JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON
+    (
+      SELECT
+        osm_changes.*,
+        coalesce(relation.members, osm_changes.members) AS geom_members
+      FROM
+        osm_changes
+        LEFT JOIN osm_base AS relation ON
+          -- In case relation is delete, get the geometry from base version
+          osm_changes.deleted = true AND
+          relation.objtype = 'r' AND
+          relation.id = osm_changes.id
+    ) AS osm_changes
+    LEFT JOIN LATERAL jsonb_to_recordset(geom_members) AS relations_members(ref bigint, role text, type text) ON
       type = 'w'
     LEFT JOIN osm_base AS ways ON
       ways.objtype = 'w' AND
