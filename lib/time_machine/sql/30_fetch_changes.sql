@@ -186,6 +186,8 @@ FROM
 locha AS (
 SELECT
     geom,
+    -- Keep snap_geom to group on
+    first_value(snap_geom) OVER (PARTITION BY snap_geom) AS snap_geom,
     coalesce(
         -- Equivalent to ST_ClusterWithinWin
         ST_ClusterDBSCAN(geom, distance, 0) OVER (PARTITION BY snap_geom),
@@ -206,17 +208,20 @@ ORDER BY
 ),
 locha_size AS (
 SELECT
+    snap_geom,
     locha_id,
     count(*) AS size
 FROM
     locha
 GROUP BY
+    snap_geom,
     locha_id
 ),
 locha_split AS (
 SELECT
     -- Max 300 objects (think about nodes), max radius
-    ST_ClusterKMeans(geom, ceil(size::float / 300)::integer, distance*20) OVER (PARTITION BY locha.locha_id) AS cluster_id,
+    ST_ClusterKMeans(geom, ceil(size::float / 300)::integer, distance*20) OVER (PARTITION BY locha.locha_id, locha.snap_geom) AS cluster_id,
+    snap_geom,
     locha_id,
     objtype,
     id,
@@ -224,17 +229,19 @@ SELECT
     p
 FROM
     locha
-    JOIN locha_size USING (locha_id)
+    JOIN locha_size USING (snap_geom, locha_id)
 ),
 g AS(
 SELECT
     cluster_id,
+    snap_geom,
     locha_id,
     (hashtext(string_agg(key, ',')))::integer AS hash_keys
 FROM
     locha_split
 GROUP BY
     cluster_id,
+    snap_geom,
     locha_id
 )
 SELECT
@@ -246,6 +253,7 @@ FROM
     locha_split
     JOIN g ON
         g.cluster_id = locha_split.cluster_id AND
+        g.snap_geom = locha_split.snap_geom AND
         g.locha_id = locha_split.locha_id
 ORDER BY
     hash_keys
