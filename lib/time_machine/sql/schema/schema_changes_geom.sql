@@ -155,11 +155,11 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
     (
       SELECT
         osm_changes.*,
-        coalesce(relation.members, osm_changes.members) AS geom_members
+        coalesce(nullif(osm_changes.members, '[]'::jsonb), relation.members) AS geom_members
       FROM
         osm_changes
         LEFT JOIN osm_base AS relation ON
-          -- In case relation is delete, get the geometry from base version
+          -- In case relation is delete and also the members, get the geometry from the base version
           osm_changes.deleted = true AND
           relation.objtype = 'r' AND
           relation.id = osm_changes.id
