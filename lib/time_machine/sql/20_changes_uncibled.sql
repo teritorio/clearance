@@ -1,26 +1,5 @@
-DROP TABLE IF EXISTS tmp_changes;
-CREATE TEMP TABLE tmp_changes AS
-WITH
-clip AS (
-    SELECT
-        ST_Union(ST_GeomFromGeoJSON(geom)) AS geom
-    FROM
-        json_array_elements_text(:polygon::json) AS t(geom)
-)
-SELECT
-    osm_changes_geom.*
-FROM
-    osm_changes_geom,
-    clip
-WHERE
-    osm_changes_geom.geom IS NULL OR
-    NOT (:osm_filter_tags) OR
-    (:polygon IS NOT NULL AND NOT ST_Intersects(clip.geom, osm_changes_geom.geom))
-;
-
--- Select only changes not linked to objects of interest
-DROP TABLE IF EXISTS changes_update;
-CREATE TEMP TABLE changes_update AS
+DROP TABLE IF EXISTS cibled_changes;
+CREATE TEMP TABLE cibled_changes AS
 WITH
 clip AS (
     SELECT
@@ -28,7 +7,8 @@ clip AS (
     FROM
         json_array_elements_text(:polygon::json) AS t(geom)
 ),
-base_update AS (
+-- Select only objects of interest in the area from osm_base
+cibled_base AS (
     SELECT
         objtype,
         id,
@@ -37,24 +17,185 @@ base_update AS (
         osm_base,
         clip
     WHERE
-        osm_base.geom IS NOT NULL AND
-        (:osm_filter_tags) AND
-        (:polygon IS NULL OR ST_Intersects(clip.geom, osm_base.geom))
+        (
+            (:osm_filter_tags) AND
+            (clip.geom IS NULL OR ST_Intersects(clip.geom, osm_base.geom))
+        ) OR (
+            osm_base.geom IS NULL
+        )
+),
+-- Select related changes liked to cibled_base
+cibled_changes_from_base AS (
+    SELECT
+        changes.*
+    FROM
+        osm_changes_geom AS changes
+        JOIN cibled_base AS base ON
+            base.objtype = changes.objtype AND
+            base.id = changes.id
+),
+-- Select only object of interest in the area from osm_changes
+cibled_changes AS (
+    SELECT
+        osm_changes_geom.*
+    FROM
+        osm_changes_geom,
+        clip
+    WHERE
+        (
+            (:osm_filter_tags) AND
+            (clip.geom IS NULL OR ST_Intersects(clip.geom, osm_changes_geom.geom))
+        ) OR (
+            osm_changes_geom.geom IS NULL
+        )
 )
 SELECT DISTINCT ON (changes.objtype, changes.id)
-    changes.*
-FROM
-    tmp_changes AS changes
-    LEFT JOIN base_update AS base ON
-        base.objtype = changes.objtype AND
-        base.id = changes.id
-WHERE
-    base.objtype IS NULL
+    *
+FROM (
+    SELECT
+        cibled_changes_from_base.*
+    FROM
+        cibled_changes_from_base
+    UNION ALL
+    SELECT
+        cibled_changes.*
+    FROM
+        cibled_changes
+) AS changes
 ORDER BY
     changes.objtype,
-    changes.id,
-    changes.version DESC,
-    changes.deleted DESC
+    changes.id
 ;
 
-DROP TABLE tmp_changes;
+ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
+
+
+-- Add transitive changes
+
+INSERT INTO cibled_changes
+WITH RECURSIVE a AS (
+    SELECT
+        *
+    FROM
+        cibled_changes
+    UNION ALL
+    (
+        WITH b AS (
+            -- Recursive term should be referenced only once time
+            SELECT * FROM a
+        )
+        (
+        SELECT DISTINCT ON (ways.id)
+            ways.objtype,
+            ways.id,
+            ways.version,
+            false AS deleted,
+            ways.changeset_id,
+            ways.created,
+            ways.uid,
+            ways.username,
+            ways.tags,
+            ways.lon,
+            ways.lat,
+            ways.nodes,
+            ways.members,
+            ways.geom
+        FROM
+            b AS cibled_changes
+            JOIN osm_changes_geom AS ways ON
+                ways.objtype = 'w' AND
+                cibled_changes.geom && ways.geom AND
+                ARRAY[cibled_changes.id] <@ ways.nodes
+        WHERE
+            cibled_changes.objtype = 'n'
+        ORDER BY
+            ways.id
+
+        ) UNION ALL (
+
+        SELECT DISTINCT ON (relations.id)
+            relations.objtype,
+            relations.id,
+            relations.version,
+            false AS deleted,
+            relations.changeset_id,
+            relations.created,
+            relations.uid,
+            relations.username,
+            relations.tags,
+            relations.lon,
+            relations.lat,
+            relations.nodes,
+            relations.members,
+            relations.geom
+        FROM
+            b AS cibled_changes
+            JOIN osm_changes_geom AS relations ON
+                relations.objtype = 'r' AND
+                cibled_changes.geom && relations.geom AND
+                ARRAY[cibled_changes.id] @> (osm_base_idx_nodes_members(relations.members, 'n'))
+        WHERE
+            cibled_changes.objtype = 'n'
+        ORDER BY
+            relations.id
+
+        ) UNION ALL (
+
+        SELECT DISTINCT ON (relations.id)
+            relations.objtype,
+            relations.id,
+            relations.version,
+            false AS deleted,
+            relations.changeset_id,
+            relations.created,
+            relations.uid,
+            relations.username,
+            relations.tags,
+            relations.lon,
+            relations.lat,
+            relations.nodes,
+            relations.members,
+            relations.geom
+        FROM
+            b AS cibled_changes
+            JOIN osm_changes_geom AS relations ON
+                relations.objtype = 'r' AND
+                cibled_changes.geom && relations.geom AND
+                ARRAY[cibled_changes.id] @> (osm_base_idx_nodes_members(relations.members, 'w'))
+        WHERE
+            cibled_changes.objtype = 'w'
+        ORDER BY
+            relations.id
+        )
+    )
+)
+SELECT DISTINCT ON (objtype, id)
+    *
+FROM
+    a
+ORDER BY
+    objtype,
+    id
+ON CONFLICT DO NOTHING
+;
+
+
+--- Select only changes not related to objects and area of interest, and not transitively related to them
+DROP TABLE IF EXISTS changes_update;
+CREATE TEMP TABLE changes_update AS
+SELECT DISTINCT ON (osm_changes.objtype, osm_changes.id)
+    osm_changes.*
+FROM
+    osm_changes
+    LEFT JOIN cibled_changes AS cibled ON
+        cibled.objtype = osm_changes.objtype AND
+        cibled.id = osm_changes.id
+WHERE
+    cibled.objtype IS NULL
+ORDER BY
+    osm_changes.objtype,
+    osm_changes.id
+;
+
+
+DROP TABLE cibled_changes;
