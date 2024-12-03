@@ -128,18 +128,18 @@ CREATE OR REPLACE FUNCTION fetch_changes(
                 t.is_change -- alows to replay histroy and keep changes after base
         )
     SELECT
-        s.objtype,
-        s.id,
-        ST_Union(s.geom) AS geom,
-        jsonb_agg(row_to_json(s)::jsonb - 'objtype' - 'id') AS p
+        state.objtype,
+        state.id,
+        ST_Union(state.geom) AS geom,
+        jsonb_agg(row_to_json(state)::jsonb - 'objtype' - 'id') AS p
     FROM
-        state AS s
+        state
     GROUP BY
-        s.objtype,
-        s.id
+        state.objtype,
+        state.id
     ORDER BY
-        s.objtype,
-        s.id
+        state.objtype,
+        state.id
     ;
 END; $$ LANGUAGE plpgsql PARALLEL SAFE;
 
@@ -175,11 +175,11 @@ FROM
 ),
 ring_snap AS (
 SELECT
-    rings.objtype,
-    rings.id,
-    rings.geom,
+    objtype,
+    id,
+    geom,
     ST_SnapToGrid(ST_Centroid(geom), distance * 100) AS snap_geom,
-    rings.p
+    p
 FROM
     rings
 ),
@@ -199,7 +199,7 @@ SELECT
     objtype || '|' || id || '|' || (p[-1]->>'version') || '|' || (p[-1]->>'deleted') || '|' AS key,
     p
 FROM
-    ring_snap AS rings
+    ring_snap
 ORDER BY
     objtype,
     id,
