@@ -76,7 +76,7 @@ class MainMain
         polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
         Db::DbConnWrite.conn(project){ |conn|
           dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
-          Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql(dialect), polygons)
+          Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql(dialect), config.locha_cluster_distance,  polygons)
         }
       end
 
