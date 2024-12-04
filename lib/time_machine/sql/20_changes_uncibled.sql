@@ -104,8 +104,7 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom AS ways ON
                 ways.objtype = 'w' AND
-                cibled_changes.geom && ways.geom AND
-                ARRAY[cibled_changes.id] <@ ways.nodes
+                ST_DWithin(cibled_changes.geom, ways.geom, :distance)
         WHERE
             cibled_changes.objtype = 'n'
         ORDER BY
@@ -132,8 +131,7 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom AS relations ON
                 relations.objtype = 'r' AND
-                cibled_changes.geom && relations.geom AND
-                ARRAY[cibled_changes.id] @> (osm_base_idx_nodes_members(relations.members, 'n'))
+                ST_DWithin(cibled_changes.geom, relations.geom, :distance)
         WHERE
             cibled_changes.objtype = 'n'
         ORDER BY
@@ -160,8 +158,7 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom AS relations ON
                 relations.objtype = 'r' AND
-                cibled_changes.geom && relations.geom AND
-                ARRAY[cibled_changes.id] @> (osm_base_idx_nodes_members(relations.members, 'w'))
+                ST_DWithin(cibled_changes.geom, relations.geom, :distance)
         WHERE
             cibled_changes.objtype = 'w'
         ORDER BY
