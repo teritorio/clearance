@@ -44,6 +44,8 @@ for EXTRACT in $EXTRACTS; do
     ope /${PBF} =o | gzip > projects/${PROJECT}/import/${EXTRACT_NAME}.pgcopy.gz
 done
 
+psql -c "ALTER SYSTEM SET autovacuum = off;" && psql -c "SELECT PG_RELOAD_CONF();"
+
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS ${PROJECT} CASCADE"
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema.sql
 
@@ -53,5 +55,7 @@ rm -f projects/${PROJECT}/import/*.pgcopy.gz
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_geom.sql
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_changes_geom.sql
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/changes_logs.sql
+
+psql -c "ALTER SYSTEM SET autovacuum = on;" && psql -c "SELECT PG_RELOAD_CONF();"
 
 mkdir -p projects/${PROJECT}/export
