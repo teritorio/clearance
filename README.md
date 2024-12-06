@@ -183,17 +183,20 @@ LoCha v1
 
 Validators implementation
   * Changes validation
-    * Contributors reputation: based on external tools / API
     * Add new duplicate similar object detections
     * Evaluation of geometry changes: implement a distance based on geometry spatial dimensions and feature types, implement threshold based on feature type
     * Pass trough after retention delay: allow automatic validation on non disputed features / not change in progress area
     * Validate again OpenData set
+    * Check for broken network continuity
   * Final state validation
     * Geometry validity (self, crossing, not closed polygon...)
     * Final state validation: not validating changes but targeted state using external rules set like MapCSS JSOM/osmose validation
 
-Validation evaluation
-  * score: implement a global score rather than just negative / neutral / positive
+Validation evaluation scoring
+  * Implement a global score rather than just negative / neutral / positive
+  * Contributors reputation: based on external tools / API
+  * Support for equivalent tagging schemas, avoid false positives
+  * Fetch changeset comments, evaluation and display
 
 UI / UX
   * Validator UI
@@ -202,3 +205,4 @@ UI / UX
   * User tools
     * Review status (Fixed, I will do it, Need help...)
     * Data Revert tool
+    * Easy new comment changesets or OSM notes
