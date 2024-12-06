@@ -25,19 +25,30 @@ module Configuration
   class UserGroupConfig < T::Struct
     extend T::Sig
 
+    const :path, String, default: './'
     const :title, MultilingualString
     const :polygon, T.nilable(String)
     const :users, T::Array[String]
 
     sig {
-      returns(T::Hash[String, T.untyped])
+      returns(T.nilable(T::Hash[String, T.untyped]))
     }
     def polygon_geojson
-      cache = WebCache.new(dir: '/cache/polygons/', life: '1d')
-      response = cache.get(polygon)
-      raise [polygon, response].inspect if !response.success?
+      return nil if polygon.nil?
 
-      JSON.parse(response.content)
+      content = (
+        if T.must(polygon).starts_with?('http')
+          cache = WebCache.new(dir: '/cache/polygons/', life: '1d')
+          response = cache.get(polygon)
+          raise [polygon, response].inspect if !response.success?
+
+          response.content
+        else
+          File.read(File.expand_path(polygon, path))
+        end
+      )
+
+      JSON.parse(content)
     end
   end
 
@@ -55,27 +66,36 @@ module Configuration
 
   sig {
     params(
+      path: String,
       config: MainConfig
     ).returns([
       T::Hash[String, UserGroupConfig],
       Osm::TagsMatches
     ])
   }
-  def self.load_user_groups(config)
+  def self.load_user_groups(path, config)
     cache = WebCache.new(dir: '/cache/osm_tags/', life: '1h')
     osm_tags = T.let([], T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
     # .to_h.collect.to_h => Mak happy Rubocop and Sorbet at the same time
     user_groups = config.user_groups.to_h.collect.to_h{ |group_id, v|
-      response = cache.get(T.cast(URI.parse(v['osm_tags']), URI::HTTP))
-      raise [v['osm_tags'], response].inspect if !response.success?
+      content = (
+        if v['osm_tags'].starts_with?('http')
+          response = cache.get(T.cast(URI.parse(v['osm_tags']), URI::HTTP))
+          raise [v['osm_tags'], response].inspect if !response.success?
 
-      j = JSON.parse(response.content)
+          response.content
+        else
+          File.read(File.expand_path(v['osm_tags'], path))
+        end
+      )
+
+      j = JSON.parse(content)
       osm_tags += j.collect{ |rule|
         rule['group_id'] = group_id
         rule
       }
 
-      [group_id, UserGroupConfig.from_hash(v)]
+      [group_id, UserGroupConfig.from_hash(v.merge('path' => path))]
     }
 
     osm_tags_matches = Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
@@ -95,14 +115,15 @@ module Configuration
 
   sig {
     params(
-      path: String
+      config_file: String
     ).returns(Config)
   }
-  def self.load(path)
-    config_yaml = YAML.unsafe_load_file(path)
+  def self.load(config_file)
+    path = File.dirname(config_file)
+    config_yaml = YAML.unsafe_load_file(config_file)
     config = MainConfig.from_hash(config_yaml)
 
-    user_groups, osm_tags_matches = load_user_groups(config)
+    user_groups, osm_tags_matches = load_user_groups(path, config)
     validators = Validation.validators_factory(config.validators, osm_tags_matches)
 
     Config.new(

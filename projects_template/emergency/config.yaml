@@ -33,7 +33,7 @@ user_groups:
     # Use the boundary polygon defined by the corresponding OSM relation id
     polygon: https://polygons.openstreetmap.fr/get_geojson.py?id=1682248&params=0.020000-0.005000-0.005000
     # Tags definition in the siblings export directory
-    osm_tags: https://clearance.teritorio.xyz/api/0.1/emergency/extract/emergency.osm_tags.json
+    osm_tags: ./export/emergency.osm_tags.json
     users: [] # OSM usernames, validation right on this group
 
 
