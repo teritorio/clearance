@@ -145,7 +145,6 @@ module Validation
       WHERE
         locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[]) AND
         after_object IS NOT NULL
-      ON CONFLICT DO NOTHING
     ", [
       locha_ids.to_json,
     ])
@@ -167,13 +166,13 @@ module Validation
         id BIGINT NOT NULL,
         version INTEGER NOT NULL,
         deleted BOOLEAN NOT NULL,
-        PRIMARY KEY (objtype, id, version, deleted)
+        PRIMARY KEY (objtype, id)
       )
     "
     r = conn.exec(sql_create_table)
     puts "  changes_update #{r.inspect}"
 
-    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING')
+    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4)')
     i = 0
     changes.each{ |change|
       i += 1

@@ -35,33 +35,6 @@ CREATE OR REPLACE FUNCTION fetch_changes(
     ;
     CREATE INDEX _changesets_idx ON _changesets (objtype, id);
 
-    DROP TABLE IF EXISTS change_uniq;
-    CREATE TEMP TABLE change_uniq AS
-    SELECT DISTINCT ON (c.objtype, c.id)
-        c.objtype,
-        c.id,
-        c.version,
-        c.deleted,
-        c.created,
-        c.uid,
-        c.username,
-        c.tags,
-        c.lon,
-        c.lat,
-        c.nodes,
-        c.members,
-        c.geom
-    FROM
-        _changes AS c
-    ORDER BY
-        c.objtype,
-        c.id,
-        c.version DESC,
-        c.deleted DESC
-    ;
-
-    DROP TABLE _changes;
-
     RETURN QUERY
     WITH
         polygons AS (
@@ -90,20 +63,32 @@ CREATE OR REPLACE FUNCTION fetch_changes(
                 false AS is_change
             FROM
                 osm_base AS base
-                JOIN change_uniq ON
-                    change_uniq.objtype = base.objtype AND
-                    change_uniq.id = base.id
+                JOIN _changes ON
+                    _changes.objtype = base.objtype AND
+                    _changes.id = base.id
         ),
         changes_with_changesets AS (
             SELECT
-                change_uniq.*,
+                _changes.objtype,
+                _changes.id,
+                _changes.version,
+                _changes.deleted,
+                _changes.created,
+                _changes.uid,
+                _changes.username,
+                _changes.tags,
+                _changes.lon,
+                _changes.lat,
+                _changes.nodes,
+                _changes.members,
+                _changes.geom,
                 changesets,
                 true AS is_change
             FROM
-                change_uniq
+                _changes
                 LEFT JOIN _changesets ON
-                    change_uniq.objtype = _changesets.objtype AND
-                    change_uniq.id = _changesets.id
+                    _changes.objtype = _changesets.objtype AND
+                    _changes.id = _changesets.id
         ),
         state AS (
             SELECT

@@ -54,7 +54,7 @@ CREATE TABLE osm_changes (
     members JSONB, -- %COL:osm_changes:members%
     cibled BOOLEAN NOT NULL DEFAULT FALSE
 );
-ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype, version, deleted); -- %PK:osm_changes%
+ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype); -- %PK:osm_changes%
 
 DROP TABLE IF EXISTS validations_log CASCADE;
 CREATE TABLE validations_log (

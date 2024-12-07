@@ -11,8 +11,7 @@ clip AS (
 cibled_base AS (
     SELECT
         objtype,
-        id,
-        version
+        id
     FROM
         osm_base,
         clip
