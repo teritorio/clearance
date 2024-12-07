@@ -136,13 +136,13 @@ module LogicalHistory
 
           if T.unsafe(b.geos).nil? && !b_geos_cached[b_i]
             b_geos_cached[b_i] = true
-            b = b_arr[b_i] = b.with(geos: cache_geom(b.geom, geo_factory, projection))
+            b = b_arr[b_i] = b.with(geos: cache_geom(T.must(b.geom), geo_factory, projection))
           end
           next if T.unsafe(b.geos).nil?
 
           if T.unsafe(a.geos).nil? && !a_geos_cached[a_i]
             a_geos_cached[a_i] = true
-            a = a_arr[a_i] = a.with(geos: cache_geom(a.geom, geo_factory, projection))
+            a = a_arr[a_i] = a.with(geos: cache_geom(T.must(a.geom), geo_factory, projection))
           end
           next if T.unsafe(a.geos).nil?
 
