@@ -39,7 +39,19 @@ SET
 INSERT INTO
     osm_changes_applyed
 SELECT DISTINCT ON (id, objtype, version, deleted)
-    changes.*
+    changes.objtype,
+    changes.id,
+    changes.version,
+    changes.deleted,
+    changes.changeset_id,
+    changes.created,
+    changes.uid,
+    changes.username,
+    changes.tags,
+    changes.lon,
+    changes.lat,
+    changes.nodes,
+    changes.members
 FROM
     osm_changes AS changes
     JOIN :changes_source AS update ON

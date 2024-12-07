@@ -67,6 +67,18 @@ ORDER BY
     changes.id
 ;
 
+UPDATE osm_changes
+SET cibled = false
+;
+
+UPDATE osm_changes
+SET cibled = true
+FROM cibled_changes
+WHERE
+    osm_changes.objtype = cibled_changes.objtype AND
+    osm_changes.id = cibled_changes.id
+;
+
 ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
 
 
@@ -75,7 +87,20 @@ ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
 INSERT INTO cibled_changes
 WITH RECURSIVE a AS (
     SELECT
-        *
+        objtype,
+        id,
+        version,
+        false AS deleted,
+        changeset_id,
+        created,
+        uid,
+        username,
+        tags,
+        lon,
+        lat,
+        nodes,
+        members,
+        geom
     FROM
         cibled_changes
     UNION ALL

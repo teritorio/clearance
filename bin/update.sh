@@ -44,7 +44,7 @@ function project() {
     rm -f ${IMPORT}/diff.osc.xml.gz
 
     echo "# Import"
-    psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes from '/${IMPORT}/osm_changes.pgcopy'"
+    psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "\copy ${PROJECT_NAME}.osm_changes(objtype, id, version, deleted, changeset_id, created, uid, username, tags, lon, lat, nodes, members) from '/${IMPORT}/osm_changes.pgcopy'"
     rm -f ${IMPORT}/osm_changes.pgcopy
 
     echo "# Validation report"

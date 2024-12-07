@@ -15,7 +15,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
     lat,
     nodes,
     members,
-    ST_SetSRID(ST_MakePoint(lon, lat), 4326) AS geom
+    ST_SetSRID(ST_MakePoint(lon, lat), 4326) AS geom,
+    cibled
   FROM
     osm_changes
   WHERE
@@ -43,6 +44,7 @@ t AS (
     osm_changes.tags,
     osm_changes.nodes,
     osm_changes.members,
+    osm_changes.cibled,
     way_nodes.index,
     coalesce(nodes_change.lon, nodes.lon) AS lon,
     coalesce(nodes_change.lat, nodes.lat) AS lat,
@@ -85,6 +87,7 @@ with_geom AS (
     ST_SetSRID(ST_MakeLine(
       ST_MakePoint(lon, lat) ORDER BY index
     ), 4326) AS geom,
+    cibled,
     is_closed
   FROM
     t
@@ -103,6 +106,7 @@ with_geom AS (
     tags,
     nodes,
     members,
+    cibled,
     is_closed
 )
 SELECT
@@ -125,7 +129,8 @@ SELECT
       ST_AddPoint(geom, ST_PointN(geom, 1))
     ELSE
       geom
-  END AS geom
+  END AS geom,
+  cibled
 FROM
   with_geom
 ;
@@ -150,7 +155,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
             ways_change.geom,
             ways.geom
         )
-    )) AS geom
+    )) AS geom,
+    osm_changes.cibled
   FROM
     (
       SELECT
@@ -187,7 +193,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
     osm_changes.lon,
     osm_changes.lat,
     osm_changes.nodes,
-    osm_changes.members
+    osm_changes.members,
+    osm_changes.cibled
 ;
 
 CREATE OR REPLACE VIEW osm_changes_geom AS

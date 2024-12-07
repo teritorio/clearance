@@ -13,6 +13,8 @@ CREATE OR REPLACE FUNCTION fetch_changes(
         *
     FROM
         osm_changes_geom
+    WHERE
+        cibled
     ;
 
     DROP TABLE IF EXISTS _changesets;
