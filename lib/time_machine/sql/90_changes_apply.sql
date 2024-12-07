@@ -56,9 +56,7 @@ FROM
     osm_changes AS changes
     JOIN :changes_source AS update ON
         update.objtype = changes.objtype AND
-        update.id = changes.id AND
-        update.version = changes.version AND
-        update.deleted = changes.deleted
+        update.id = changes.id
 ORDER BY
     changes.objtype, changes.id, changes.version DESC, changes.deleted
 -- FIXME rather than check for conflicts on each, better validate data by lochas and do not re-insert objects changed only by transitivity.
@@ -72,6 +70,5 @@ USING
     :changes_source AS update
 WHERE
     update.objtype = changes.objtype AND
-    update.id = changes.id AND
-    update.version >= changes.version
+    update.id = changes.id
 ;

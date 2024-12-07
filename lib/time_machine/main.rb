@@ -11,6 +11,7 @@ require './lib/time_machine/configuration'
 require './lib/time_machine/db/changeset'
 require './lib/time_machine/db/db_conn'
 require './lib/time_machine/db/export'
+require './lib/time_machine/db/import'
 
 if ENV['SENTRY_DSN_TOOLS']
   Sentry.init do |config|
@@ -29,6 +30,9 @@ OptionParser.new { |opts|
   end
   opts.on('-pPROJECT', '--project=PROJECT', 'Project directory to use.') do |project|
     @options[:project] = project
+  end
+  opts.on('-pDUMP', '--import-changes=DUMP', 'Import postgres dump into osm_changes.') do |dump|
+    @options[:import_changes] = dump
   end
   opts.on('-p', '--changes-prune', 'Changes prune.') do
     @options[:changes_prune] = true
@@ -64,6 +68,12 @@ class MainMain
     else
       project = options[:project].split('/')[-1]
       config = Configuration.load("#{options[:project]}/config.yaml")
+
+      if options[:import_changes]
+        Db::DbConnWrite.conn(project) { |conn|
+          Db.import_changes(conn, options[:import_changes])
+        }
+      end
 
       if options[:changes_prune]
         Db::DbConnWrite.conn(project) { |conn|
