@@ -127,18 +127,18 @@ module LogicalHistory
         b = T.must(b_arr[b_i])
         next if b.geom.nil?
 
+        if T.unsafe(b.geos).nil? && !b_geos_cached[b_i]
+          b_geos_cached[b_i] = true
+          b = b_arr[b_i] = b.with(geos: cache_geom(T.must(b.geom), geo_factory, projection))
+        end
+        next if T.unsafe(b.geos).nil?
+
         0.upto(a_arr.length - 1).each{ |a_i|
           a = T.must(a_arr[a_i])
           next if a.geom.nil?
 
           t_dist = LogicalHistory::Tags.tags_distance(b.tags, a.tags)
           next if t_dist.nil?
-
-          if T.unsafe(b.geos).nil? && !b_geos_cached[b_i]
-            b_geos_cached[b_i] = true
-            b = b_arr[b_i] = b.with(geos: cache_geom(T.must(b.geom), geo_factory, projection))
-          end
-          next if T.unsafe(b.geos).nil?
 
           if T.unsafe(a.geos).nil? && !a_geos_cached[a_i]
             a_geos_cached[a_i] = true
