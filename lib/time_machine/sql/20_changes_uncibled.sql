@@ -78,6 +78,12 @@ WHERE
     osm_changes.id = cibled_changes.id
 ;
 
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - cibled_changes: %', (SELECT COUNT(*) FROM cibled_changes);
+    RAISE NOTICE '20_changes_uncibled - osm_changes: % (cibled: %, not cibled: %)', (SELECT COUNT(*) FROM osm_changes), (SELECT COUNT(*) FROM osm_changes WHERE cibled), (SELECT COUNT(*) FROM osm_changes WHERE NOT cibled);
+END; $$ LANGUAGE plpgsql;
+
+
 CREATE TEMP TABLE osm_changes_geom_ AS
 SELECT * FROM osm_changes_geom;
 CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
@@ -220,5 +226,9 @@ ORDER BY
     osm_changes.id
 ;
 
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - cibled_changes & transitive: %', (SELECT COUNT(*) FROM cibled_changes);
+    RAISE NOTICE '20_changes_uncibled - changes_update: %', (SELECT COUNT(*) FROM changes_update);
+END; $$ LANGUAGE plpgsql;
 
 DROP TABLE cibled_changes;

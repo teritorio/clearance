@@ -1,3 +1,7 @@
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - delete: %', (SELECT COUNT(*) FROM :changes_source WHERE deleted);
+END; $$ LANGUAGE plpgsql;
+
 DELETE FROM
     osm_base
 USING
@@ -7,6 +11,11 @@ WHERE
     changes.id = osm_base.id AND
     changes.deleted
 ;
+
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - to insert: %', (SELECT COUNT(*) FROM :changes_source WHERE NOT deleted);
+END; $$ LANGUAGE plpgsql;
+
 
 INSERT INTO
     osm_base

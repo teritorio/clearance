@@ -3,6 +3,10 @@ ALTER TABLE osm_changes_import DROP COLUMN cibled;
 
 COPY osm_changes_import FROM ':pgcopy';
 
+DO $$ BEGIN
+    RAISE NOTICE '00_import_changes - COPY: %', (SELECT COUNT(*) FROM osm_changes_import);
+END; $$ LANGUAGE plpgsql;
+
 INSERT INTO osm_changes
 SELECT
     *
