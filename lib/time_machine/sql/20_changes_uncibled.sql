@@ -78,8 +78,9 @@ WHERE
     osm_changes.id = cibled_changes.id
 ;
 
-ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
-
+CREATE TEMP TABLE osm_changes_geom_ AS
+SELECT * FROM osm_changes_geom;
+CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
 
 -- Add transitive changes
 
@@ -126,7 +127,7 @@ WITH RECURSIVE a AS (
             ways.geom
         FROM
             b AS cibled_changes
-            JOIN osm_changes_geom AS ways ON
+            JOIN osm_changes_geom_ AS ways ON
                 ways.objtype = 'w' AND
                 ST_DWithin(cibled_changes.geom, ways.geom, :distance)
         WHERE
@@ -153,7 +154,7 @@ WITH RECURSIVE a AS (
             relations.geom
         FROM
             b AS cibled_changes
-            JOIN osm_changes_geom AS relations ON
+            JOIN osm_changes_geom_ AS relations ON
                 relations.objtype = 'r' AND
                 ST_DWithin(cibled_changes.geom, relations.geom, :distance)
         WHERE
@@ -180,7 +181,7 @@ WITH RECURSIVE a AS (
             relations.geom
         FROM
             b AS cibled_changes
-            JOIN osm_changes_geom AS relations ON
+            JOIN osm_changes_geom_ AS relations ON
                 relations.objtype = 'r' AND
                 ST_DWithin(cibled_changes.geom, relations.geom, :distance)
         WHERE
@@ -200,6 +201,7 @@ ORDER BY
 ON CONFLICT DO NOTHING
 ;
 
+DROP TABLE osm_changes_geom_;
 
 --- Select only changes not related to objects and area of interest, and not transitively related to them
 DROP TABLE IF EXISTS changes_update;
