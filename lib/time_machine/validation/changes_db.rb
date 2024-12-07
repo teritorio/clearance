@@ -16,7 +16,7 @@ module Validation
     const :locha_id, Integer
     const :objtype, String
     const :id, Integer
-    const :geom, String
+    const :geom, T.nilable(String)
     const :geos, T.nilable(RGeo::Feature::Geometry)
     prop :geom_distance, T.nilable(T.any(Float, Integer))
     const :deleted, T::Boolean
