@@ -84,6 +84,6 @@ if flock --nonblock $G_LOCK_FD; then
     done
 
 else
-    echo "crom already locked"
+    echo "an update is already in progress"
 fi
 exec {G_LOCK_FD}>&-

@@ -10,7 +10,7 @@ for PROJECT in $PROJECTS; do
     echo $PROJECT
     echo
 
-    exec {LOCK_FD}> ${PROJECT}/lock
+    exec {LOCK_FD}> projects/${PROJECT}/lock
     flock $LOCK_FD
 
     # Check if schema/table exist
