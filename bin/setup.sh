@@ -14,6 +14,12 @@ if ! flock --nonblock $LOCK_FD; then
     exit 1
 fi
 
+# Clean before re-import
+rm -fr projects/${PROJECT}/import/
+rm -fr projects/${PROJECT}/export/update
+rm -fr projects/${PROJECT}/export/state.txt
+
+
 for EXTRACT in $EXTRACTS; do
     EXTRACT_STATE=${EXTRACT/.osm.pbf/.state.txt}
     EXTRACT_STATE=${EXTRACT_STATE/-latest/}
