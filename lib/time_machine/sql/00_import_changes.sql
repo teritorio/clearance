@@ -8,10 +8,12 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 INSERT INTO osm_changes
-SELECT
+SELECT DISTINCT ON (id, objtype)
     *
 FROM
     osm_changes_import
+ORDER BY
+    id, objtype, version DESC
 ON CONFLICT (id, objtype) DO
 UPDATE
 SET
