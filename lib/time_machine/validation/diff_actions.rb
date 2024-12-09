@@ -55,7 +55,7 @@ module Validation
     }
 
     ((before&.tags&.keys || []) + (after&.tags&.keys || [])).uniq.each{ |tag|
-      diff_tags[tag] = [] if (before&.tags || tag) != (after&.tags || tag)
+      diff_tags[tag] = [] if (before&.tags&.[](tag) || tag) != (after&.tags&.[](tag) || tag)
     }
 
     DiffActions.new(attribs: diff_attribs, tags: diff_tags)
