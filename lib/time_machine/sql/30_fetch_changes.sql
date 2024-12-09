@@ -200,6 +200,8 @@ SELECT
     count(*) AS size
 FROM
     locha
+WHERE
+    geom IS NOT NULL
 GROUP BY
     snap_geom,
     locha_id
@@ -217,6 +219,22 @@ SELECT
 FROM
     locha
     JOIN locha_size USING (snap_geom, locha_id)
+WHERE
+    geom IS NOT NULL
+UNION ALL
+SELECT
+    -- Max 300 objects (think about nodes), max radius
+    (SELECT sum(size) FROM locha_size) + row_number() OVER() AS cluster_id,
+    snap_geom,
+    locha_id,
+    objtype,
+    id,
+    key,
+    p
+FROM
+    locha
+WHERE
+    geom IS NULL
 ),
 g AS(
 SELECT
@@ -240,7 +258,7 @@ FROM
     locha_split
     JOIN g ON
         g.cluster_id = locha_split.cluster_id AND
-        g.snap_geom = locha_split.snap_geom AND
+        g.snap_geom IS NOT DISTINCT FROM locha_split.snap_geom AND
         g.locha_id = locha_split.locha_id
 ORDER BY
     hash_keys
