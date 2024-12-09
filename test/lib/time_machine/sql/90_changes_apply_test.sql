@@ -44,7 +44,7 @@ END; $$ LANGUAGE plpgsql;
 BEGIN;
 TRUNCATE changes_update;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 INSERT INTO changes_update VALUES
   ('n', 1, 2, false)
@@ -65,7 +65,7 @@ END; $$ LANGUAGE plpgsql;
 BEGIN;
 TRUNCATE changes_update;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, true, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+  ('n', 1, 2, true, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 INSERT INTO changes_update VALUES
   ('n', 1, 2, true)

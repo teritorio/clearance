@@ -28,7 +28,7 @@ END; $$ LANGUAGE plpgsql;
 -- Change node location
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 COMMIT;
 
@@ -50,7 +50,7 @@ INSERT INTO osm_base VALUES
 ;
 
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 3, 3, NULL, NULL)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 3, 3, NULL, NULL, true)
 ;
 COMMIT;
 

@@ -20,7 +20,7 @@ COMMIT;
 -- Test change node location
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 COMMIT;
 
@@ -33,7 +33,7 @@ TRUNCATE osm_changes;
 -- Test change way nodes
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('w', 3, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL)
+  ('w', 3, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
 ;
 COMMIT;
 
@@ -46,7 +46,7 @@ TRUNCATE osm_changes;
 -- Test delete way
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('w', 3, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL)
+  ('w', 3, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
 ;
 COMMIT;
 

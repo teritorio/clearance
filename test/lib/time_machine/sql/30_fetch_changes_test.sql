@@ -30,9 +30,7 @@ END; $$ LANGUAGE plpgsql;
 -- Change node location
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 2, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL),
-  ('n', 1, 3, false, 3, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL),
-  ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+  ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 COMMIT;
 
@@ -68,7 +66,7 @@ INSERT INTO osm_changesets VALUES
 COMMIT;
 
 do $$ BEGIN
-  ASSERT 3 = (SELECT jsonb_array_length(p->1->'changesets') FROM a),
+  ASSERT 1 = (SELECT jsonb_array_length(p->1->'changesets') FROM a),
     (SELECT jsonb_array_length(p->1->'changesets') FROM a);
 END; $$ LANGUAGE plpgsql;
 
@@ -78,7 +76,7 @@ END; $$ LANGUAGE plpgsql;
 BEGIN;
 TRUNCATE osm_changes;
 INSERT INTO osm_changes VALUES
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL)
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL, true)
 ;
 COMMIT;
 
