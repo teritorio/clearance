@@ -13,7 +13,7 @@ SELECT DISTINCT ON (id, objtype)
 FROM
     osm_changes_import
 ORDER BY
-    id, objtype, version DESC
+    id, objtype, version DESC, deleted DESC
 ON CONFLICT (id, objtype) DO
 UPDATE
 SET
