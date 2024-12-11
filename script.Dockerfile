@@ -15,6 +15,8 @@ RUN apt update -y && apt install -y \
     libprotozero-dev \
     osmosis \
     postgresql-client \
+    python-is-python3 \
+    python3-pyosmium \
     ruby-dev \
     ruby-json \
     wget
@@ -49,5 +51,3 @@ RUN bundle config --global silence_root_warning 1
 RUN bundle install
 
 ADD . ./
-
-RUN apt install -y python-is-python3 python3-pyosmium
