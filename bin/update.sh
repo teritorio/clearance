@@ -32,10 +32,7 @@ function project() {
     echo "# Merge Updates"
     [ -n "$(find ${IMPORT} -name diff-*.osc.xml.bz2 -print -quit)" ] && \
     [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-    osmosis \
-        `find ${IMPORT}/diff-*.osc.xml.bz2 | sed -e 's/^/ --read-xml-change /' | tr -d '\n'` \
-        `yes -- '--merge-change' | head -n $(($(find ${IMPORT}/diff-*.osc.xml.bz2 | wc -l)-1))` \
-        --write-xml-change ${IMPORT}/diff.osc.xml.gz || $(rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
+    osmium merge-changes --simplify -o ${IMPORT}/diff.osc.xml.gz $(find ${IMPORT}/diff-*.osc.xml.bz2) || $(rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
     rm -f ${IMPORT}/diff-*.osc.xml.bz2
 
     echo "# Convert"

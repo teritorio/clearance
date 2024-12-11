@@ -13,7 +13,6 @@ RUN apt update -y && apt install -y \
     libpq-dev \
     libproj-dev \
     libprotozero-dev \
-    osmium-tool \
     osmosis \
     postgresql-client \
     ruby-dev \
@@ -25,6 +24,19 @@ WORKDIR /srv/
 RUN git clone https://github.com/osmcode/osm-postgresql-experiments.git && \
     cd osm-postgresql-experiments && \
     git checkout 3ddc1ca && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make install
+
+WORKDIR /srv/
+
+# Custom patch, wating for https://github.com/osmcode/osmium-tool/issues/282
+ADD osmium-tool-merge-osc-deleted.diff .
+RUN git clone https://github.com/osmcode/osmium-tool.git && \
+    cd osmium-tool && \
+    git checkout v1.13.0 && \
+    patch -p1 < ../osmium-tool-merge-osc-deleted.diff && \
     mkdir build && \
     cd build && \
     cmake .. && \

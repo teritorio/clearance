@@ -1,0 +1,37 @@
+diff --git a/src/command_merge_changes.cpp b/src/command_merge_changes.cpp
+index c8cb0e3..6c769d2 100644
+--- a/src/command_merge_changes.cpp
++++ b/src/command_merge_changes.cpp
+@@ -91,6 +91,23 @@ void CommandMergeChanges::show_arguments() {
+     show_output_arguments(m_vout);
+ }
+ 
++struct object_order_type_id_reverse_version_deleted {
++
++    bool operator()(const osmium::OSMObject& lhs, const osmium::OSMObject& rhs) const noexcept {
++        return const_tie(lhs.type(), lhs.id() > 0, lhs.positive_id(), rhs.version(),
++                    ((lhs.timestamp().valid() && rhs.timestamp().valid()) ? rhs.timestamp() : osmium::Timestamp()), !rhs.deleted()) <
++                const_tie(rhs.type(), rhs.id() > 0, rhs.positive_id(), lhs.version(),
++                    ((lhs.timestamp().valid() && rhs.timestamp().valid()) ? lhs.timestamp() : osmium::Timestamp()), !lhs.deleted());
++    }
++
++    /// @pre lhs and rhs must not be nullptr
++    bool operator()(const osmium::OSMObject* lhs, const osmium::OSMObject* rhs) const noexcept {
++        assert(lhs && rhs);
++        return operator()(*lhs, *rhs);
++    }
++
++}; // struct object_order_type_id_reverse_version_deleted
++
+ bool CommandMergeChanges::run() {
+     m_vout << "Opening output file...\n";
+     osmium::io::Header header;
+@@ -135,7 +152,7 @@ bool CommandMergeChanges::run() {
+         // sure it appears first in the objects vector before doing the
+         // stable sort.
+         std::reverse(objects.ptr_begin(), objects.ptr_end());
+-        objects.sort(osmium::object_order_type_id_reverse_version());
++        objects.sort(object_order_type_id_reverse_version_deleted());
+ 
+         m_vout << "Writing last version of each object to output...\n";
+         std::unique_copy(objects.cbegin(), objects.cend(), out, osmium::object_equal_type_id());
