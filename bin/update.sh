@@ -30,15 +30,28 @@ function project() {
     cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
 
     echo "# Merge Updates"
-    [ -n "$(find ${IMPORT} -name diff-*.osc.xml.bz2 -print -quit)" ] && \
-    [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-    osmium merge-changes --simplify -o ${IMPORT}/diff.osc.xml.gz $(find ${IMPORT}/diff-*.osc.xml.bz2) || $(rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
-    rm -f ${IMPORT}/diff-*.osc.xml.bz2
+    if [[ ! -n "$(find ${IMPORT} -name diff-*.osc.xml.bz2 -print -quit)" ]]; then
+       echo "no diff-*.osc.xml.bz2, skip merge"
+    else
+        if [[ -f ${IMPORT}/diff.osc.xml.gz ]]; then
+            echo "diff.osc.xml.gz already exist, skip merge"
+        else
+            if [[ -f ${IMPORT}/osm_changes.pgcopy ]]; then
+                echo "osm_changes.pgcopy already exist, skip merge"
+            else
+                osmium merge-changes --simplify -o ${IMPORT}/diff.osc.xml.gz $(find ${IMPORT}/diff-*.osc.xml.bz2) || (echo "osmium merge-changes fails, clening and abort..." && rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
+                rm -f ${IMPORT}/diff-*.osc.xml.bz2
+            fi
+        fi
+    fi
 
     echo "# Convert"
-    [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-    ope -H /${IMPORT}/diff.osc.xml.gz /${IMPORT}/osm_changes=o || $(rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
-    rm -f ${IMPORT}/diff.osc.xml.gz
+    if [[ -f ${IMPORT}/osm_changes.pgcopy ]]; then
+        echo "osm_changes.pgcopy already exist, skip convert"
+    else
+        ope -H /${IMPORT}/diff.osc.xml.gz /${IMPORT}/osm_changes=o || (echo "ope fails, cleaning and abort..." && rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
+        rm -f ${IMPORT}/diff.osc.xml.gz
+    fi
 
     echo "# Import"
     echo "== import-changes ==" && \
