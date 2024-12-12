@@ -57,6 +57,46 @@ module Validation
 
   sig {
     params(
+      config: Configuration::Config,
+      lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
+      accept_all_validators: T::Array[Validators::ValidatorBase],
+    ).returns(T::Enumerable[[Integer, T::Array[ValidationLogMatch], ValidationResult]])
+  }
+  def self.time_machine_locha(config, lo_cha, accept_all_validators)
+    befores = lo_cha.collect(&:first).compact
+    afters = lo_cha.collect(&:last).compact
+    conflations = LogicalHistory::Conflation.conflate_with_simplification(befores, afters, config.local_srid, 200.0)
+
+    Enumerator.new { |yielder|
+      conflations.each{ |conflation|
+        matches = [conflation.before, conflation.after].compact.collect{ |object|
+          config.osm_tags_matches.match(object.tags)
+        }.flatten(1).uniq.collect{ |overpass, match|
+          ValidationLogMatch.new(
+            sources: match.sources&.compact || [],
+            selectors: [overpass],
+            user_groups: match.user_groups.intersection(conflation.to_a.compact.collect(&:group_ids).flatten.uniq),
+            name: match.name,
+            icon: match.icon,
+          )
+        }.flatten(1).uniq
+
+        matching_group = matches.any?{ |match|
+          !match.user_groups&.empty?
+        }
+        validators = matching_group ? config.validators : accept_all_validators
+        validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
+        yielder << [
+          T.must(conflation.before || conflation.after).locha_id,
+          matches,
+          validation_result
+        ]
+      }
+    }
+  end
+
+  sig {
+    params(
       conn: PG::Connection,
       config: Configuration::Config,
     ).returns(T::Enumerable[[Integer, T::Array[ValidationLogMatch], ValidationResult]])
@@ -65,34 +105,7 @@ module Validation
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |lo_cha|
-        befores = lo_cha.collect(&:first).compact
-        afters = lo_cha.collect(&:last).compact
-        conflations = LogicalHistory::Conflation.conflate_with_simplification(befores, afters, config.local_srid, 200.0)
-
-        conflations.each{ |conflation|
-          matches = [conflation.before, conflation.after].compact.collect{ |object|
-            config.osm_tags_matches.match(object.tags)
-          }.flatten(1).uniq.collect{ |overpass, match|
-            ValidationLogMatch.new(
-              sources: match.sources&.compact || [],
-              selectors: [overpass],
-              user_groups: match.user_groups.intersection(conflation.to_a.compact.collect(&:group_ids).flatten.uniq),
-              name: match.name,
-              icon: match.icon,
-            )
-          }.flatten(1).uniq
-
-          matching_group = matches.any?{ |match|
-            !match.user_groups&.empty?
-          }
-          validators = matching_group ? config.validators : accept_all_validators
-          validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
-          yielder << [
-            T.must(conflation.before || conflation.after).locha_id,
-            matches,
-            validation_result
-          ]
-        }
+        yielder << time_machine_locha(config, lo_cha, accept_all_validators)
       }
     }
   end

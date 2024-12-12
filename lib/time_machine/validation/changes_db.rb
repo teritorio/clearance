@@ -44,6 +44,18 @@ module Validation
 
   sig {
     params(
+      osm_change_object: T.untyped,
+    ).returns([T.nilable(OSMChangeProperties), OSMChangeProperties])
+  }
+  def self.convert_locha_item(osm_change_object)
+    ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'] }
+    before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
+    after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
+    [before, after]
+  end
+
+  sig {
+    params(
       conn: PG::Connection,
       local_srid: Integer,
       locha_cluster_distance: Integer,
@@ -66,10 +78,7 @@ module Validation
           results = []
         end
 
-        ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'] }
-        before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
-        after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
-        results << [before, after]
+        results << convert_locha_item(osm_change_object)
         last_locha_id = osm_change_object['locha_id']
       }
     }
