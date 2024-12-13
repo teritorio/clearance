@@ -97,6 +97,44 @@ module Validation
 
   sig {
     params(
+      config: Configuration::Config,
+      lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
+      accept_all_validators: T::Array[Validators::ValidatorBase],
+    ).returns(T::Enumerable[[Integer, T::Array[ValidationLogMatch], ValidationResult]])
+  }
+  def self.time_machine_locha_propagate_rejection(config, lo_cha, accept_all_validators)
+    Enumerator.new { |yielder|
+      validations = time_machine_locha(config, lo_cha, accept_all_validators).to_a
+
+      # Propagate rejection to other part of the same object
+      validations = validations.group_by{ |_locha_id, _matches, validation|
+        [validation.after_object.objtype, validation.after_object.id]
+      }.values.collect{ |group|
+        rejected = group.select{ |_locha_id, _matches, validation|
+          validation.action != 'accept'
+        }
+        if rejected.empty?
+          group
+        else
+          group.collect{ |locha_id, matches, validation|
+            if validation.action != 'reject'
+              diff_action = Validation::Action.new(validator_id: 'same_object_rejection_propagation', action: 'reject')
+              validation.diff.attribs['geom'] = (validation.diff.attribs['geom'] || []) + [diff_action]
+              validation = validation.with(action: 'reject')
+            end
+            [locha_id, matches, validation]
+          }
+        end
+      }.flatten(1)
+
+      validations.each{ |locha_id, matches, validation|
+        yielder << [locha_id, matches, validation]
+      }
+    }
+  end
+
+  sig {
+    params(
       conn: PG::Connection,
       config: Configuration::Config,
     ).returns(T::Enumerable[[Integer, T::Array[ValidationLogMatch], ValidationResult]])
@@ -105,7 +143,9 @@ module Validation
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |lo_cha|
-        yielder << time_machine_locha(config, lo_cha, accept_all_validators)
+        time_machine_locha_propagate_rejection(config, lo_cha, accept_all_validators).each { |locha_id, matches, validation|
+          yielder << [locha_id, matches, validation]
+        }
       }
     }
   end

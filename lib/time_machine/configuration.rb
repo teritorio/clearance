@@ -115,12 +115,12 @@ module Configuration
 
   sig {
     params(
-      config_file: String
+      content: String,
+      path: String,
     ).returns(Config)
   }
-  def self.load(config_file)
-    path = File.dirname(config_file)
-    config_yaml = YAML.unsafe_load_file(config_file)
+  def self.parse(content, path)
+    config_yaml = YAML.unsafe_load(content)
     config = MainConfig.from_hash(config_yaml)
 
     user_groups, osm_tags_matches = load_user_groups(path, config)
@@ -137,5 +137,16 @@ module Configuration
       local_srid: config.local_srid,
       locha_cluster_distance: config.locha_cluster_distance,
     )
+  end
+
+  sig {
+    params(
+      config_file: String
+    ).returns(Config)
+  }
+  def self.load(config_file)
+    path = File.dirname(config_file)
+    content = File.read(config_file)
+    parse(content, path)
   end
 end

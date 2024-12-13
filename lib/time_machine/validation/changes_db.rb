@@ -179,7 +179,7 @@ module Validation
     r = conn.exec(sql_create_table)
     puts "  changes_update #{r.inspect}"
 
-    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4)')
+    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING')
     i = 0
     changes.each{ |change|
       i += 1
