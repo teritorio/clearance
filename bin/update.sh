@@ -9,6 +9,10 @@ function project() {
 
     echo "# Get Updates"
     EXTRACTS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
+    if [ -z "$EXTRACTS" ]; then
+        echo "No extracts, skip update"
+        return 5
+    fi
     TIMESTAMP=$(date +%s)
     [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
     for EXTRACT in $EXTRACTS; do
