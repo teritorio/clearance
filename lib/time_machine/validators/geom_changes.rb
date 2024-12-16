@@ -15,11 +15,11 @@ module Validators
         osm_tags_matches: Osm::TagsMatches,
         accept: String,
         reject: String,
-        dist: T.nilable(T.any(Float, Integer)),
+        dist: T.any(Float, Integer),
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, accept:, reject:, dist: nil, description: nil)
+    def initialize(id:, osm_tags_matches:, accept:, reject:, dist:, description: nil)
       super(id: id, osm_tags_matches: osm_tags_matches, accept: accept, reject: reject, description: description)
       @dist = dist
     end
@@ -34,18 +34,15 @@ module Validators
     def apply(before, after, diff)
       return if !before || ((!diff.attribs['geom_distance'] || diff.attribs['geom_distance'] == 0) && !diff.attribs['members'])
 
-      if @dist.nil?
-        assign_action_accept(diff.attribs['geom_distance'] || []) if diff.attribs['geom_distance']
-        assign_action_accept(diff.attribs['members'] || []) if diff.attribs['members']
-      elsif !after.nil? && after.geom_distance
-        dist = after.geom_distance
-        return if dist.nil?
+      return unless !after.nil? && after.geom_distance
 
-        if dist < @dist
-          assign_action_accept(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
-        else
-          assign_action_reject(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
-        end
+      dist = after.geom_distance
+      return if dist.nil?
+
+      if dist < @dist
+        assign_action_accept(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
+      else
+        assign_action_reject(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
       end
     end
   end
