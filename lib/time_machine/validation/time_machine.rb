@@ -110,20 +110,24 @@ module Validation
       validations = validations.group_by{ |_locha_id, _matches, validation|
         [validation.after_object.objtype, validation.after_object.id]
       }.values.collect{ |group|
-        rejected = group.select{ |_locha_id, _matches, validation|
-          validation.action != 'accept'
-        }
-        if rejected.empty?
+        if group.size == 1
           group
         else
-          group.collect{ |locha_id, matches, validation|
-            if validation.action != 'reject'
-              diff_action = Validation::Action.new(validator_id: 'same_object_rejection_propagation', action: 'reject')
-              validation.diff.attribs['geom'] = (validation.diff.attribs['geom'] || []) + [diff_action]
-              validation = validation.with(action: 'reject')
-            end
-            [locha_id, matches, validation]
+          rejected = group.find{ |_locha_id, _matches, validation|
+            validation.action != 'accept'
           }
+          if rejected.nil?
+            group
+          else
+            group.collect{ |locha_id, matches, validation|
+              if validation.action != 'reject'
+                diff_action = Validation::Action.new(validator_id: 'same_object_rejection_propagation', action: 'reject')
+                validation.diff.attribs['geom'] = (validation.diff.attribs['geom'] || []) + [diff_action]
+                validation = validation.with(action: 'reject')
+              end
+              [locha_id, matches, validation]
+            }
+          end
         end
       }.flatten(1)
 
