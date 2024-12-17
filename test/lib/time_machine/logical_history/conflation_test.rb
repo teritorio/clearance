@@ -33,7 +33,7 @@ class TestConflation < Test::Unit::TestCase
         locha_id: 1,
         objtype: 'n',
         id: id,
-        geom: '',
+        geom: geom,
         geos: RGeo::GeoJSON.decode(JSON.parse(geom)),
         geom_distance: 0,
         deleted: false,
@@ -407,10 +407,10 @@ class TestConflation < Test::Unit::TestCase
   sig { void }
   def test_conflate_merge_deleted_created
     before = [
-      build_object(id: 1, geom: '{"type":"Point","coordinates":[[0,0]]}', tags: { 'amenity' => 'a' }),
+      build_object(id: 1, geom: '{"type":"Point","coordinates":[0,0]}', tags: { 'amenity' => 'a' }),
     ]
     after = [
-      build_object(id: 1, geom: '{"type":"Point","coordinates":[[0,0]]}', tags: { 'amenity' => 'b' }),
+      build_object(id: 1, geom: '{"type":"Point","coordinates":[0,0]}', tags: { 'amenity' => 'b' }),
     ]
 
     conflations = Conflation.conflate_with_simplification(before, after, @@srid, @@demi_distance)
