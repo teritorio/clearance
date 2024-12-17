@@ -37,7 +37,7 @@ class TestValidation < Test::Unit::TestCase
         # Use the boundary polygon defined by the corresponding OSM relation id
         polygon: https://polygons.openstreetmap.fr/get_geojson.py?id=349027&params=0.004000-0.001000-0.001000
         # Tags definition in the siblings export directory
-        osm_tags: ./export/highway.osm_tags.json
+        osm_tags: ./highway.osm_tags.json
         users: [] # OSM usernames, validation right on this group
   YAML
 
@@ -50,7 +50,7 @@ class TestValidation < Test::Unit::TestCase
         deleted:
           action_force: reject
     YAML
-    config = Configuration.parse(yaml, './projects/espana_navarra/')
+    config = Configuration.parse(yaml, './test/fixtures/')
 
     assert_equal(1, config.user_groups.size)
     assert_not_empty(config.osm_tags_matches.match({ 'highway' => 'primary' }))
@@ -95,7 +95,7 @@ class TestValidation < Test::Unit::TestCase
           reject: geom_changes_significant
           accept: geom_changes_insignificant
     YAML
-    config = Configuration.parse(yaml, './projects/espana_navarra/')
+    config = Configuration.parse(yaml, './test/fixtures/')
 
     locha = [
       [1, '[

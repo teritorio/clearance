@@ -1,0 +1,13 @@
+[
+  {
+    "select": [
+      "[highway~'motorway|trunk|primary|terciary|unclassified|residential|service|living_street']"
+    ],
+    "interest": {
+      "name": null,
+      "name:es": null,
+      "name:eu": null,
+      "offical_name": null
+    }
+  }
+]
