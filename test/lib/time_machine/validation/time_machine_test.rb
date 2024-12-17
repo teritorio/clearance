@@ -53,7 +53,7 @@ class TestValidation < Test::Unit::TestCase
     config = Configuration.parse(yaml, './projects/espana_navarra/')
 
     assert_equal(1, config.user_groups.size)
-    assert(config.osm_tags_matches.match({ 'highway' => 'primary' }).size > 0)
+    assert_not_empty(config.osm_tags_matches.match({ 'highway' => 'primary' }))
     assert_equal(1, config.user_groups.size)
 
     locha = [
