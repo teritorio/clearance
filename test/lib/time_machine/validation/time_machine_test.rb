@@ -164,7 +164,7 @@ class TestValidation < Test::Unit::TestCase
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
 
     yaml = "#{CONFIG_YAML_HEADER}
-      validators: {}"
+validators: {}"
     config = Configuration.parse(yaml, './test/fixtures/')
 
     locha = [
