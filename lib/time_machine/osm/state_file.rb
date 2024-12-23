@@ -10,7 +10,7 @@ module Osm
     const :sequence_number, Integer
     const :timestamp, String
 
-    sig{
+    sig {
       params(
         path: String
       ).returns(T.nilable(StateFile))
@@ -36,13 +36,13 @@ module Osm
       )
     end
 
-    sig{
+    sig {
       params(
         path: String
       ).void
     }
     def save_to(path)
-      File.write(path, "timestamp=#{timestamp}
+      File.write(path, "timestamp=#{timestamp.gsub(':', '\\:')}
 sequenceNumber=#{sequence_number}
 ")
     end
