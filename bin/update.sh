@@ -53,14 +53,22 @@ function project() {
     if [[ -f ${IMPORT}/osm_changes.pgcopy ]]; then
         echo "osm_changes.pgcopy already exist, skip convert"
     else
-        ope -H /${IMPORT}/diff.osc.xml.gz /${IMPORT}/osm_changes=o || (echo "ope fails, cleaning and abort..." && rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
-        rm -f ${IMPORT}/diff.osc.xml.gz
+        if [[ ! -f ${IMPORT}/diff.osc.xml.gz ]]; then
+            echo "no diff.osc.xml.gz, skip convert"
+        else
+            ope -H /${IMPORT}/diff.osc.xml.gz /${IMPORT}/osm_changes=o || (echo "ope fails, cleaning and abort..." && rm -f /${IMPORT}/osm_changes.pgcopy && return 4)
+            rm -f ${IMPORT}/diff.osc.xml.gz
+        fi
     fi
 
     echo "# Import"
     echo "== import-changes ==" && \
-    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --import-changes="/${IMPORT}/osm_changes.pgcopy" && \
-    rm -f ${IMPORT}/osm_changes.pgcopy
+    if [[ ! -f ${IMPORT}/osm_changes.pgcopy ]]; then
+        echo "no osm_changes.pgcopy, skip import"
+    else
+        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --import-changes="/${IMPORT}/osm_changes.pgcopy" && \
+        rm -f ${IMPORT}/osm_changes.pgcopy
+    fi
 
     echo "# Validation report"
     echo "== changes-prune ==" && \
