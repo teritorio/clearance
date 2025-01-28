@@ -10,3 +10,4 @@ sorbet/
 tmp/
 core
 log*
+.github

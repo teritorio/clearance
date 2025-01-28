@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master, dev ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -66,32 +70,18 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/api
 
-  deploy_dev:
-    needs:
-      - test
-    if: github.ref == 'refs/heads/dev' && ${{vars.DEPLOY_SSH_HOST}} != ''
-    name: Deploy Dev
+  docker:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 🛎
-        uses: actions/checkout@v4
+    needs: [test]
+    if: github.ref == 'refs/heads/dev'
 
-      - name: Deploy
-        uses: appleboy/ssh-action@v1.0.3
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Docker Build and Push
+        uses: cartoway/docker-compose-build-push-action@main
         with:
-          host: ${{vars.DEPLOY_SSH_HOST}}
-          username: ${{vars.DEPLOY_SSH_USERNAME}}
-          key: ${{secrets.DEPLOY_SSH_KEY_DEV}}
-          port: 2222
-          script: |
-            echo -n 'Deployment started at: ' &&
-            date -u &&
-            cd ${{vars.DEPLOY_SSH_PATH}} &&
-            git fetch &&
-            git checkout -f origin/dev &&
-            git submodule init &&
-            git submodule update &&
-            docker compose --profile "*" build &&
-            docker compose up -d &&
-            echo -n 'Deployment completed at: ' &&
-            date -u
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
