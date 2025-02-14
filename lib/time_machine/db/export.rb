@@ -86,7 +86,17 @@ module Db
   def self.export(conn, osm_bz2)
     sql = "
     SELECT
-      *
+      objtype,
+      id,
+      version,
+      changeset_id,
+      created,
+      uid,
+      username,
+      tags,
+      lon,
+      lat,
+      nodes
     FROM
       osm_base
     ORDER BY
@@ -100,11 +110,11 @@ module Db
       f.write('<osm version="0.6" generator="clearance">')
       f.write("\n")
 
-      conn.exec(sql) { |result|
-        result.each{ |row|
-          f.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
-          f.write("\n")
-        }
+      conn.send_query(sql)
+      conn.set_single_row_mode
+      conn.get_result.stream_each { |row|
+        f.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
+        f.write("\n")
       }
 
       f.write('</osm>')
