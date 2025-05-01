@@ -33,12 +33,10 @@ RUN git clone https://github.com/osmcode/osm-postgresql-experiments.git && \
 
 WORKDIR /srv/
 
-# Custom patch, wating for https://github.com/osmcode/osmium-tool/issues/282
-ADD osmium-tool-merge-osc-deleted.diff .
+# Manual install of osmium-tool as we require at least 1.17.0
 RUN git clone https://github.com/osmcode/osmium-tool.git && \
     cd osmium-tool && \
-    git checkout v1.13.0 && \
-    patch -p1 < ../osmium-tool-merge-osc-deleted.diff && \
+    git checkout v1.18.0 && \
     mkdir build && \
     cd build && \
     cmake .. && \
