@@ -176,33 +176,39 @@ Held objects and manual object acceptance are available via API and user [fronte
 The idea is to group changes locally to make contextual validation. It allows detecting, and ignoring, e.g. deletion and recreation of the same object. It also allows implementing multi-object validators, e.g. to validate road network continuity.
 
 ## Roadmap
-LoCha v1
-  * Clustering distance configurable by feature type
-  * LoCha splitting strategy on large cluster
-  * Support Large object changes:  admin relation, large landuses, rivers
+Engine
+  * Ensure database integrity (base and changes, by source type)
+  * LoCha splitting strategy on large clusters
+  * Support changes on objects larger than a cluster: admin relations, large landuses, rivers
+
+Configuration
+  * Add OSM extract URL in the config file to initialize the project from it
+  * By feature type
+    * LoCha / clustering distance
+    * Evaluation of geometry change thresholds
 
 Validators implementation
-  * Changes validation
-    * Add new duplicate similar object detections
-    * Evaluation of geometry changes: implement a distance based on geometry spatial dimensions and feature types, implement threshold based on feature type
-    * Pass trough after retention delay: allow automatic validation on non disputed features / not change in progress area
-    * Validate again OpenData set
-    * Check for broken network continuity
-  * Final state validation
-    * Geometry validity (self, crossing, not closed polygon...)
-    * Final state validation: not validating changes but targeted state using external rules set like MapCSS JSOM/osmose validation
+  * Geometry validity (self-intersections, crossings, unclosed polygons...)
+  * Check for broken network continuity
+  * Add detection of new duplicate or similar objects
+  * Pass-through after retention delay: allow automatic validation of non-disputed features / outside change-in-progress areas
+  * Validate again OpenData set
+  * Validate changes using external rule sets, like MapCSS from JOSM or Osmose-QA validation
 
 Validation evaluation scoring
-  * Implement a global score rather than just negative / neutral / positive
-  * Contributors reputation: based on external tools / API
-  * Support for equivalent tagging schemas, avoid false positives
-  * Fetch changeset comments, evaluation and display
+  * Fetch user blocks and use them in score
+  * Fetch changeset discussions and use them in the score
+  * Contributors' reputation: based on external tools / APIs
+  * Support equivalent tagging schemas to avoid false positives
 
 UI / UX
-  * Validator UI
-  * RSS
-  * Configuration UI
+  * Partial validation of LoCha
+  * RSS by user groups
+  * Validation review UI / UX
+  * Configuration UI:
+    * Display
+    * Edit
   * User tools
     * Review status (Fixed, I will do it, Need help...)
     * Data Revert tool
-    * Easy new comment changesets or OSM notes
+    * Easy creation of changeset discussions or OSM notes
