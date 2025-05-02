@@ -91,7 +91,7 @@ Note 2: To lower CPU usage, you can lower the update frequency. It is not requir
 ### Drop
 Drop a project.
 ```
-docker compose run --rm script ./bin/drop.sh projects/emergency
+docker compose run --rm script ./bin/drop.sh emergency
 ```
 
 ## Dev
