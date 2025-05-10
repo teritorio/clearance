@@ -152,6 +152,9 @@ module Validation
       WHERE
         locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[]) AND
         after_object IS NOT NULL
+
+      ON CONFLICT (objtype, id, version, deleted)
+      DO NOTHING
     ", [
       locha_ids.to_json,
     ])
