@@ -30,6 +30,7 @@ OptionParser.new { |opts|
   end
   opts.on('-pPROJECT', '--project=PROJECT', 'Project directory to use.') do |project|
     @options[:project] = project
+    Sentry.set_tags(project: project)
   end
   opts.on('-pDUMP', '--import-changes=DUMP', 'Import postgres dump into osm_changes.') do |dump|
     @options[:import_changes] = dump

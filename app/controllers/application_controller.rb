@@ -2,6 +2,10 @@
 # typed: strict
 
 class ApplicationController < ActionController::API
+  if ENV['SENTRY_DSN_TOOLS']
+    before_action :sentry_project_tag
+  end
+
   delegate :osm_name, to: :current_user, prefix: true
   delegate :osm_id, to: :current_user, prefix: true
 
@@ -11,5 +15,12 @@ class ApplicationController < ActionController::API
 
   rescue_from ActiveHash::RecordNotFound do |_exception|
     render nothing: true, status: :not_found
+  end
+
+  private
+
+  def sentry_project_tag
+    project = params('project')
+    Sentry.set_tags(project: project) if project
   end
 end
