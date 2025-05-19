@@ -20,7 +20,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
       - PUBLIC_URL=${PUBLIC_URL}
-      - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS}
+      - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS:-}
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./projects:/projects
@@ -39,7 +39,7 @@ services:
       - OSM_OAUTH2_SECRET=${OSM_OAUTH2_SECRET}
       - OSM_OAUTH2_REDIRECT=${OSM_OAUTH2_REDIRECT}
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
-      - SENTRY_DSN_API=${SENTRY_DSN_API}
+      - SENTRY_DSN_API=${SENTRY_DSN_API:-}
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./cache:/cache
@@ -54,7 +54,7 @@ services:
     image: ghcr.io/teritorio/clearance-frontend:develop
     environment:
       - NUXT_PUBLIC_API=${PUBLIC_URL}/api/0.1
-      - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND}
+      - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND:-}
       - NUXT_PUBLIC_SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
     depends_on:
       - api
