@@ -68,7 +68,7 @@ class MainMain
       puts 'RTFC'
     else
       project = options[:project].split('/')[-1]
-      config = Configuration.load("#{options[:project]}/config.yaml")
+      config = nil
 
       if options[:import_changes]
         Db::DbConnWrite.conn(project) { |conn|
@@ -83,6 +83,7 @@ class MainMain
       end
 
       if options[:apply_unclibled_changes]
+        config ||= Configuration.load("#{options[:project]}/config.yaml")
         osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
         polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
         Db::DbConnWrite.conn(project){ |conn|
@@ -93,6 +94,7 @@ class MainMain
 
       if options[:validate]
         Db::DbConnWrite.conn(project){ |conn|
+          config ||= Configuration.load("#{options[:project]}/config.yaml")
           Validation.validate(conn, config)
         }
       end
