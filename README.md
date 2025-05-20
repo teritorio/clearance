@@ -117,11 +117,11 @@ docker compose run --rm script bundle exec rake test:sql
 ## What Clearance Does and How It Works
 
 ### OSM Extracts
-Clearance starts by downloading an OSM extract from remote sources like [OSM-FR](https://download.openstreetmap.fr/) or [Geofabrik](https://download.geofabrik.de/) and loads the objects into a Postgres/PostGIS database in raw format (not as spatial objects). Each object is a row in the `osm_base` table, regardless of the object type.
+Clearance starts by downloading an OSM extract from remote sources like [OSM-FR](https://download.openstreetmap.fr/) or [Geofabrik](https://download.geofabrik.de/) and loads the objects into a Postgres/PostGIS database in raw format (not as spatial objects). Each object is a row in a `osm_base_n`, `osm_base_w` or `osm_base_r` table.
 
-This `osm_base` table is _the truth_. The data is considered as qualified and with the goal to not deteriorate its quality.
+This `osm_base_*` tables ar _the truth_. The data is considered as qualified and with the goal to not deteriorate its quality.
 
-The `osm_base` can be queried with an Overpass API and is also available as an OSM extract with _diff_ updates.
+The `osm_base_*` can be queried with an Overpass API and the data is also available as an OSM extract with _diff_ updates.
 
 ### OSM Incoming Update
 
@@ -131,16 +131,16 @@ The updates are loaded into an `osm_changes` table, as is, in raw format, withou
 
 ### Update Validation Processing
 
-The content of `osm_changes` is processed to determine if the changes can be applied to the `osm_base`:
+The content of `osm_changes` is processed to determine if the changes can be applied to the `osm_base_*`:
 1. If the changes are outside of the area of interest, they can be applied (note: objects can be moved in or out of the area of interest).
 2. If the changed tags are not targeted by the configured tag combination, they are also out of interest, then changes can be applied.
-3. Changes of interest in the area of interest are subject to validation rules. Changes not triggering any validator rules are also applied to the `osm_base`.
+3. Changes of interest in the area of interest are subject to validation rules. Changes not triggering any validator rules are also applied to the `osm_base_*`.
 
-Changes can also be applied to `osm_base` by manual validation, see below.
+Changes can also be applied to `osm_base_*` by manual validation, see below.
 
 Held objects are kept in the `osm_changes` table.
 
-While changes are applied to `osm_base`, they are removed from `osm_changes`. Validated changes are available from the Overpass API and as update diffs.
+While changes are applied to `osm_base_*`, they are removed from `osm_changes`. Validated changes are available from the Overpass API and as update diffs.
 
 So, the Clearance project acts as an OSM Extract/Update proxy of valid data. The OSM Extracts and Updates are standards and can be used with any OSM compatible tools.
 
@@ -157,17 +157,17 @@ Currently implemented validators:
 
 More advanced validators are planned.
 
-After each update, the validation is reevaluated. The validation is done using the last version of incoming changed objects. Changes to validate are computed between `osm_base` and the last version of OSM objects.
+After each update, the validation is reevaluated. The validation is done using the last version of incoming changed objects. Changes to validate are computed between `osm_base_*` and the last version of OSM objects.
 
-If a new update makes previously retained objects pass the validation, there are no more objects to retain and cumulated changes are applied to `osm_base`.
+If a new update makes previously retained objects pass the validation, there are no more objects to retain and cumulated changes are applied to `osm_base_*`.
 
 ### Manual Intervention
 
-Held objects rejected by validation must be fixed in order to comply with quality rules. Once fixed in OpenStreetMap, the next update makes them pass the validation and they are available in `osm_base`.
+Held objects rejected by validation must be fixed in order to comply with quality rules. Once fixed in OpenStreetMap, the next update makes them pass the validation and they are available in the `osm_base_*`.
 
 The original OpenStreetMap data is the only modifiable version. All contributions must be done to the original OpenStreetMap database.
 
-In case the change is considered valid according to the user despite the quality rule rejecting it, the integration into the `osm_base` can be accepted manually.
+In case the change is considered valid according to the user despite the quality rule rejecting it, the integration into the `osm_base_*` can be accepted manually.
 
 Held objects and manual object acceptance are available via API and user [frontend](https://github.com/teritorio/clearance-frontend/).
 

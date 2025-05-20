@@ -13,11 +13,13 @@ SELECT * FROM fetch_changes(:group_id_polys::jsonb);
 
 -- No changes
 BEGIN;
-INSERT INTO osm_base VALUES
-  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
-  ('n', 101, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
-  ('n', 102, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
-  ('w', 100, 1, 1, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101], NULL)
+INSERT INTO osm_base_n VALUES
+  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
+  (101, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
+  (102, 1, 1, NULL, NULL, NULL, NULL, 1, 1)
+;
+INSERT INTO osm_base_w VALUES
+  (100, 1, 1, NULL, NULL, NULL, NULL, ARRAY[101])
 ;
 COMMIT;
 

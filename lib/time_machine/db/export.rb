@@ -84,9 +84,9 @@ module Db
     ).void
   }
   def self.export(conn, osm_bz2)
-    sql = "
+    sql = "(
     SELECT
-      objtype,
+      'n' AS objtype,
       id,
       version,
       changeset_id,
@@ -96,13 +96,53 @@ module Db
       tags,
       lon,
       lat,
-      nodes
+      NULL::bigint[] AS nodes,
+      NULL::jsonb AS members
     FROM
-      osm_base
+      osm_base_n
     ORDER BY
-      CASE objtype WHEN 'n' THEN 1 WHEN 'w' THEN 2 ELSE 3 END,
       id
-    "
+
+    ) UNION ALL (
+
+    SELECT
+      'w' AS objtype,
+      id,
+      version,
+      changeset_id,
+      created,
+      uid,
+      username,
+      tags,
+      NULL AS lon,
+      NULL AS lat,
+      nodes,
+      NULL::jsonb AS members
+    FROM
+      osm_base_w
+    ORDER BY
+      id
+
+    ) UNION ALL (
+
+    SELECT
+      'r' AS objtype,
+      id,
+      version,
+      changeset_id,
+      created,
+      uid,
+      username,
+      tags,
+      NULL AS lon,
+      NULL AS lat,
+      NULL::bigint[] AS nodes,
+      members
+    FROM
+      osm_base_r
+    ORDER BY
+      id
+    )"
 
     Bzip2::FFI::Writer.open(osm_bz2) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')

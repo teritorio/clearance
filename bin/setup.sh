@@ -47,7 +47,9 @@ for EXTRACT in $EXTRACTS; do
     echo "baseUrl=${BASE_URL}
     maxInterval=86400" > ${IMPORT}/replication/configuration.txt
 
-    ope /${PBF} =o | gzip > projects/${PROJECT}/import/${EXTRACT_NAME}.pgcopy.gz
+    ope /${PBF} =n | gzip > projects/${PROJECT}/import/${EXTRACT_NAME}-n.pgcopy.gz
+    ope /${PBF} =w | gzip > projects/${PROJECT}/import/${EXTRACT_NAME}-w.pgcopy.gz
+    ope /${PBF} =r | gzip > projects/${PROJECT}/import/${EXTRACT_NAME}-r.pgcopy.gz
 done
 
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "ALTER SYSTEM SET autovacuum = off;" && \
@@ -56,7 +58,9 @@ psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "SELECT PG_RELOAD_CONF();"
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS ${PROJECT} CASCADE"
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema.sql
 
-zcat projects/${PROJECT}/import/*.pgcopy.gz | sort -k 1,1 -k 2,2n --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base FROM stdin" || exit 1 &&
+zcat projects/${PROJECT}/import/*-n.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_n FROM stdin" || exit 1 &&
+zcat projects/${PROJECT}/import/*-w.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_w FROM stdin" || exit 1 &&
+zcat projects/${PROJECT}/import/*-r.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_r FROM stdin" || exit 1 &&
 rm -f projects/${PROJECT}/import/*.pgcopy.gz
 
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_geom.sql
