@@ -19,7 +19,7 @@ module Validators
       ).void
     }
     def initialize(id:, osm_tags_matches:, action: nil, action_force: nil, description: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
+      super
     end
 
     sig {

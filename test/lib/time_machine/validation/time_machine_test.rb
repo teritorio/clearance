@@ -80,7 +80,7 @@ class TestValidation < Test::Unit::TestCase
     assert_equal(-1, locha_id)
     assert_equal(1, matches&.size)
     assert_equal('reject', validation_result&.action)
-    assert_equal('deleted', validation_result&.diff&.attribs&.dig('deleted', 0)&.validator_id)
+    assert_equal('deleted', validation_result.nil? ? nil : validation_result.diff.attribs.dig('deleted', 0)&.validator_id)
   end
 
   sig { void }
