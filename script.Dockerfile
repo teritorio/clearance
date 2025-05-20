@@ -50,4 +50,7 @@ ADD Gemfile Gemfile.lock ./
 RUN bundle config --global silence_root_warning 1
 RUN bundle install
 
+RUN cd /usr/local/bundle/gems/levenshtein-ffi-1.1.0/ext/levenshtein && \
+    make
+
 ADD . ./
