@@ -12,8 +12,8 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 -- No changes
 BEGIN;
-INSERT INTO osm_base VALUES
-  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL)
+INSERT INTO osm_base_n VALUES
+  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1)
 ;
 COMMIT;
 
@@ -42,11 +42,11 @@ END; $$ LANGUAGE plpgsql;
 
 -- Test include or exclude
 BEGIN;
-TRUNCATE osm_base;
+TRUNCATE osm_base_n;
 TRUNCATE osm_changes;
 
-INSERT INTO osm_base VALUES
-  ('n', 1, 1, 1, NULL, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1, NULL, NULL)
+INSERT INTO osm_base_n VALUES
+  (1, 1, 1, NULL, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1)
 ;
 
 INSERT INTO osm_changes VALUES

@@ -4,15 +4,15 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/schema/schema_geom.sql
 \i lib/time_machine/sql/schema/schema_changes_geom.sql
 
--- Test osm_base WHERE objtype = 'w' update
+-- Test osm_base_w update
 
 BEGIN;
-INSERT INTO osm_base VALUES
-  ('n', 1, 1, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL),
-  ('n', 2, 1, 1, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL)
+INSERT INTO osm_base_n VALUES
+  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
+  (2, 1, 1, NULL, NULL, NULL, NULL, 2, 2)
 ;
-INSERT INTO osm_base VALUES
-  ('w', 3, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 2], NULL)
+INSERT INTO osm_base_w VALUES
+  (3, 1, 1, NULL, NULL, NULL, NULL, ARRAY[1, 2])
 ;
 COMMIT;
 

@@ -1,8 +1,10 @@
 SET search_path TO :schema,public;
 
-ALTER TABLE osm_base ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+ALTER TABLE osm_base_w ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+ALTER TABLE osm_base_r ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
 
-CREATE INDEX IF NOT EXISTS osm_base_idx_nodes ON osm_base USING gin(nodes) WHERE objtype = 'w';
+CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes ON osm_base_w USING gin(nodes);
 
 DROP FUNCTION IF EXISTS osm_base_idx_nodes_members();
 CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
@@ -21,15 +23,15 @@ CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
 ;
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
-CREATE INDEX IF NOT EXISTS osm_base_idx_members_n ON osm_base USING gin(osm_base_idx_nodes_members(members, 'n')) WHERE objtype = 'r';
-CREATE INDEX IF NOT EXISTS osm_base_idx_members_w ON osm_base USING gin(osm_base_idx_nodes_members(members, 'w')) WHERE objtype = 'r';
+CREATE INDEX IF NOT EXISTS osm_base_idx_members_n ON osm_base_r USING gin(osm_base_idx_nodes_members(members, 'n'));
+CREATE INDEX IF NOT EXISTS osm_base_idx_members_w ON osm_base_r USING gin(osm_base_idx_nodes_members(members, 'w'));
 
 
 -- Trigger to update geom
 DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
-DROP TRIGGER IF EXISTS osm_base_nodes_trigger ON osm_base;
-DROP TRIGGER IF EXISTS osm_base_trigger_insert ON osm_base;
-DROP TRIGGER IF EXISTS osm_base_trigger_update ON osm_base;
+DROP TRIGGER IF EXISTS osm_base_nodes_trigger ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_trigger_insert ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_trigger_update ON osm_base_n;
 
 CREATE TABLE IF NOT EXISTS osm_base_changes_ids(
   objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
@@ -46,7 +48,7 @@ CREATE OR REPLACE FUNCTION osm_base_nodes_geom() RETURNS trigger AS $$
 BEGIN
   NEW.geom := ST_MakePoint(NEW.lon, NEW.lat);
 
-  INSERT INTO osm_base_changes_ids VALUES (NEW.objtype, NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
+  INSERT INTO osm_base_changes_ids VALUES ('n', NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
   INSERT INTO osm_base_changes_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
 
   RETURN NEW;
@@ -55,14 +57,29 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER osm_base_nodes_trigger
   BEFORE INSERT OR UPDATE OF lon, lat
-  ON osm_base
+  ON osm_base_n
   FOR EACH ROW
-  WHEN (NEW.objtype = 'n')
 EXECUTE PROCEDURE osm_base_nodes_geom();
 
-CREATE OR REPLACE FUNCTION osm_base_log_update() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION osm_base_n_log_update() RETURNS trigger AS $$
 BEGIN
-  INSERT INTO osm_base_changes_ids VALUES (NEW.objtype, NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
+  INSERT INTO osm_base_changes_ids VALUES ('n', NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
+  INSERT INTO osm_base_changes_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION osm_base_w_log_update() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO osm_base_changes_ids VALUES ('w', NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
+  INSERT INTO osm_base_changes_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION osm_base_r_log_update() RETURNS trigger AS $$
+BEGIN
+  INSERT INTO osm_base_changes_ids VALUES ('r', NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
   INSERT INTO osm_base_changes_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
   RETURN NULL;
 END;
@@ -70,28 +87,46 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER osm_base_trigger_insert
   AFTER INSERT
-  ON osm_base
+  ON osm_base_n
   FOR EACH ROW
-EXECUTE PROCEDURE osm_base_log_update();
+EXECUTE PROCEDURE osm_base_n_log_update();
 
-CREATE TRIGGER osm_base_trigger_update
-  AFTER UPDATE
-  ON osm_base
+CREATE TRIGGER osm_base_trigger_insert
+  AFTER INSERT
+  ON osm_base_w
   FOR EACH ROW
-  WHEN (OLD.nodes IS DISTINCT FROM NEW.nodes OR OLD.members IS DISTINCT FROM NEW.members)
-EXECUTE PROCEDURE osm_base_log_update();
+EXECUTE PROCEDURE osm_base_w_log_update();
+CREATE TRIGGER osm_base_trigger_insert
+  AFTER INSERT
+  ON osm_base_r
+  FOR EACH ROW
+EXECUTE PROCEDURE osm_base_r_log_update();
+
+CREATE TRIGGER osm_base_w_trigger_update
+  AFTER UPDATE
+  ON osm_base_w
+  FOR EACH ROW
+  WHEN (OLD.nodes IS DISTINCT FROM NEW.nodes)
+EXECUTE PROCEDURE osm_base_w_log_update();
+
+CREATE TRIGGER osm_base_r_trigger_update
+  AFTER UPDATE
+  ON osm_base_r
+  FOR EACH ROW
+  WHEN (OLD.members IS DISTINCT FROM NEW.members)
+EXECUTE PROCEDURE osm_base_r_log_update();
+
 
 CREATE OR REPLACE FUNCTION osm_base_update_geom() RETURNS trigger AS $$
 BEGIN
   -- Add transitive changes, from nodes to ways
   INSERT INTO osm_base_changes_ids
   SELECT DISTINCT ON (ways.id)
-    ways.objtype,
+    'w' AS objtype,
     ways.id
   FROM
     osm_base_changes_ids
-    JOIN osm_base AS ways ON
-      ways.objtype = 'w' AND
+    JOIN osm_base_w AS ways ON
       ARRAY[osm_base_changes_ids.id] <@ ways.nodes
   WHERE
     osm_base_changes_ids.objtype = 'n'
@@ -103,12 +138,11 @@ BEGIN
   -- Add transitive changes, to relations
   INSERT INTO osm_base_changes_ids (
   SELECT DISTINCT ON (relations.id)
-    relations.objtype,
+    'r' AS objtype,
     relations.id
   FROM
     osm_base_changes_ids
-    JOIN osm_base AS relations ON
-      relations.objtype = 'r' AND
+    JOIN osm_base_r AS relations ON
       ARRAY[osm_base_changes_ids.id] @> (osm_base_idx_nodes_members(members, 'n'))
   WHERE
     osm_base_changes_ids.objtype = 'n'
@@ -118,12 +152,11 @@ BEGIN
   ) UNION ALL (
 
   SELECT DISTINCT ON (relations.id)
-    relations.objtype,
+    'r' AS objtype,
     relations.id
   FROM
     osm_base_changes_ids
-    JOIN osm_base AS relations ON
-      relations.objtype = 'r' AND
+    JOIN osm_base_r AS relations ON
       ARRAY[osm_base_changes_ids.id] @> (osm_base_idx_nodes_members(members, 'w'))
   WHERE
     osm_base_changes_ids.objtype = 'w'
@@ -140,8 +173,7 @@ BEGIN
       ways.nodes
     FROM
       osm_base_changes_ids
-      JOIN osm_base AS ways ON
-        ways.objtype = 'w' AND
+      JOIN osm_base_w AS ways ON
         ways.id = osm_base_changes_ids.id
     WHERE
       osm_base_changes_ids.objtype = 'w'
@@ -153,21 +185,19 @@ BEGIN
     FROM
       ways
       JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-      JOIN osm_base AS nodes ON
-        nodes.objtype = 'n' AND
+      JOIN osm_base_n AS nodes ON
         nodes.id = way_nodes.node_id
     GROUP BY
       ways.id
   )
   UPDATE
-    osm_base
+    osm_base_w
   SET
     geom = a.geom
   FROM
     a
   WHERE
-    osm_base.objtype = 'w' AND
-    osm_base.id = a.id
+    osm_base_w.id = a.id
   ;
 
   WITH
@@ -177,8 +207,7 @@ BEGIN
       relations.members
     FROM
       osm_base_changes_ids
-      JOIN osm_base AS relations ON
-        relations.objtype = 'r' AND
+      JOIN osm_base_r AS relations ON
         relations.id = osm_base_changes_ids.id
     WHERE
       osm_base_changes_ids.objtype = 'r'
@@ -190,24 +219,21 @@ BEGIN
     FROM
       relations
       JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON true
-      LEFT JOIN osm_base AS nodes ON
-        nodes.objtype = 'n' AND
+      LEFT JOIN osm_base_n AS nodes ON
         nodes.id = relations_members.ref
-      LEFT JOIN osm_base AS ways ON
-        ways.objtype = 'w' AND
+      LEFT JOIN osm_base_w AS ways ON
         ways.id = relations_members.ref
     GROUP BY
       relations.id
   )
   UPDATE
-    osm_base
+    osm_base_r
   SET
     geom = a.geom
   FROM
     a
   WHERE
-    osm_base.objtype = 'r' AND
-    osm_base.id = a.id
+    osm_base_r.id = a.id
   ;
 
   DELETE FROM osm_base_changes_ids;
@@ -233,9 +259,7 @@ parts AS (
     tags,
     ST_LineMerge((ST_Dump(geom)).geom) AS geom
   FROM
-    osm_base
-  WHERE
-    objtype = 'r'
+    osm_base_r
 ),
 poly AS (
   SELECT
@@ -268,32 +292,28 @@ GROUP BY
 
 -- Init geom
 
-UPDATE osm_base SET geom=ST_MakePoint(lon, lat) WHERE objtype='n';
+UPDATE osm_base_n SET geom=ST_MakePoint(lon, lat);
 
 CREATE TEMP TABLE osm_base_geom_way AS
 SELECT
   ways.id,
   ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
 FROM
-  osm_base AS ways
+  osm_base_w AS ways
   JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-  JOIN osm_base AS nodes ON
-    nodes.objtype = 'n' AND
+  JOIN osm_base_n AS nodes ON
     nodes.id = way_nodes.node_id
-WHERE
-  ways.objtype = 'w'
 GROUP BY
   ways.id
 ;
 UPDATE
-  osm_base
+  osm_base_w
 SET
   geom = osm_base_geom_way.geom
 FROM
   osm_base_geom_way
 WHERE
-  osm_base.objtype = 'w' AND
-  osm_base.id = osm_base_geom_way.id
+  osm_base_w.id = osm_base_geom_way.id
 ;
 DROP TABLE osm_base_geom_way;
 
@@ -302,28 +322,82 @@ WITH a AS (
     relations.id,
     ST_LineMerge(ST_Collect(coalesce(nodes.geom, ways.geom))) AS geom
   FROM
-    osm_base AS relations
+    osm_base_r AS relations
     JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON true
-    LEFT JOIN osm_base AS nodes ON
-      nodes.objtype = 'n' AND
+    LEFT JOIN osm_base_n AS nodes ON
       nodes.id = relations_members.ref
-    LEFT JOIN osm_base AS ways ON
-      ways.objtype = 'w' AND
+    LEFT JOIN osm_base_w AS ways ON
       ways.id = relations_members.ref
-  WHERE
-    ways.objtype = 'w'
   GROUP BY
     relations.id
 )
 UPDATE
-  osm_base
+  osm_base_r
 SET
   geom = a.geom
 FROM
   a
 WHERE
-  osm_base.objtype = 'r' AND
-  osm_base.id = a.id
+  osm_base_r.id = a.id
 ;
 
-CREATE INDEX IF NOT EXISTS osm_base_idx_geom ON osm_base USING gist(geom);
+CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n USING gist(geom);
+CREATE INDEX IF NOT EXISTS osm_base_w_idx_geom ON osm_base_w USING gist(geom);
+CREATE INDEX IF NOT EXISTS osm_base_r_idx_geom ON osm_base_r USING gist(geom);
+
+CREATE OR REPLACE VIEW osm_base AS (
+SELECT
+    'n'::char(1) AS objtype,
+    id,
+    version,
+    changeset_id,
+    created,
+    uid,
+    username,
+    tags,
+    lon,
+    lat,
+    NULL::bigint[] AS nodes,
+    NULL::jsonb AS members,
+    geom
+FROM
+    osm_base_n
+
+) UNION ALL (
+
+SELECT
+    'w' AS objtype,
+    id,
+    version,
+    changeset_id,
+    created,
+    uid,
+    username,
+    tags,
+    NULL AS lon,
+    NULL AS lat,
+    nodes,
+    NULL::jsonb AS members,
+    geom
+FROM
+    osm_base_w
+
+) UNION ALL (
+
+SELECT
+    'r' AS objtype,
+    id,
+    version,
+    changeset_id,
+    created,
+    uid,
+    username,
+    tags,
+    NULL AS lon,
+    NULL AS lat,
+    NULL::bigint[] AS nodes,
+    members,
+    geom
+FROM
+    osm_base_r
+);

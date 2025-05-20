@@ -52,8 +52,7 @@ t AS (
   FROM
     osm_changes
     LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-    LEFT JOIN osm_base AS nodes ON
-      nodes.objtype = 'n' AND
+    LEFT JOIN osm_base_n AS nodes ON
       nodes.id = way_nodes.node_id
     LEFT JOIN osm_changes AS nodes_change ON
       nodes_change.objtype = 'n' AND
@@ -164,16 +163,14 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
         coalesce(nullif(osm_changes.members, '[]'::jsonb), relation.members) AS geom_members
       FROM
         osm_changes
-        LEFT JOIN osm_base AS relation ON
+        LEFT JOIN osm_base_r AS relation ON
           -- In case relation is delete and also the members, get the geometry from the base version
           osm_changes.deleted = true AND
-          relation.objtype = 'r' AND
           relation.id = osm_changes.id
     ) AS osm_changes
     LEFT JOIN LATERAL jsonb_to_recordset(geom_members) AS relations_members(ref bigint, role text, type text) ON
       type = 'w'
-    LEFT JOIN osm_base AS ways ON
-      ways.objtype = 'w' AND
+    LEFT JOIN osm_base_w AS ways ON
       ways.id = relations_members.ref
     LEFT JOIN osm_changes_geom_ways AS ways_change ON
       ways_change.objtype = 'w' AND

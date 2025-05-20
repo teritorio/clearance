@@ -1,9 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS :schema;
 SET search_path TO :schema,public;
 
-DROP TABLE IF EXISTS osm_base CASCADE;
-CREATE TABLE osm_base (
-    objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')), -- %COL:osm_base:objtype%
+DROP TABLE IF EXISTS osm_base_n CASCADE;
+CREATE TABLE osm_base_n (
     id BIGINT NOT NULL, -- %COL:osm_base:id%
     version INTEGER NOT NULL, -- %COL:osm_base:version%
     changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
@@ -12,12 +11,38 @@ CREATE TABLE osm_base (
     username TEXT, -- %COL:osm_base:username%
     tags JSONB, -- %COL:osm_base:tags%
     lon REAL, -- %COL:osm_base:lon%
-    lat REAL, -- %COL:osm_base:lat%
-    nodes BIGINT[], -- %COL:osm_base:nodes%
+    lat REAL -- %COL:osm_base:lat%
+);
+ALTER TABLE osm_base_n ADD PRIMARY KEY(id);
+CREATE INDEX osm_base_n_idx_tags ON osm_base_n USING gin(tags);
+
+DROP TABLE IF EXISTS osm_base_w CASCADE;
+CREATE TABLE osm_base_w (
+    id BIGINT NOT NULL, -- %COL:osm_base:id%
+    version INTEGER NOT NULL, -- %COL:osm_base:version%
+    changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
+    created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_base:created%
+    uid INTEGER, -- %COL:osm_base:uid%
+    username TEXT, -- %COL:osm_base:username%
+    tags JSONB, -- %COL:osm_base:tags%
+    nodes BIGINT[] -- %COL:osm_base:nodes%
+);
+ALTER TABLE osm_base_w ADD PRIMARY KEY(id);
+CREATE INDEX osm_base_w_idx_tags ON osm_base_w USING gin(tags);
+
+DROP TABLE IF EXISTS osm_base_r CASCADE;
+CREATE TABLE osm_base_r (
+    id BIGINT NOT NULL, -- %COL:osm_base:id%
+    version INTEGER NOT NULL, -- %COL:osm_base:version%
+    changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
+    created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_base:created%
+    uid INTEGER, -- %COL:osm_base:uid%
+    username TEXT, -- %COL:osm_base:username%
+    tags JSONB, -- %COL:osm_base:tags%
     members JSONB -- %COL:osm_base:members%
 );
-ALTER TABLE osm_base ADD PRIMARY KEY(id, objtype); -- %PK:osm_base%
-CREATE INDEX osm_base_idx_tags ON osm_base USING gin(tags);
+ALTER TABLE osm_base_r ADD PRIMARY KEY(id);
+CREATE INDEX osm_base_r_idx_tags ON osm_base_r USING gin(tags);
 
 DROP TABLE IF EXISTS osm_changesets CASCADE;
 CREATE TABLE osm_changesets (
