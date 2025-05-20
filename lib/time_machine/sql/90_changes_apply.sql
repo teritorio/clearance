@@ -3,11 +3,31 @@
 -- END; $$ LANGUAGE plpgsql;
 
 DELETE FROM
-    osm_base
+    osm_base_r AS osm_base
 USING
     :changes_source AS changes
 WHERE
-    changes.objtype = osm_base.objtype AND
+    changes.objtype = 'r' AND
+    changes.id = osm_base.id AND
+    changes.deleted
+;
+
+DELETE FROM
+    osm_base_w AS osm_base
+USING
+    :changes_source AS changes
+WHERE
+    changes.objtype = 'w' AND
+    changes.id = osm_base.id AND
+    changes.deleted
+;
+
+DELETE FROM
+    osm_base_n AS osm_base
+USING
+    :changes_source AS changes
+WHERE
+    changes.objtype = 'n' AND
     changes.id = osm_base.id AND
     changes.deleted
 ;
@@ -18,19 +38,19 @@ WHERE
 
 
 INSERT INTO
-    osm_base
-SELECT DISTINCT ON (objtype, id)
-    objtype, id, version, changeset_id, created, uid, username, tags, lon, lat, nodes, members
+    osm_base_n
+SELECT DISTINCT ON (id)
+    id, version, changeset_id, created, uid, username, tags, lon, lat
 FROM
     :changes_source AS changes
 WHERE
-    NOT changes.deleted
+    NOT changes.deleted AND
+    objtype = 'n'
 ORDER BY
-    objtype, id, version DESC
-ON CONFLICT (id, objtype) DO
+    id, version DESC
+ON CONFLICT (id) DO
 UPDATE
 SET
-    -- objtype = EXCLUDED.objtype,
     -- id = EXCLUDED.id,
     version = EXCLUDED.version,
     -- deleted = EXCLUDED.deleted,
@@ -40,8 +60,56 @@ SET
     username = EXCLUDED.username,
     tags = EXCLUDED.tags,
     lon = EXCLUDED.lon,
-    lat = EXCLUDED.lat,
-    nodes = EXCLUDED.nodes,
+    lat = EXCLUDED.lat
+;
+
+INSERT INTO
+    osm_base_w
+SELECT DISTINCT ON (id)
+    id, version, changeset_id, created, uid, username, tags, nodes
+FROM
+    :changes_source AS changes
+WHERE
+    NOT changes.deleted AND
+    objtype = 'w'
+ORDER BY
+    id, version DESC
+ON CONFLICT (id) DO
+UPDATE
+SET
+    -- id = EXCLUDED.id,
+    version = EXCLUDED.version,
+    -- deleted = EXCLUDED.deleted,
+    changeset_id = EXCLUDED.changeset_id,
+    created = EXCLUDED.created,
+    uid = EXCLUDED.uid,
+    username = EXCLUDED.username,
+    tags = EXCLUDED.tags,
+    nodes = EXCLUDED.nodes
+;
+
+INSERT INTO
+    osm_base_r
+SELECT DISTINCT ON (id)
+    id, version, changeset_id, created, uid, username, tags, members
+FROM
+    :changes_source AS changes
+WHERE
+    NOT changes.deleted AND
+    objtype = 'r'
+ORDER BY
+    id, version DESC
+ON CONFLICT (id) DO
+UPDATE
+SET
+    -- id = EXCLUDED.id,
+    version = EXCLUDED.version,
+    -- deleted = EXCLUDED.deleted,
+    changeset_id = EXCLUDED.changeset_id,
+    created = EXCLUDED.created,
+    uid = EXCLUDED.uid,
+    username = EXCLUDED.username,
+    tags = EXCLUDED.tags,
     members = EXCLUDED.members
 ;
 
