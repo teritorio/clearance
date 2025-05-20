@@ -9,7 +9,7 @@ AllCops:
     - assert_migration.rb
     - frontend/**/*
 
-require:
+plugins:
  - rubocop-rake
  - rubocop-rails
 

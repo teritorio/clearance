@@ -38,7 +38,7 @@ module Db
       ).void
     }
     def self.conn(project, &block)
-      super(project) { |conn0|
+      super { |conn0|
         conn0.transaction(&block)
       }
     end

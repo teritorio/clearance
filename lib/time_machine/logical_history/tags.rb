@@ -47,7 +47,7 @@ module LogicalHistory
       keys.sum(0.0) { |key|
         if tags_a[key] == tags_b[key]
           0.0
-        elsif tags_a.key?(key) && tags_b.key?(key) && MAIN_TAGS_CLASS_OF_VALUES.key?(key) && MAIN_TAGS_CLASS_OF_VALUES[key].nil? || (MAIN_TAGS_CLASS_OF_VALUES[key]&.include?(tags_a[key]) && MAIN_TAGS_CLASS_OF_VALUES[key]&.include?(tags_b[key]))
+        elsif tags_a.key?(key) && tags_b.key?(key) && MAIN_TAGS_CLASS_OF_VALUES.key?(key) && MAIN_TAGS_CLASS_OF_VALUES[key].nil? || (MAIN_TAGS_CLASS_OF_VALUES[key]&.include?(tags_a[key]) && MAIN_TAGS_CLASS_OF_VALUES[key].include?(tags_b[key]))
           # Same key with values in the same range class
           0.5
         else

@@ -6,6 +6,6 @@ require 'test_helper'
 class ProjectsControllerTest < ActionDispatch::IntegrationTest
   test 'me' do
     get '/api/0.1/users/me'
-    assert_response 404
+    assert_response :not_found
   end
 end
