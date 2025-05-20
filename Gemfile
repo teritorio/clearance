@@ -10,10 +10,10 @@ ruby '>= 3.4'
 gem 'activemodel'
 gem 'activerecord'
 gem 'activesupport'
-gem 'rails', '~> 7.0.4'
+gem 'rails', '~> 8.0.0'
 
 # Use the Puma web server [https://github.com/puma/puma]
-gem 'puma', '~> 6.0'
+gem 'puma', '~> 6.6'
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
