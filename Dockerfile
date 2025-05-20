@@ -1,4 +1,4 @@
-FROM ruby:3.0-alpine
+FROM ruby:3.4-alpine
 
 RUN apk add --no-cache --virtual \
         build-dependencies \
@@ -6,6 +6,7 @@ RUN apk add --no-cache --virtual \
         git \
         libbz2 \
         libpq-dev \
+        libffi-dev \
         postgresql-dev \
         proj-dev \
         ruby-dev \

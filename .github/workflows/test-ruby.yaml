@@ -34,9 +34,14 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'
+          ruby-version: '3.4'
           bundler-cache: true
           cache-version: 1
+
+      - name: Fix bundler install
+        run: |
+          cd /home/runner/work/clearance/clearance/vendor/bundle/ruby/3.4.0/gems/levenshtein-ffi-1.1.0/lib/../ext/levenshtein && \
+          make
 
       - name: Setup test database
         env:

@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/teritorio/overpass_parser-rb.git
-  revision: 0937495e2eba50ff1a3b4c1f42541fbb41814ec7
+  revision: f9fd7c5dcfed4f9a458476ada02da9bcc400ffd8
   specs:
     overpass_parser (1.0.0)
       rice (~> 4.0)
@@ -163,6 +163,7 @@ GEM
     marcel (1.0.4)
     method_source (1.1.0)
     mini_mime (1.1.5)
+    mini_portile2 (2.8.9)
     minitest (5.22.3)
     msgpack (1.7.2)
     multi_xml (0.6.0)
@@ -179,7 +180,8 @@ GEM
       net-protocol
     netrc (0.11.0)
     nio4r (2.7.3)
-    nokogiri (1.16.4-x86_64-linux)
+    nokogiri (1.16.4)
+      mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     oauth2 (2.0.9)
       faraday (>= 0.17.3, < 3.0)
@@ -426,7 +428,7 @@ DEPENDENCIES
   webcache
 
 RUBY VERSION
-   ruby 3.0.4p208
+   ruby 3.4.3p32
 
 BUNDLED WITH
    2.3.23
