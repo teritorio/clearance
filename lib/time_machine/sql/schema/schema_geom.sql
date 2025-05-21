@@ -220,8 +220,10 @@ BEGIN
       relations
       JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON true
       LEFT JOIN osm_base_n AS nodes ON
+        relations_members.type = 'N' AND
         nodes.id = relations_members.ref
       LEFT JOIN osm_base_w AS ways ON
+        relations_members.type = 'W' AND
         ways.id = relations_members.ref
     GROUP BY
       relations.id
@@ -325,8 +327,10 @@ WITH a AS (
     osm_base_r AS relations
     JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON true
     LEFT JOIN osm_base_n AS nodes ON
+      relations_members.type = 'N' AND
       nodes.id = relations_members.ref
     LEFT JOIN osm_base_w AS ways ON
+      relations_members.type = 'W' AND
       ways.id = relations_members.ref
   GROUP BY
     relations.id
