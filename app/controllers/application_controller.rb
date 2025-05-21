@@ -2,7 +2,7 @@
 # typed: strict
 
 class ApplicationController < ActionController::API
-  if ENV['SENTRY_DSN_TOOLS']
+  if ENV['SENTRY_DSN_TOOLS'].present?
     before_action :sentry_project_tag
   end
 
