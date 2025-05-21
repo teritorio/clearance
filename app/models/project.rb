@@ -7,14 +7,22 @@ require './lib/time_machine/db/db_conn'
 
 class Project < ActiveFile::Base
   class << self
+    def projects_path
+      if ENV['RAILS_ENV'] == 'test'
+        'projects_template'
+      else
+        ENV['PROJECT_PATH'].present || 'projects'
+      end
+    end
+
     def extension
       ''
     end
 
     def load_file
-      Dir.glob('*/', base: 'projects/').collect{ |project|
+      Dir.glob('*/', base: "#{projects_path}/").collect{ |project|
         project = project[..-2]
-        c = ::Configuration.load("projects/#{project}/config.yaml")
+        c = ::Configuration.load("#{projects_path}/#{project}/config.yaml")
         date_last_update = Osm::StateFile.from_file("projects/#{project}/export/state.txt")
 
         {
