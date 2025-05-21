@@ -13,7 +13,7 @@ require './lib/time_machine/db/db_conn'
 require './lib/time_machine/db/export'
 require './lib/time_machine/db/import'
 
-if ENV['SENTRY_DSN_TOOLS']
+if ENV['SENTRY_DSN_TOOLS'].present?
   Sentry.init do |config|
     config.dsn = ENV['SENTRY_DSN_TOOLS']
     # enable performance monitoring
