@@ -19,6 +19,12 @@ import:
   extracts:
     - http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf
     - http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
+  # Enable database check for relation integrity.
+  # The check is done for update, not import.
+  # Enable only if extract contains all nodes for ways.
+  # Geofabrik: true
+  # OSM-FR: false
+  check_ref_integrity: true
 
 # Set a projection relative to the data location. Should be in meter unit.
 # If you don't know the projection, set the corresponding UTM Zone ESRID code from.

@@ -5,6 +5,7 @@ set -e
 PROJECT=$1
 CONFIG=projects/${PROJECT}/config.yaml
 EXTRACTS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
+CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == 'true' || ''"`
 
 echo $EXTRACTS
 
@@ -63,6 +64,10 @@ zcat projects/${PROJECT}/import/*-w.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique |
 zcat projects/${PROJECT}/import/*-r.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_r FROM stdin" || exit 1 &&
 rm -f projects/${PROJECT}/import/*.pgcopy.gz
 
+# if CHECK_REF_INTEGRITY not empty
+if [ -n "$CHECK_REF_INTEGRITY" ]; then
+    psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema-check-integrity.sql
+fi
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_geom.sql
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_changes_geom.sql
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/changes_logs.sql
