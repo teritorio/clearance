@@ -14,6 +14,12 @@ main_contacts: [frodrigo]
 # Free keywords to describe the project
 project_tags: [emergency]
 
+import:
+  # OSM extracts to import, eg from Geofabrik or OSM-FR
+  extracts:
+    - http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf
+    - http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
+
 # Set a projection relative to the data location. Should be in meter unit.
 # If you don't know the projection, set the corresponding UTM Zone ESRID code from.
 local_srid: 2056
