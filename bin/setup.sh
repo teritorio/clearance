@@ -3,8 +3,8 @@
 set -e
 
 PROJECT=$1
-shift 1
-EXTRACTS=${@:-http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf}
+CONFIG=projects/${PROJECT}/config.yaml
+EXTRACTS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
 
 echo $EXTRACTS
 

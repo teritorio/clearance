@@ -58,7 +58,7 @@ Adjust the `config.yaml` and the `export*.osm_tags.json` files.
 ### Init
 Set up the initial OSM extract in the database. Use the project directory name from `projects` and one or more URLs to OSM PBF extracts.
 ```
-docker compose run --rm script ./bin/setup.sh emergency http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
+docker compose run --rm script ./bin/setup.sh emergency
 ```
 
 Note: PBFs from Geofabrik have daily diffs, while OSM-FR have minutely updates.
