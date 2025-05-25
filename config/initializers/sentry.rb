@@ -5,7 +5,7 @@ if ENV['SENTRY_DSN_API']
   Sentry.init do |config|
     config.dsn = ENV['SENTRY_DSN_API']
     # enable performance monitoring
-    config.enable_tracing = true
+    config.traces_sample_rate = 1.0
     # get breadcrumbs from logs
     config.breadcrumbs_logger = [:http_logger]
   end
