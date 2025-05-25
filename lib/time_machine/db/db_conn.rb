@@ -17,7 +17,7 @@ module Db
       ).void
     }
     def self.conn(project, &block)
-      conn0 = PG::Connection.new('postgresql://postgres@postgres:5432/postgres')
+      conn0 = PG::Connection.new(ENV['DATABASE_URL'].presence || 'postgresql://postgres@postgres:5432/postgres')
       conn0.type_map_for_results = PG::BasicTypeMapForResults.new(conn0)
 
       # Avoid SQL injection
