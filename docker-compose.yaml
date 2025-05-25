@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgis/postgis:15-3.4
+    shm_size: 1g
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
