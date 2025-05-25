@@ -53,8 +53,8 @@ group :development do
   gem 'rubocop-rails', require: false
   gem 'rubocop-rake', require: false
   gem 'ruby-lsp', require: false
-  gem 'sorbet'
-  gem 'sorbet-rails'
+  gem 'sorbet', require: false
+  # gem 'sorbet-rails', require: false # Doest nor work with tapioca 0.17.0
   gem 'tapioca', require: false
   gem 'test-unit'
 
