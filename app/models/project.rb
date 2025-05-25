@@ -11,7 +11,7 @@ class Project < ActiveFile::Base
       if ENV['RAILS_ENV'] == 'test'
         'projects_template'
       else
-        ENV['PROJECT_PATH'].present || 'projects'
+        ENV['PROJECT_PATH'].presence || 'projects'
       end
     end
 
