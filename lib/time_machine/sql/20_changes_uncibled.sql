@@ -1,3 +1,8 @@
+CREATE TEMP TABLE osm_changes_geom_ AS
+SELECT * FROM osm_changes_geom;
+CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
+
+
 DROP TABLE IF EXISTS cibled_changes;
 CREATE TEMP TABLE cibled_changes AS
 WITH
@@ -28,7 +33,7 @@ cibled_changes_from_base AS (
     SELECT
         changes.*
     FROM
-        osm_changes_geom AS changes
+        osm_changes_geom_ AS changes
         JOIN cibled_base AS base ON
             base.objtype = changes.objtype AND
             base.id = changes.id
@@ -36,16 +41,16 @@ cibled_changes_from_base AS (
 -- Select only object of interest in the area from osm_changes
 cibled_changes AS (
     SELECT
-        osm_changes_geom.*
+        osm_changes_geom_.*
     FROM
-        osm_changes_geom,
+        osm_changes_geom_,
         clip
     WHERE
         (
             (:osm_filter_tags) AND
-            (clip.geom IS NULL OR ST_Intersects(clip.geom, osm_changes_geom.geom))
+            (clip.geom IS NULL OR ST_Intersects(clip.geom, osm_changes_geom_.geom))
         ) OR (
-            osm_changes_geom.geom IS NULL
+            osm_changes_geom_.geom IS NULL
         )
 )
 SELECT DISTINCT ON (changes.objtype, changes.id)
@@ -83,10 +88,6 @@ DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - osm_changes: % (cibled: %, not cibled: %)', (SELECT COUNT(*) FROM osm_changes), (SELECT COUNT(*) FROM osm_changes WHERE cibled), (SELECT COUNT(*) FROM osm_changes WHERE NOT cibled);
 END; $$ LANGUAGE plpgsql;
 
-
-CREATE TEMP TABLE osm_changes_geom_ AS
-SELECT * FROM osm_changes_geom;
-CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
 
 -- Add transitive changes
 
