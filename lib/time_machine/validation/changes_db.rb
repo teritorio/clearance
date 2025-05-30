@@ -102,14 +102,16 @@ module Validation
     params(
       conn: PG::Connection,
       sql_osm_filter_tags: String,
+      proj: Integer,
       distance: Integer,
       geojson_polygons: T.nilable(T::Array[T::Hash[String, T.untyped]]),
     ).void
   }
-  def self.apply_unclibled_changes(conn, sql_osm_filter_tags, distance, geojson_polygons = nil)
+  def self.apply_unclibled_changes(conn, sql_osm_filter_tags, proj, distance, geojson_polygons = nil)
     conn.exec(File.new('/sql/20_changes_uncibled.sql').read
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json))
+      .gsub(':proj', proj.to_s)
       .gsub(':distance', distance.to_s))
     conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
   end

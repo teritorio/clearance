@@ -1,5 +1,21 @@
 CREATE TEMP TABLE osm_changes_geom_ AS
-SELECT * FROM osm_changes_geom;
+SELECT
+    objtype,
+    id,
+    version,
+    deleted,
+    changeset_id,
+    created,
+    uid,
+    username,
+    tags,
+    lon,
+    lat,
+    nodes,
+    members,
+    ST_Transform(geom, :proj) AS geom,
+    cibled
+FROM osm_changes_geom;
 CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
 
 
@@ -48,7 +64,7 @@ cibled_changes AS (
     WHERE
         (
             (:osm_filter_tags) AND
-            (clip.geom IS NULL OR ST_Intersects(clip.geom, osm_changes_geom_.geom))
+            (clip.geom IS NULL OR ST_Intersects(ST_Transform(clip.geom, :proj), osm_changes_geom_.geom))
         ) OR (
             osm_changes_geom_.geom IS NULL
         )
@@ -108,7 +124,7 @@ WITH RECURSIVE a AS (
         lat,
         nodes,
         members,
-        geom
+        ST_Transform(geom, :proj) AS geom
     FROM
         cibled_changes
     UNION
