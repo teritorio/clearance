@@ -109,14 +109,14 @@ WITH RECURSIVE a AS (
         geom
     FROM
         cibled_changes
-    UNION ALL
+    UNION
     (
         WITH b AS (
             -- Recursive term should be referenced only once time
             SELECT * FROM a
         )
         (
-        SELECT DISTINCT ON (ways.id)
+        SELECT
             ways.objtype,
             ways.id,
             ways.version,
@@ -138,12 +138,10 @@ WITH RECURSIVE a AS (
                 ST_DWithin(cibled_changes.geom, ways.geom, :distance)
         WHERE
             cibled_changes.objtype = 'n'
-        ORDER BY
-            ways.id
 
-        ) UNION ALL (
+        ) UNION (
 
-        SELECT DISTINCT ON (relations.id)
+        SELECT
             relations.objtype,
             relations.id,
             relations.version,
@@ -165,12 +163,10 @@ WITH RECURSIVE a AS (
                 ST_DWithin(cibled_changes.geom, relations.geom, :distance)
         WHERE
             cibled_changes.objtype = 'n'
-        ORDER BY
-            relations.id
 
-        ) UNION ALL (
+        ) UNION (
 
-        SELECT DISTINCT ON (relations.id)
+        SELECT
             relations.objtype,
             relations.id,
             relations.version,
@@ -192,8 +188,6 @@ WITH RECURSIVE a AS (
                 ST_DWithin(cibled_changes.geom, relations.geom, :distance)
         WHERE
             cibled_changes.objtype = 'w'
-        ORDER BY
-            relations.id
         )
     )
 )
