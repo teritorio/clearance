@@ -68,7 +68,7 @@ class MainMain
       puts 'RTFC'
     else
       project = options[:project].split('/')[-1]
-      config = nil
+      config = T.let(nil, T.nilable(Configuration::Config))
 
       if options[:import_changes]
         Db::DbConnWrite.conn(project) { |conn|

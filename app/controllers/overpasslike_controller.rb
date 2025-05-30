@@ -12,7 +12,7 @@ class OverpasslikeController < ApplicationController
 
     begin
       Db::DbConnRead.conn(project) { |conn|
-        elements = Db::Overpass.query(conn, data)
+        elements = Db::Overpass.query(conn, data, 4326)
         render json: {
           version: 0.6,
           generator: 'Clearance',

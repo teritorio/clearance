@@ -17,13 +17,14 @@ module Db
       params(
         conn: PG::Connection,
         query: String,
+        srid: Integer,
       ).returns(T::Array[T::Hash[String, T.untyped]])
     }
-    def self.query(conn, query)
+    def self.query(conn, query, srid)
       request = OverpassParser.parse(query)
       sql = File.new('/sql/overpasslike.sql').read
       dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
-      sql += request.to_sql(dialect)
+      sql += request.to_sql(dialect, srid)
 
       conn.exec(sql) { |result|
         result.pluck('j')
