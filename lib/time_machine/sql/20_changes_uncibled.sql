@@ -205,10 +205,14 @@ ON CONFLICT DO NOTHING
 
 DROP TABLE osm_changes_geom_;
 
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - cibled_changes & transitive: %', (SELECT COUNT(*) FROM cibled_changes);
+END; $$ LANGUAGE plpgsql;
+
 --- Select only changes not related to objects and area of interest, and not transitively related to them
 DROP TABLE IF EXISTS changes_update;
 CREATE TEMP TABLE changes_update AS
-SELECT DISTINCT ON (osm_changes.objtype, osm_changes.id)
+SELECT DISTINCT ON (osm_changes.id, osm_changes.objtype)
     osm_changes.*
 FROM
     osm_changes
@@ -218,12 +222,11 @@ FROM
 WHERE
     cibled.objtype IS NULL
 ORDER BY
-    osm_changes.objtype,
-    osm_changes.id
+    osm_changes.id,
+    osm_changes.objtype
 ;
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - cibled_changes & transitive: %', (SELECT COUNT(*) FROM cibled_changes);
     RAISE NOTICE '20_changes_uncibled - changes_update: %', (SELECT COUNT(*) FROM changes_update);
 END; $$ LANGUAGE plpgsql;
 
