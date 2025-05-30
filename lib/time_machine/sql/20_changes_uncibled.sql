@@ -73,6 +73,7 @@ ORDER BY
 
 UPDATE osm_changes
 SET cibled = false
+WHERE cibled != false
 ;
 
 UPDATE osm_changes
