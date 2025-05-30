@@ -2,6 +2,8 @@
 # typed: strict
 
 class ApplicationController < ActionController::API
+  extend T::Sig
+
   if ENV['SENTRY_DSN_TOOLS'].present?
     before_action :sentry_project_tag
   end
@@ -19,8 +21,9 @@ class ApplicationController < ActionController::API
 
   private
 
+  sig { void }
   def sentry_project_tag
-    project = params('project')
+    project = params['project']
     Sentry.set_tags(project: project) if project
   end
 end
