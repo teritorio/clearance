@@ -14,10 +14,9 @@ services:
   script:
     profiles:
       - tools
+    image: ghcr.io/teritorio/clearance-api:dev
     build:
       context: .
-      dockerfile: script.Dockerfile
-    image: ghcr.io/teritorio/clearance-script:dev
     environment:
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
       - PUBLIC_URL=${PUBLIC_URL}
