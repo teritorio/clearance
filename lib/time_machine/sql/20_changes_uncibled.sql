@@ -13,7 +13,7 @@ SELECT
     lat,
     nodes,
     members,
-    ST_Transform(geom, :proj) AS geom,
+    ST_Transform(ST_MakeValid(geom), :proj) AS geom,
     cibled
 FROM osm_changes_geom;
 CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
@@ -24,7 +24,8 @@ CREATE TEMP TABLE cibled_changes AS
 WITH
 clip AS (
     SELECT
-        ST_Union(ST_GeomFromGeoJSON(geom)) AS geom
+        ST_Union(ST_GeomFromGeoJSON(geom)) AS geom,
+        ST_MakeValid(ST_Transform(ST_Union(ST_GeomFromGeoJSON(geom)), :proj)) AS geom_proj
     FROM
         json_array_elements_text(:polygon::json) AS t(geom)
 ),
@@ -39,7 +40,7 @@ cibled_base AS (
     WHERE
         (
             (:osm_filter_tags) AND
-            (clip.geom IS NULL OR ST_Intersects(clip.geom, osm_base.geom))
+            (clip.geom IS NULL OR (clip.geom && osm_base.geom AND ST_Intersects(clip.geom, ST_MakeValid(osm_base.geom))))
         ) OR (
             osm_base.geom IS NULL
         )
@@ -64,7 +65,7 @@ cibled_changes AS (
     WHERE
         (
             (:osm_filter_tags) AND
-            (clip.geom IS NULL OR ST_Intersects(ST_Transform(clip.geom, :proj), osm_changes_geom_.geom))
+            (clip.geom IS NULL OR ST_Intersects(clip.geom_proj, osm_changes_geom_.geom))
         ) OR (
             osm_changes_geom_.geom IS NULL
         )
@@ -124,7 +125,7 @@ WITH RECURSIVE a AS (
         lat,
         nodes,
         members,
-        ST_Transform(geom, :proj) AS geom
+        ST_Transform(ST_MakeValid(geom), :proj) AS geom
     FROM
         cibled_changes
     UNION
