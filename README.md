@@ -58,7 +58,7 @@ Adjust the `config.yaml` and the `export*.osm_tags.json` files.
 ### Init
 Set up the initial OSM extract in the database. Use the project directory name from `projects` and one or more URLs to OSM PBF extracts.
 ```
-docker compose run --rm script ./bin/setup.sh emergency
+docker compose run --rm script ./bin/setup.sh projects/emergency
 ```
 
 Note: PBFs from Geofabrik have daily diffs, while OSM-FR have minutely updates.
@@ -91,7 +91,7 @@ Note 2: To lower CPU usage, you can lower the update frequency. It is not requir
 ### Drop
 Drop a project.
 ```
-docker compose run --rm script ./bin/drop.sh emergency
+docker compose run --rm script ./bin/drop.sh projects/emergency
 ```
 
 ## Dev
