@@ -15,6 +15,7 @@ RUN apt update -y && apt install -y \
     libprotozero-dev \
     osmosis \
     postgresql-client \
+    pyosmium \
     python-is-python3 \
     python3-pyosmium \
     ruby-dev \

@@ -53,6 +53,9 @@ OptionParser.new { |opts|
   opts.on('-E', '--export-osm-update', 'Export XML OSM Update.') do
     @options[:export_osm_update] = true
   end
+  opts.on('-rDIFF', '--export-retained-diff=DIFF', 'Export XML OSM Diff of retained data.') do |diff|
+    @options[:export_retained_diff] = diff
+  end
 }.parse!
 
 
@@ -112,6 +115,10 @@ class MainMain
       elsif options[:export_osm_update]
         Db::DbConnWrite.conn(project){ |conn|
           Db.export_update(conn, project)
+        }
+      elsif options[:export_retained_diff]
+        Db::DbConnWrite.conn(project){ |conn|
+          Db.export_retained_diff(conn, options[:export_retained_diff])
         }
       end
     end

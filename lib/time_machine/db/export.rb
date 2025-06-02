@@ -164,10 +164,11 @@ module Db
   sig {
     params(
       conn: PG::Connection,
+      table: String,
       osc_gz: String,
     ).returns(T::Boolean)
   }
-  def self.export_changes(conn, osc_gz)
+  def self.export_changes(conn, table, osc_gz)
     has_content = T.let(false, T::Boolean)
     Zlib::GzipWriter.open(osc_gz) { |f|
       f.write('<?xml version="1.0" encoding="UTF-8"?>')
@@ -179,7 +180,7 @@ module Db
         SELECT
           *
         FROM
-          osm_changes_applyed
+          #{table}
         ORDER BY
           objtype,
           id,
@@ -217,10 +218,6 @@ module Db
       f.write('</osmChange>')
     }
 
-    if has_content
-      conn.exec('DELETE FROM osm_changes_applyed')
-    end
-
     has_content
   end
 
@@ -249,9 +246,11 @@ module Db
     FileUtils.mkdir_p(path)
     osc_gz = "#{path}/#{sequence_path0}.osc.gz"
 
-    has_content = export_changes(conn, osc_gz)
+    has_content = export_changes(conn, 'osm_changes_applyed', osc_gz)
 
     if has_content
+      conn.exec('DELETE FROM osm_changes_applyed')
+
       osc_gz_state = osc_gz.gsub('.osc.gz', '.state.txt')
       Osm::StateFile.new(
         timestamp: import_state_file.timestamp,
@@ -262,5 +261,15 @@ module Db
       # Nothing exported, remove files
       File.delete(osc_gz)
     end
+  end
+
+  sig {
+    params(
+      conn: PG::Connection,
+      osc_gz: String,
+    ).void
+  }
+  def self.export_retained_diff(conn, osc_gz)
+    export_changes(conn, 'osm_changes', osc_gz)
   end
 end

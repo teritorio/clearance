@@ -94,6 +94,12 @@ Drop a project.
 docker compose run --rm script ./bin/drop.sh projects/emergency
 ```
 
+### Test data integrity
+Check if the imported extract update with diff is the same data as dump from Clearance with retained objects.
+```
+docker compose run --rm script ./bin/check-integrity.sh projects/emergency
+```
+
 ## Dev
 
 Setup
