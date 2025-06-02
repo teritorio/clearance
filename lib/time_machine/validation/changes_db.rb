@@ -81,6 +81,10 @@ module Validation
         results << convert_locha_item(osm_change_object)
         last_locha_id = osm_change_object['locha_id']
       }
+
+      if !results.empty?
+        block.call(results)
+      end
     }
   end
 
