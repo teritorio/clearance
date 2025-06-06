@@ -92,3 +92,4 @@ jobs:
         uses: cartoway/docker-compose-build-push-action@main
         with:
           registry_password: ${{ secrets.GITHUB_TOKEN }}
+          service: api
