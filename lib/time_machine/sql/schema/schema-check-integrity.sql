@@ -36,10 +36,10 @@ EXECUTE PROCEDURE osm_base_w_check_fk();
 --     FROM
 --         jsonb_to_recordset(NEW.members) AS relations_members(ref bigint, role text, type text)
 --         LEFT JOIN osm_base_n ON
---             relations_members.type = 'N' AND
+--             relations_members.type = 'n' AND
 --             osm_base_n.id = relations_members.ref
 --         LEFT JOIN osm_base_w ON
---             relations_members.type = 'W' AND
+--             relations_members.type = 'w' AND
 --             osm_base_w.id = relations_members.ref
 --     WHERE
 --         osm_base_n.id IS NULL AND
