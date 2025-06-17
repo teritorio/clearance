@@ -2,6 +2,8 @@
 
 set -e
 
+source $(dirname $0)/_lib.sh
+
 PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects -not -name '.*')}
 
 function project() {
@@ -17,8 +19,10 @@ function project() {
     TIMESTAMP=$(date +%s)
     [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
     for EXTRACT in $EXTRACTS; do
+        geofabrik_cookie $(cat ${EXTRACT}/replication/sequence.url) # Fills variables WGET_OPS and PYOSMIUM_OPS
+
         EXTRACT_NAME=$(basename "$EXTRACT")
-        pyosmium-get-changes \
+        pyosmium-get-changes ${PYOSMIUM_OPS} \
             -v \
             --server $(cat ${EXTRACT}/replication/sequence.url) \
             --sequence-file ${EXTRACT}/replication/sequence.txt \

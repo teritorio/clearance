@@ -21,6 +21,8 @@ services:
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
       - PUBLIC_URL=${PUBLIC_URL}
       - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS:-}
+      - OSM_GEOFABRIK_PASSWORD=${OSM_GEOFABRIK_PASSWORD:-}
+      - OSM_GEOFABRIK_USER=${OSM_GEOFABRIK_USER:-}
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./projects:/projects

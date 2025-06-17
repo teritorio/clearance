@@ -2,6 +2,8 @@
 
 set -e
 
+source $(dirname $0)/_lib.sh
+
 PROJECT=$1
 PROJECT_NAME=$(basename "$PROJECT")
 CONFIG=${PROJECT}/config.yaml
@@ -24,18 +26,21 @@ rm -fr ${PROJECT}/export/state.txt
 
 for EXTRACT in $EXTRACTS; do
     EXTRACT_NAME=$(basename "$EXTRACT")
+    EXTRACT_NAME=${EXTRACT_NAME/-internal/}
     IMPORT=${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
 
     PBF=${IMPORT}/import.osm.pbf
 
     mkdir -p ${IMPORT}
     if [ ! -e "${PBF}" ]; then
-        wget ${EXTRACT} --no-clobber -O ${PBF}
+        geofabrik_cookie ${EXTRACT} # Fills variables WGET_OPS and PYOSMIUM_OPS
+
+        wget ${WGET_OPS} ${EXTRACT} --no-clobber -O ${PBF} || (echo "Fails download $EXTRACT, abort" && exit 1)
     fi
 
     rm -fr ${IMPORT}/replication
     mkdir -p ${IMPORT}/replication
-    pyosmium-get-changes \
+    pyosmium-get-changes ${PYOSMIUM_OPS} \
         --start-osm-data ${PBF} \
         --sequence-file ${IMPORT}/replication/sequence.txt \
         -v \

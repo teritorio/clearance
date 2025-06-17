@@ -2,6 +2,8 @@
 
 set -e
 
+source $(dirname $0)/_lib.sh
+
 PROJECT=$1
 CONFIG=${PROJECT}/config.yaml
 
@@ -17,15 +19,18 @@ for EXTRACT in $EXTRACTS; do
     echo "Download OSM extract: $EXTRACT"
 
     EXTRACT_NAME=$(basename "$EXTRACT")
+    EXTRACT_NAME=${EXTRACT_NAME/-internal/}
     IMPORT=${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
 
     PBF=${IMPORT}/import.osm.pbf
 
+    geofabrik_cookie ${EXTRACT} # Fills variables WGET_OPS and PYOSMIUM_OPS
+
     mkdir -p ${IMPORT}
-    wget ${EXTRACT} -O ${PBF} || (echo "Extract $EXTRACT fails to download, abort" && exit 1)
+    wget ${WGET_OPS} ${EXTRACT} -O ${PBF} || (echo "Extract $EXTRACT fails to download, abort" && exit 1)
 
     echo "Updating OSM extract: $EXTRACT"
-    pyosmium-up-to-date "$PBF" || (echo "Extract $EXTRACT fails to update, abort" && exit 1)
+    pyosmium-up-to-date ${PYOSMIUM_OPS} "$PBF" || (echo "Extract $EXTRACT fails to update, abort" && exit 1)
 
     PBFS="$PBFS $PBF"
 done

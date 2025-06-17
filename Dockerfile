@@ -17,9 +17,13 @@ RUN apt update -y && apt install -y \
     pyosmium \
     python-is-python3 \
     python3-pyosmium \
+    python3-requests \
     ruby-dev \
     ruby-json \
     wget
+
+RUN wget https://github.com/geofabrik/sendfile_osm_oauth_protector/raw/refs/heads/master/oauth_cookie_client.py -O /usr/bin/oauth_cookie_client.py && \
+    chmod a+x /usr/bin/oauth_cookie_client.py
 
 WORKDIR /srv/
 
