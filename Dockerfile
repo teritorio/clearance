@@ -13,7 +13,6 @@ RUN apt update -y && apt install -y \
     libpq-dev \
     libproj-dev \
     libprotozero-dev \
-    osmosis \
     postgresql-client \
     pyosmium \
     python-is-python3 \

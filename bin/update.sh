@@ -6,6 +6,7 @@ PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects -not -nam
 
 function project() {
     PROJECT=$1
+    IMPORT=${PROJECT}/import
 
     echo "# Get Updates"
     EXTRACTS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
@@ -17,7 +18,28 @@ function project() {
     [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
     for EXTRACT in $EXTRACTS; do
         EXTRACT_NAME=$(basename "$EXTRACT")
-        osmosis --read-replication-interval workingDirectory=${EXTRACT}/replication --write-xml-change ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
+        pyosmium-get-changes \
+            -v \
+            --server $(cat ${EXTRACT}/replication/sequence.url) \
+            --sequence-file ${EXTRACT}/replication/sequence.txt \
+            --no-deduplicate \
+            --outfile ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
+        ret_code=$?
+
+        if [ $ret_code -eq 3 ]; then
+            echo "No available OSM update for ${EXTRACT_NAME}"
+            continue
+        fi
+
+        if [ $ret_code -ne 0 ]; then
+            echo "pyosmium-get-changes failed for ${EXTRACT_NAME}"
+            return 5
+        fi
+
+        SEQUENCE_NUMBER=$(cat ${IMPORT}/replication/sequence.txt)
+        TIMESTAMP=
+        echo "sequenceNumber=${SEQUENCE_NUMBER}
+timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
     done
 
     echo "# Check all extracts have the same sequenceNumber"

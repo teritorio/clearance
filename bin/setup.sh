@@ -23,9 +23,6 @@ rm -fr ${PROJECT}/export/state.txt
 
 
 for EXTRACT in $EXTRACTS; do
-    EXTRACT_STATE=${EXTRACT/.osm.pbf/.state.txt}
-    EXTRACT_STATE=${EXTRACT_STATE/-latest/}
-
     EXTRACT_NAME=$(basename "$EXTRACT")
     IMPORT=${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
 
@@ -38,21 +35,38 @@ for EXTRACT in $EXTRACTS; do
 
     rm -fr ${IMPORT}/replication
     mkdir -p ${IMPORT}/replication
-    osmosis --read-replication-interval-init workingDirectory=${IMPORT}/replication
+    pyosmium-get-changes \
+        --start-osm-data ${PBF} \
+        --sequence-file ${IMPORT}/replication/sequence.txt \
+        -v \
+    2>&1 | grep http | sed -e "s/.*\(http.*\)/\1/" \
+    > ${IMPORT}/replication/sequence.url || (echo "pyosmium-get-changes failed"; exit 1)
 
-    SEQUENCE_NUMBER=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_sequence_number'))")
+    SEQUENCE_NUMBER=$(cat ${IMPORT}/replication/sequence.txt)
     TIMESTAMP=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_timestamp'))")
     echo "sequenceNumber=${SEQUENCE_NUMBER}
-    timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
-
-    BASE_URL=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_base_url'))")
-    echo "baseUrl=${BASE_URL}
-    maxInterval=86400" > ${IMPORT}/replication/configuration.txt
+timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
 
     ope /${PBF} =n | gzip > ${PROJECT}/import/${EXTRACT_NAME}-n.pgcopy.gz
     ope /${PBF} =w | gzip > ${PROJECT}/import/${EXTRACT_NAME}-w.pgcopy.gz
     ope /${PBF} =r | gzip > ${PROJECT}/import/${EXTRACT_NAME}-r.pgcopy.gz
 done
+
+
+echo "# Check all extracts have the same sequenceNumber"
+STATES=$(find ${PROJECT}/import/ -wholename "*/replication/state.txt")
+if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
+    echo "Missing states files. Abort."
+    return 1
+fi
+COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
+if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
+    echo "Different sequenceNumber from sequence.txt files. Abort."
+    return 2
+fi
+cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
+
+mkdir -p ${PROJECT}/export/update
 
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "ALTER SYSTEM SET autovacuum = off;" && \
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "SELECT PG_RELOAD_CONF();"
