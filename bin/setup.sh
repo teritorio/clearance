@@ -3,6 +3,7 @@
 set -e
 
 PROJECT=$1
+PROJECT_NAME=$(basename "$PROJECT")
 CONFIG=${PROJECT}/config.yaml
 EXTRACTS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
 CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == 'true' || ''"`
@@ -56,21 +57,21 @@ done
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "ALTER SYSTEM SET autovacuum = off;" && \
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "SELECT PG_RELOAD_CONF();"
 
-psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS ${PROJECT} CASCADE"
-psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema.sql
+psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS ${PROJECT_NAME} CASCADE"
+psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT_NAME} -f lib/time_machine/sql/schema/schema.sql
 
-zcat ${PROJECT}/import/*-n.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_n FROM stdin" || exit 1 &&
-zcat ${PROJECT}/import/*-w.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_w FROM stdin" || exit 1 &&
-zcat ${PROJECT}/import/*-r.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT}.osm_base_r FROM stdin" || exit 1 &&
+zcat ${PROJECT}/import/*-n.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT_NAME}.osm_base_n FROM stdin" || exit 1 &&
+zcat ${PROJECT}/import/*-w.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT_NAME}.osm_base_w FROM stdin" || exit 1 &&
+zcat ${PROJECT}/import/*-r.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "COPY ${PROJECT_NAME}.osm_base_r FROM stdin" || exit 1 &&
 rm -f ${PROJECT}/import/*.pgcopy.gz
 
 # if CHECK_REF_INTEGRITY not empty
 if [ -n "$CHECK_REF_INTEGRITY" ]; then
-    psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema-check-integrity.sql
+    psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT_NAME} -f lib/time_machine/sql/schema/schema-check-integrity.sql
 fi
-psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_geom.sql
-psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema_changes_geom.sql
-psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/changes_logs.sql
+psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT_NAME} -f lib/time_machine/sql/schema/schema_geom.sql
+psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT_NAME} -f lib/time_machine/sql/schema/schema_changes_geom.sql
+psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT_NAME} -f lib/time_machine/sql/changes_logs.sql
 
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "ALTER SYSTEM SET autovacuum = on;" && \
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "SELECT PG_RELOAD_CONF();"
