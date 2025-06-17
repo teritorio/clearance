@@ -150,11 +150,19 @@ module Db
       f.write('<osm version="0.6" generator="clearance">')
       f.write("\n")
 
-      conn.send_query(sql)
-      conn.set_single_row_mode
-      conn.get_result.stream_each { |row|
-        f.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
-        f.write("\n")
+      conn.transaction {
+        conn.exec("DECLARE my_cursor CURSOR FOR #{sql}")
+        loop {
+          result = conn.exec('FETCH 1000 FROM my_cursor')
+          break if result.ntuples == 0
+
+          result.each { |row|
+            f.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
+            f.write("\n")
+          }
+        }
+
+        conn.exec('CLOSE my_cursor')
       }
 
       f.write('</osm>')
