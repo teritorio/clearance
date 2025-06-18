@@ -110,7 +110,7 @@ class MainMain
 
       if options[:export_osm]
         Db::DbConnRead.conn(project){ |conn|
-          Db.export(conn, "/projects/#{project}/export/#{project}.osm.bz2")
+          Db.export(conn)
         }
       elsif options[:export_osm_update]
         Db::DbConnWrite.conn(project){ |conn|

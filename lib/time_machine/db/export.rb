@@ -80,10 +80,9 @@ module Db
   sig {
     params(
       conn: PG::Connection,
-      osm_bz2: String,
     ).void
   }
-  def self.export(conn, osm_bz2)
+  def self.export(conn)
     sql = "(
     SELECT
       'n' AS objtype,
@@ -144,29 +143,27 @@ module Db
       id
     )"
 
-    Bzip2::FFI::Writer.open(osm_bz2) { |f|
-      f.write('<?xml version="1.0" encoding="UTF-8"?>')
-      f.write("\n")
-      f.write('<osm version="0.6" generator="clearance">')
-      f.write("\n")
+    $stdout.write('<?xml version="1.0" encoding="UTF-8"?>')
+    $stdout.write("\n")
+    $stdout.write('<osm version="0.6" generator="clearance">')
+    $stdout.write("\n")
 
-      conn.transaction {
-        conn.exec("DECLARE my_cursor CURSOR FOR #{sql}")
-        loop {
-          result = conn.exec('FETCH 1000 FROM my_cursor')
-          break if result.ntuples == 0
+    conn.transaction {
+      conn.exec("DECLARE my_cursor CURSOR FOR #{sql}")
+      loop {
+        result = conn.exec('FETCH 10000 FROM my_cursor')
+        break if result.ntuples == 0
 
-          result.each { |row|
-            f.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
-            f.write("\n")
-          }
+        result.each { |row|
+          $stdout.write(as_osm_xml(Osm::ObjectBase.from_hash(row)))
+          $stdout.write("\n")
         }
-
-        conn.exec('CLOSE my_cursor')
       }
 
-      f.write('</osm>')
+      conn.exec('CLOSE my_cursor')
     }
+
+    $stdout.write('</osm>')
   end
 
   sig {
