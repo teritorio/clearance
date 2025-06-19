@@ -11,21 +11,21 @@ function project() {
     IMPORT=${PROJECT}/import
 
     echo "# Get Updates"
-    EXTRACTS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
-    if [ -z "$EXTRACTS" ]; then
+    EXTRACT_PATHS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
+    if [ -z "$EXTRACT_PATHS" ]; then
         echo "No extracts, skip update"
         return 5
     fi
     TIMESTAMP=$(date +%s)
     [ ! -f ${IMPORT}/diff.osc.xml.gz ] && [ ! -f ${IMPORT}/osm_changes.pgcopy ] && \
-    for EXTRACT in $EXTRACTS; do
-        geofabrik_cookie $(cat ${EXTRACT}/replication/sequence.url) # Fills variables WGET_OPS and PYOSMIUM_OPS
+    for EXTRACT_PATH in $EXTRACT_PATHS; do
+        geofabrik_cookie $(cat ${EXTRACT_PATH}/replication/sequence.url) # Fills variables WGET_OPS and PYOSMIUM_OPS
 
-        EXTRACT_NAME=$(basename "$EXTRACT")
+        EXTRACT_NAME=$(basename "$EXTRACT_PATH")
         pyosmium-get-changes ${PYOSMIUM_OPS} \
             -v \
-            --server $(cat ${EXTRACT}/replication/sequence.url) \
-            --sequence-file ${EXTRACT}/replication/sequence.txt \
+            --server $(cat ${EXTRACT_PATH}/replication/sequence.url) \
+            --sequence-file ${EXTRACT_PATH}/replication/sequence.txt \
             --no-deduplicate \
             --outfile ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
         ret_code=$?
@@ -46,18 +46,7 @@ function project() {
 timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
     done
 
-    echo "# Check all extracts have the same sequenceNumber"
-    STATES=$(find ${IMPORT} -wholename "*/replication/state.txt")
-    if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
-        echo "Missing states files. Abort."
-        return 1
-    fi
-    COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
-    if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
-        echo "Different sequenceNumber from state.txt files. Abort."
-        return 2
-    fi
-    cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
+    check_sequenceNumber ${PROJECT} "${EXTRACT_PATH}"
 
     echo "# Merge Updates"
     if [[ ! -n "$(find ${IMPORT} -name diff-*.osc.xml.bz2 -print -quit)" ]]; then

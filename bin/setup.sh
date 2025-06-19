@@ -6,70 +6,24 @@ source $(dirname $0)/_lib.sh
 
 PROJECT=$1
 PROJECT_NAME=$(basename "$PROJECT")
-CONFIG=${PROJECT}/config.yaml
-EXTRACTS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
-CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == 'true' || ''"`
+read_config $PROJECT # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
 
-echo $EXTRACTS
-
-exec {LOCK_FD}> ${PROJECT}/lock
-if ! flock --nonblock $LOCK_FD; then
-    echo "${PROJECT} already locked, abort"
-    exit 1
-fi
+lock_or_exit $PROJECT
 
 # Clean before re-import
 rm -fr ${PROJECT}/import/
 rm -fr ${PROJECT}/export/update
 rm -fr ${PROJECT}/export/state.txt
 
-
-for EXTRACT in $EXTRACTS; do
-    EXTRACT_NAME=$(basename "$EXTRACT")
-    EXTRACT_NAME=${EXTRACT_NAME/-internal/}
-    IMPORT=${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
-
-    PBF=${IMPORT}/import.osm.pbf
-
-    mkdir -p ${IMPORT}
-    if [ ! -e "${PBF}" ]; then
-        geofabrik_cookie ${EXTRACT} # Fills variables WGET_OPS and PYOSMIUM_OPS
-
-        wget ${WGET_OPS} ${EXTRACT} --no-clobber -O ${PBF} || (echo "Fails download $EXTRACT, abort" && exit 1)
-    fi
-
-    rm -fr ${IMPORT}/replication
-    mkdir -p ${IMPORT}/replication
-    pyosmium-get-changes ${PYOSMIUM_OPS} \
-        --start-osm-data ${PBF} \
-        --sequence-file ${IMPORT}/replication/sequence.txt \
-        -v \
-    2>&1 | grep http | sed -e "s/.*\(http.*\)/\1/" \
-    > ${IMPORT}/replication/sequence.url || (echo "pyosmium-get-changes failed"; exit 1)
-
-    SEQUENCE_NUMBER=$(cat ${IMPORT}/replication/sequence.txt)
-    TIMESTAMP=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_timestamp'))")
-    echo "sequenceNumber=${SEQUENCE_NUMBER}
-timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
+for EXTRACT_URL in $EXTRACT_URLS; do
+    download_pbf $EXTRACT_URL # Fills variables PBF and EXTRACT_NAME
 
     ope /${PBF} =n | gzip > ${PROJECT}/import/${EXTRACT_NAME}-n.pgcopy.gz
     ope /${PBF} =w | gzip > ${PROJECT}/import/${EXTRACT_NAME}-w.pgcopy.gz
     ope /${PBF} =r | gzip > ${PROJECT}/import/${EXTRACT_NAME}-r.pgcopy.gz
 done
 
-
-echo "# Check all extracts have the same sequenceNumber"
-STATES=$(find ${PROJECT}/import/ -wholename "*/replication/state.txt")
-if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
-    echo "Missing states files. Abort."
-    return 1
-fi
-COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
-if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
-    echo "Different sequenceNumber from sequence.txt files. Abort."
-    return 2
-fi
-cp "$(echo ${STATES} | cut -d ' ' -f1)" ${IMPORT}/state.txt
+check_sequenceNumber ${PROJECT} "${EXTRACT_URLS}"
 
 mkdir -p ${PROJECT}/export/update
 

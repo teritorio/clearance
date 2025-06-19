@@ -1,3 +1,30 @@
+function lock_or_exit {
+    local PROJECT=$1
+
+    exec {LOCK_FD}> ${PROJECT}/lock
+    if ! flock --nonblock $LOCK_FD; then
+        echo "${PROJECT} already locked, abort"
+        exit 1
+    fi
+}
+
+function lock_or_wait {
+    local PROJECT=$1
+
+    LOCK=${PROJECT}/lock
+    touch $LOCK
+    exec 8>$LOCK;
+}
+
+function read_config {
+    local PROJECT=$1
+
+    local CONFIG=${PROJECT}/config.yaml
+    EXTRACT_URLS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
+    CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == 'true' || ''"`
+
+    # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
+}
 
 function geofabrik_cookie {
     if [[ "$1" == *"osm-internal.download.geofabrik.de"* ]]; then
@@ -24,4 +51,56 @@ function geofabrik_cookie {
     fi
 
     # Fills variables WGET_OPS and PYOSMIUM_OPS
+}
+
+function download_pbf {
+    local EXTRACT_URL=$1
+
+    EXTRACT_NAME=$(basename "$EXTRACT_URL")
+    EXTRACT_NAME=${EXTRACT_NAME/-internal/}
+    IMPORT=${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
+
+    PBF=${IMPORT}/import.osm.pbf
+
+    mkdir -p ${IMPORT}
+    geofabrik_cookie ${EXTRACT_URL} # Fills variables WGET_OPS and PYOSMIUM_OPS
+    if [ ! -e "${PBF}" ]; then
+        wget ${WGET_OPS} ${EXTRACT_URL} --no-clobber -O ${PBF} || (echo "Fails download $EXTRACT, abort" && exit 1)
+    fi
+
+    rm -fr ${IMPORT}/replication
+    mkdir -p ${IMPORT}/replication
+    pyosmium-get-changes ${PYOSMIUM_OPS} \
+        --start-osm-data ${PBF} \
+        --sequence-file ${IMPORT}/replication/sequence.txt \
+        -v \
+    2>&1 | grep http | sed -e "s/.*\(http.*\)/\1/" \
+    > ${IMPORT}/replication/sequence.url || (echo "pyosmium-get-changes failed"; exit 1)
+
+    local SEQUENCE_NUMBER=$(cat ${IMPORT}/replication/sequence.txt)
+    local TIMESTAMP=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_timestamp'))")
+    echo "sequenceNumber=${SEQUENCE_NUMBER}
+timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
+
+    # Fills variables PBF and EXTRACT_NAME (also WGET_OPS and PYOSMIUM_OPS)
+}
+
+function check_sequenceNumber {
+    local PROJECT=$1
+    local EXTRACTS=$2
+
+    local STATES=$(find ${PROJECT}/import/ -wholename "*/replication/state.txt")
+
+    echo "# Check all extracts have the same sequenceNumber"
+    if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
+        echo "Missing states files. Abort."
+        exit 1
+    fi
+    local COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
+    if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
+        echo "Different sequenceNumber from sequence.txt files. Abort."
+        exit 2
+    fi
+
+    cp "$(echo ${STATES} | cut -d ' ' -f1)" ${PROJECT}/import/state.txt
 }

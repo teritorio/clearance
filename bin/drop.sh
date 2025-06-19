@@ -2,12 +2,12 @@
 
 set -e
 
+source $(dirname $0)/_lib.sh
+
 PROJECT=$1
 PROJECT_NAME=$(basename "$PROJECT")
 
-LOCK=${PROJECT}/lock
-touch $LOCK
-exec 8>$LOCK;
+lock_or_wait $PROJECT
 
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS ${PROJECT_NAME} CASCADE"
 
