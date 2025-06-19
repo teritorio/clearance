@@ -14,7 +14,7 @@ services:
   script:
     profiles:
       - tools
-    image: ghcr.io/teritorio/clearance-api:dev
+    image: ghcr.io/teritorio/clearance-api:${CLEARANCE_VERSION:-dev}
     build:
       context: .
     environment:
@@ -33,7 +33,7 @@ services:
   api:
     build:
       context: .
-    image: ghcr.io/teritorio/clearance-api:dev
+    image: ghcr.io/teritorio/clearance-api:${CLEARANCE_VERSION:-dev}
     environment:
       - RAILS_ENV=${RAILS_ENV:-production}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-Toe8eihai5ieShai}
@@ -53,7 +53,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/teritorio/clearance-frontend:develop
+    image: ghcr.io/teritorio/clearance-frontend:${CLEARANCE_VERSION:-develop}
     environment:
       - NUXT_PUBLIC_API=${PUBLIC_URL}/api/0.1
       - NUXT_PUBLIC_SENTRY_DSN=${SENTRY_DSN_FRONTEND:-}
