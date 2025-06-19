@@ -10,6 +10,9 @@ function project() {
     PROJECT=$1
     IMPORT=${PROJECT}/import
 
+    echo "# State before update"
+    cat ${PROJECT}/import/state.txt
+
     echo "# Get Updates"
     EXTRACT_PATHS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
     if [ -z "$EXTRACT_PATHS" ]; then
@@ -40,10 +43,10 @@ function project() {
             return 5
         fi
 
-        SEQUENCE_NUMBER=$(cat ${IMPORT}/replication/sequence.txt)
+        SEQUENCE_NUMBER=$(cat ${EXTRACT_PATH}/replication/sequence.txt)
         TIMESTAMP=
         echo "sequenceNumber=${SEQUENCE_NUMBER}
-timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
+timestamp=${TIMESTAMP}" > ${EXTRACT_PATH}/replication/state.txt
     done
 
     check_sequenceNumber ${PROJECT} "${EXTRACT_PATH}"

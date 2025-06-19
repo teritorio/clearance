@@ -38,7 +38,7 @@ function geofabrik_cookie {
         WGET_OPS="--load-cookies ${GEOFABRIK_COOKIE} --max-redirect 0"
         PYOSMIUM_OPS="--cookie ${GEOFABRIK_COOKIE}"
 
-        wget -v ${WGET_OPS} https://osm-internal.download.geofabrik.de/cookie_status -O /dev/null \
+        wget ${WGET_OPS} --quiet https://osm-internal.download.geofabrik.de/cookie_status -O /dev/null \
         || (
             oauth_cookie_client.py \
                 --password "${OSM_GEOFABRIK_PASSWORD}" \
@@ -70,14 +70,9 @@ function download_pbf {
 
     rm -fr ${IMPORT}/replication
     mkdir -p ${IMPORT}/replication
-    pyosmium-get-changes ${PYOSMIUM_OPS} \
-        --start-osm-data ${PBF} \
-        --sequence-file ${IMPORT}/replication/sequence.txt \
-        -v \
-    2>&1 | grep http | sed -e "s/.*\(http.*\)/\1/" \
-    > ${IMPORT}/replication/sequence.url || (echo "pyosmium-get-changes failed"; exit 1)
-
-    local SEQUENCE_NUMBER=$(cat ${IMPORT}/replication/sequence.txt)
+    python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_base_url'))" > ${IMPORT}/replication/sequence.url
+    local SEQUENCE_NUMBER=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_sequence_number'))")
+    echo $SEQUENCE_NUMBER > ${IMPORT}/replication/sequence.txt
     local TIMESTAMP=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_timestamp'))")
     echo "sequenceNumber=${SEQUENCE_NUMBER}
 timestamp=${TIMESTAMP}" > ${IMPORT}/replication/state.txt
@@ -98,9 +93,10 @@ function check_sequenceNumber {
     fi
     local COUNT_SEQUENCE_NUMBER=$(echo "$STATES" | grep --no-filename sequenceNumber | sort | uniq | wc -l)
     if [ $COUNT_SEQUENCE_NUMBER -gt 1 ]; then
-        echo "Different sequenceNumber from sequence.txt files. Abort."
+        echo "Different sequenceNumber from state.txt files. Abort."
         exit 2
     fi
 
     cp "$(echo ${STATES} | cut -d ' ' -f1)" ${PROJECT}/import/state.txt
+    cat ${PROJECT}/import/state.txt
 }
