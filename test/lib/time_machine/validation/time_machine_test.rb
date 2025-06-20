@@ -2,6 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
+require 'yaml'
 require 'test/unit'
 require './lib/time_machine/validation/time_machine'
 
@@ -50,7 +51,7 @@ class TestValidation < Test::Unit::TestCase
         deleted:
           action_force: reject
     YAML
-    config = Configuration.parse(yaml, './test/fixtures/')
+    config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
 
     assert_equal(1, config.user_groups.size)
     assert_not_empty(config.osm_tags_matches.match({ 'highway' => 'primary' }))
@@ -95,7 +96,7 @@ class TestValidation < Test::Unit::TestCase
           reject: geom_changes_significant
           accept: geom_changes_insignificant
     YAML
-    config = Configuration.parse(yaml, './test/fixtures/')
+    config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
 
     locha = [
       [1, '[
@@ -165,7 +166,7 @@ class TestValidation < Test::Unit::TestCase
 
     yaml = "#{CONFIG_YAML_HEADER}
 validators: {}"
-    config = Configuration.parse(yaml, './test/fixtures/')
+    config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
 
     locha = [
       # deleted

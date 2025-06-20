@@ -46,6 +46,7 @@ gem 'sentry-rails'
 gem 'sentry-ruby'
 gem 'sorbet-runtime'
 gem 'webcache'
+gem 'yaml_extend'
 
 group :development do
   gem 'rake'

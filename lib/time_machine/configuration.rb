@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require 'yaml'
+require 'yaml_extend'
 require './lib/time_machine/validation/validator_factory'
 require 'open-uri'
 
@@ -115,12 +116,11 @@ module Configuration
 
   sig {
     params(
-      content: String,
+      config_yaml: T::Hash[String, T.untyped],
       path: String,
     ).returns(Config)
   }
-  def self.parse(content, path)
-    config_yaml = YAML.unsafe_load(content)
+  def self.parse(config_yaml, path)
     config = MainConfig.from_hash(config_yaml)
 
     user_groups, osm_tags_matches = load_user_groups(path, config)
@@ -146,7 +146,7 @@ module Configuration
   }
   def self.load(config_file)
     path = File.dirname(config_file)
-    content = File.read(config_file)
-    parse(content, path)
+    config_yaml = YAML.ext_load_file(config_file)
+    parse(config_yaml, path)
   end
 end
