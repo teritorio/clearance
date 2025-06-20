@@ -23,7 +23,7 @@ module Db
       # Avoid SQL injection
       raise 'Invalid project name' if !(project =~ /[-A-Za-z0-9_]+/)
 
-      conn0.exec("SET search_path = #{project},public")
+      conn0.exec("SET search_path = \"#{project}\",public")
       block.call(conn0)
     end
   end
