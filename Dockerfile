@@ -22,9 +22,6 @@ RUN apt update -y && apt install -y \
     ruby-json \
     wget
 
-RUN wget https://github.com/geofabrik/sendfile_osm_oauth_protector/raw/refs/heads/master/oauth_cookie_client.py -O /usr/bin/oauth_cookie_client.py && \
-    chmod a+x /usr/bin/oauth_cookie_client.py
-
 WORKDIR /srv/
 
 RUN git clone https://github.com/osmcode/osm-postgresql-experiments.git && \

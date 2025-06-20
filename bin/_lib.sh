@@ -33,21 +33,29 @@ function geofabrik_cookie {
             exit 1
         fi
 
-        local GEOFABRIK_COOKIE=${PROJECT}/geofabrik.cookie
-        touch ${GEOFABRIK_COOKIE}
+        local GEOFABRIK_COOKIE=${PROJECT}/../geofabrik.cookie
         WGET_OPS="--load-cookies ${GEOFABRIK_COOKIE} --max-redirect 0"
         PYOSMIUM_OPS="--cookie ${GEOFABRIK_COOKIE}"
 
-        wget ${WGET_OPS} --quiet https://osm-internal.download.geofabrik.de/cookie_status -O /dev/null \
-        || (
-            oauth_cookie_client.py \
+        local HAS_VALID_COOKIE=99
+        if [ -s "${GEOFABRIK_COOKIE}" ]; then
+            wget ${WGET_OPS} --quiet https://osm-internal.download.geofabrik.de/cookie_status -O /dev/null
+            HAS_VALID_COOKIE=$?
+        fi
+
+        if [ "${HAS_VALID_COOKIE}" -ne "0" ]; then
+            echo "# Get new Geofabrik cookie"
+            rm -fr "${GEOFABRIK_COOKIE}"
+
+            python bin/oauth_cookie_client.py \
                 --password "${OSM_GEOFABRIK_PASSWORD}" \
                 --user "${OSM_GEOFABRIK_USER}" \
                 --format netscape \
                 --output "${GEOFABRIK_COOKIE}" \
                 --osm-host "https://www.openstreetmap.org" \
-                --consumer-url "https://osm-internal.download.geofabrik.de/get_cookie"
-        ) || (echo "Fails to get geofabrik cookie, abort" && exit 1)
+                --consumer-url "https://osm-internal.download.geofabrik.de/get_cookie" \
+            && (echo "Got a cookie") || (echo "Fails to get geofabrik cookie, abort" && exit 1)
+        fi
     fi
 
     # Fills variables WGET_OPS and PYOSMIUM_OPS
