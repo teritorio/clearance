@@ -16,6 +16,7 @@ project_tags: [emergency]
 
 import:
   # OSM extracts to import, eg from Geofabrik or OSM-FR
+  # Geofabrik extract must not have common area / boundary
   extracts:
     - http://download.openstreetmap.fr/extracts/europe/monaco-latest.osm.pbf
     - http://download.openstreetmap.fr/extracts/europe/vatican_city-latest.osm.pbf
