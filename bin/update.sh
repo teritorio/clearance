@@ -44,9 +44,9 @@ function project() {
         fi
 
         SEQUENCE_NUMBER=$(cat ${EXTRACT_PATH}/replication/sequence.txt)
-        TIMESTAMP=
-        echo "sequenceNumber=${SEQUENCE_NUMBER}
-timestamp=${TIMESTAMP}" > ${EXTRACT_PATH}/replication/state.txt
+        SEQUENCE_PATH=$(ruby -e "puts '$SEQUENCE_NUMBER'.rjust(9, '0').gsub(/(...)(...)(...)/, '\1/\2/\3')")
+        STATE_URL=$(cat ${EXTRACT_PATH}/replication/sequence.url)/${SEQUENCE_PATH}.state.txt
+        wget ${WGET_OPS} --quiet "$STATE_URL" -O ${EXTRACT_PATH}/replication/state.txt
     done
 
     check_sequenceNumber ${PROJECT} "${EXTRACT_PATHS}"
