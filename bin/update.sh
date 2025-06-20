@@ -49,7 +49,7 @@ function project() {
 timestamp=${TIMESTAMP}" > ${EXTRACT_PATH}/replication/state.txt
     done
 
-    check_sequenceNumber ${PROJECT} "${EXTRACT_PATH}"
+    check_sequenceNumber ${PROJECT} "${EXTRACT_PATHS}"
 
     echo "# Merge Updates"
     if [[ ! -n "$(find ${IMPORT} -name diff-*.osc.xml.bz2 -print -quit)" ]]; then
