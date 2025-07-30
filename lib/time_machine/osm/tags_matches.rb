@@ -3,8 +3,7 @@
 
 require 'sorbet-runtime'
 require_relative 'types'
-require 'overpass_parser'
-require 'overpass_parser/nodes/selectors'
+require 'overpass_parser_ruby'
 
 
 module Osm
@@ -33,7 +32,7 @@ module Osm
 
     sig {
       params(
-        selectors: T::Array[T.any(String, OverpassParser::Nodes::Selectors)],
+        selectors: T::Array[T.any(String, OverpassParserRuby::Selectors)],
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
         sources: T.nilable(T::Array[String]),
         user_groups: T::Array[String],
@@ -46,21 +45,22 @@ module Osm
         if selector.is_a?(String)
           raise 'Tags selector format' if selector.size <= 2
 
-          tree = OverpassParser.parse("node#{selector};")
-          raise "Invalid selector: #{selector}" if tree.queries.empty? || !tree.queries[0].is_a?(OverpassParser::Nodes::QueryObjects)
+          tree = OverpassParserRuby.parse("node#{selector};")
+          first_selectors = tree.all_selectors.first
+          raise "Invalid selector: #{selector}" if first_selectors.nil?
 
-          T.must(T.cast(tree.queries[0], OverpassParser::Nodes::QueryObjects).selectors)
+          first_selectors
         else
           selector
         end
-      }, T::Array[OverpassParser::Nodes::Selectors])
+      }, T::Array[OverpassParserRuby::Selectors])
 
       @selector_extra = selector_extra
       @name = name
       @icon = icon
 
       # Ensure key from selectors are in selector_extra
-      selectors_keys = @selector_matches.collect{ |s| s.collect(&:key) }.flatten.uniq.filter{ |key| @selector_extra.nil? || !@selector_extra.key?(key) }
+      selectors_keys = @selector_matches.collect(&:keys).flatten.uniq.filter{ |key| @selector_extra.nil? || !@selector_extra.key?(key) }
       if @selector_extra.nil?
         @selector_extra = selectors_keys.index_with{ |_key| nil }
       else
@@ -83,7 +83,7 @@ module Osm
     def match(tags)
       @selector_matches.collect{ |selectors|
         m = selectors.matches(tags)
-        [selectors.sort.to_overpass, self] if !m.nil?
+        [selectors.to_overpass, self] if !m.nil?
       }.compact
     end
 
@@ -100,12 +100,13 @@ module Osm
 
     sig {
       params(
-        sql_dialect: OverpassParser::SqlDialect::SqlDialect
+        sql_dialect: String,
+        escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
       ).returns(String)
     }
-    def to_sql(sql_dialect)
+    def to_sql(sql_dialect, escape_literal)
       pp = @selector_matches.collect{ |selectors|
-        p = selectors.to_sql(sql_dialect)
+        p = selectors.to_sql(sql_dialect, 0, escape_literal)
         "(#{p})"
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
@@ -148,14 +149,15 @@ module Osm
 
     sig {
       params(
-        sql_dialect: OverpassParser::SqlDialect::SqlDialect,
+        sql_dialect: String,
+        escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
       ).returns(String)
     }
-    def to_sql(sql_dialect)
+    def to_sql(sql_dialect, escape_literal)
       if @matches.blank?
         'true'
       else
-        @matches.collect{ |match| match.to_sql(sql_dialect) }.join(' OR ')
+        @matches.collect{ |match| match.to_sql(sql_dialect, escape_literal) }.join(' OR ')
       end
     end
   end

@@ -3,7 +3,6 @@
 
 require './lib/time_machine/db/db_conn'
 require './lib/time_machine/db/overpasslike'
-require 'overpass_parser/visitor'
 
 class OverpasslikeController < ApplicationController
   def interpreter
@@ -23,7 +22,7 @@ class OverpasslikeController < ApplicationController
           elements: elements,
         }
       }
-    rescue OverpassParser::ParsingError => e
+    rescue OverpassParserRuby::ParsingError => e
       puts e.inspect
       render status: :bad_request, html: "<html>
 <body>

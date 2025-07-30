@@ -3,6 +3,7 @@ FROM ruby:3.4-bullseye
 RUN apt update -y && apt install -y \
     build-essential \
     bzip2 \
+    clang \
     cmake \
     gzip \
     libboost-dev \

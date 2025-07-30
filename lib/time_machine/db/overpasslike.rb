@@ -4,8 +4,6 @@
 require 'sorbet-runtime'
 require './lib/time_machine/osm/types'
 require './lib/time_machine/osm/tags_matches'
-require 'overpass_parser/visitor'
-require 'overpass_parser/sql_dialect/postgres'
 
 module Db
   extend T::Sig
@@ -21,10 +19,9 @@ module Db
       ).returns(T::Array[T::Hash[String, T.untyped]])
     }
     def self.query(conn, query, srid)
-      request = OverpassParser.parse(query)
+      request = OverpassParserRuby.parse(query)
       sql = File.new('/sql/overpasslike.sql').read
-      dialect = OverpassParser::SqlDialect::Postgres.new(postgres_escape_literal: ->(s) { conn.escape_literal(s) })
-      sql += request.to_sql(dialect, srid)
+      sql += request.to_sql('postgres', srid, proc { |s| conn.escape_literal(s) })
 
       conn.exec(sql) { |result|
         result.pluck('j')

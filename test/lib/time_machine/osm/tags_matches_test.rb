@@ -3,7 +3,6 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require 'overpass_parser/sql_dialect/postgres'
 require './lib/time_machine/osm/tags_matches'
 
 
@@ -23,7 +22,7 @@ class TestTagsMatchs < Test::Unit::TestCase
     assert_equal([], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway' }).collect(&:first))
     assert_equal(['[footway=traffic_island][highway=footway]'], Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']).match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
 
-    assert_equal(['[highway=footway][!footway]'], Osm::TagsMatch.new(['[highway=footway][!footway]']).match({ 'highway' => 'footway' }).collect(&:first))
+    assert_equal(['[!footway][highway=footway]'], Osm::TagsMatch.new(['[highway=footway][!footway]']).match({ 'highway' => 'footway' }).collect(&:first))
     assert_equal([], Osm::TagsMatch.new(['[highway=footway][!footway]']).match({ 'highway' => 'footway', 'footway' => 'traffic_island' }).collect(&:first))
   end
 
@@ -57,19 +56,19 @@ class TestTagsMatchs < Test::Unit::TestCase
       Osm::TagsMatch.new(['[shop~"pizza.*"]']),
       Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']),
     ])
-    sql = matches.to_sql(OverpassParser::SqlDialect::Postgres.new)
-    assert_equal("(tags?'amenity') OR ((tags?'shop' AND tags->>'shop' = 'florist')) OR ((tags?'shop' AND tags->>'shop' ~ '(pizza.*)')) OR ((tags?'highway' AND tags->>'highway' = 'footway') AND (tags?'footway' AND tags->>'footway' = 'traffic_island'))", sql)
+    sql = matches.to_sql('postgres', nil)
+    assert_equal("(tags?'amenity') OR ((tags?'shop' AND tags->>'shop' = 'florist')) OR ((tags?'shop' AND tags->>'shop' ~ 'pizza.*')) OR ((tags?'highway' AND tags->>'highway' = 'footway') AND (tags?'footway' AND tags->>'footway' = 'traffic_island'))", sql)
 
     matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[amenity]', '[shop]']),
     ])
-    sql = matches.to_sql(OverpassParser::SqlDialect::Postgres.new)
+    sql = matches.to_sql('postgres', nil)
     assert_equal("((tags?'amenity') OR (tags?'shop'))", sql)
 
     matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[!amenity]']),
     ])
-    sql = matches.to_sql(OverpassParser::SqlDialect::Postgres.new)
+    sql = matches.to_sql('postgres', nil)
     assert_equal("(NOT tags?'amenity')", sql)
   end
 end
