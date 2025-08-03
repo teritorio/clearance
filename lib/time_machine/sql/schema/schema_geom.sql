@@ -55,7 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER osm_base_nodes_trigger
+CREATE OR REPLACE TRIGGER osm_base_nodes_trigger
   BEFORE INSERT OR UPDATE OF lon, lat
   ON osm_base_n
   FOR EACH ROW
@@ -85,31 +85,31 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER osm_base_trigger_insert
+CREATE OR REPLACE TRIGGER osm_base_trigger_insert
   AFTER INSERT
   ON osm_base_n
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_n_log_update();
 
-CREATE TRIGGER osm_base_trigger_insert
+CREATE OR REPLACE TRIGGER osm_base_trigger_insert
   AFTER INSERT
   ON osm_base_w
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_w_log_update();
-CREATE TRIGGER osm_base_trigger_insert
+CREATE OR REPLACE TRIGGER osm_base_trigger_insert
   AFTER INSERT
   ON osm_base_r
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_r_log_update();
 
-CREATE TRIGGER osm_base_w_trigger_update
+CREATE OR REPLACE TRIGGER osm_base_w_trigger_update
   AFTER UPDATE
   ON osm_base_w
   FOR EACH ROW
   WHEN (OLD.nodes IS DISTINCT FROM NEW.nodes)
 EXECUTE PROCEDURE osm_base_w_log_update();
 
-CREATE TRIGGER osm_base_r_trigger_update
+CREATE OR REPLACE TRIGGER osm_base_r_trigger_update
   AFTER UPDATE
   ON osm_base_r
   FOR EACH ROW
