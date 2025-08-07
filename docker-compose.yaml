@@ -49,7 +49,7 @@ services:
       - ./projects:/srv/app/projects
     depends_on:
       - postgres
-    command: bundle exec rails server --binding=0.0.0.0 --port 9000
+    command: bundle exec rails server --pid /dev/shm/server.pid --binding=0.0.0.0 --port 9000
     restart: unless-stopped
 
   frontend:
