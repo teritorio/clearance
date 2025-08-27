@@ -45,8 +45,7 @@ user_groups:
       es: Zúrich
     # Use the boundary polygon defined by the corresponding OSM relation id
     polygon: https://polygons.openstreetmap.fr/get_geojson.py?id=1682248
-    # Tags definition in the siblings export directory
-    osm_tags: ./export/emergency.osm_tags.json
+    osm_tags: emergency.osm_tags.json
     users: [] # OSM usernames, validation right on this group
 
 
