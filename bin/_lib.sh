@@ -1,6 +1,7 @@
 function lock_or_exit {
     local PROJECT=$1
 
+    mkdir -p ${PROJECTS_DATA_PATH}/${PROJECT}
     exec {LOCK_FD}> ${PROJECTS_DATA_PATH}/${PROJECT}/lock
     if ! flock --nonblock $LOCK_FD; then
         echo "${PROJECTS_DATA_PATH}/${PROJECT} already locked, abort"
@@ -11,6 +12,7 @@ function lock_or_exit {
 function lock_or_wait {
     local PROJECT=$1
 
+    mkdir -p ${PROJECTS_DATA_PATH}/${PROJECT}
     LOCK=${PROJECTS_DATA_PATH}/${PROJECT}/lock
     touch $LOCK
     exec 8>$LOCK;

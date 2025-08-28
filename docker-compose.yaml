@@ -24,12 +24,12 @@ services:
       - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS:-}
       - OSM_GEOFABRIK_PASSWORD=${OSM_GEOFABRIK_PASSWORD:-}
       - OSM_GEOFABRIK_USER=${OSM_GEOFABRIK_USER:-}
+      - PROJECTS_CONFIG_PATH=/projects_config
+      - PROJECTS_DATA_PATH=/projects_data
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./projects_config:/projects_config
       - ./projects_data:/projects_data
-      - ./projects_config:/srv/app/projects_config
-      - ./projects_data:/srv/app/projects_data
     depends_on:
       - postgres
 
@@ -45,13 +45,13 @@ services:
       - OSM_OAUTH2_REDIRECT=${OSM_OAUTH2_REDIRECT}
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
       - SENTRY_DSN_API=${SENTRY_DSN_API:-}
+      - PROJECTS_CONFIG_PATH=/projects_config
+      - PROJECTS_DATA_PATH=/projects_data
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./cache:/cache
       - ./projects_config:/projects_config
       - ./projects_data:/projects_data
-      - ./projects_config:/srv/app/projects_config
-      - ./projects_data:/srv/app/projects_data
     depends_on:
       - postgres
     command: bundle exec rails server --pid /dev/shm/server.pid --binding=0.0.0.0 --port 9000
