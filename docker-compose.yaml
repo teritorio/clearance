@@ -7,8 +7,8 @@ services:
     volumes:
       - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./lib/time_machine/sql/:/scripts
-      - ./projects_config:/projects_config
-      - ./projects_data:/projects_data
+      - projects_config:/projects_config
+      - projects_data:/projects_data
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
@@ -28,8 +28,8 @@ services:
       - PROJECTS_DATA_PATH=/projects_data
     volumes:
       - ./lib/time_machine/sql:/sql
-      - ./projects_config:/projects_config
-      - ./projects_data:/projects_data
+      - projects_config:/projects_config
+      - projects_data:/projects_data
     depends_on:
       - postgres
 
@@ -50,8 +50,8 @@ services:
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./cache:/cache
-      - ./projects_config:/projects_config
-      - ./projects_data:/projects_data
+      - projects_config:/projects_config
+      - projects_data:/projects_data
     depends_on:
       - postgres
     command: bundle exec rails server --pid /dev/shm/server.pid --binding=0.0.0.0 --port 9000
@@ -73,8 +73,8 @@ services:
       - ${NGINX_PORT:-8000}:80
     volumes:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./projects_config:/projects_config
-      - ./projects_data:/projects_data
+      - projects_config:/projects_config
+      - projects_data:/projects_data
     depends_on:
       - api
       - frontend
@@ -82,3 +82,15 @@ services:
 
 volumes:
   pgdata:
+  projects_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./projects_config
+  projects_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./projects_data
