@@ -5,7 +5,8 @@ cache/
 docker/
 frontend/
 log/
-projects/
+projects_config/
+projects_data/
 sorbet/
 tmp/
 core

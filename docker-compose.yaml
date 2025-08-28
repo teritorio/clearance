@@ -7,7 +7,8 @@ services:
     volumes:
       - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./lib/time_machine/sql/:/scripts
-      - ./projects:/projects
+      - ./projects_config:/projects_config
+      - ./projects_data:/projects_data
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
@@ -25,8 +26,10 @@ services:
       - OSM_GEOFABRIK_USER=${OSM_GEOFABRIK_USER:-}
     volumes:
       - ./lib/time_machine/sql:/sql
-      - ./projects:/projects
-      - ./projects:/srv/app/projects
+      - ./projects_config:/projects_config
+      - ./projects_data:/projects_data
+      - ./projects_config:/srv/app/projects_config
+      - ./projects_data:/srv/app/projects_data
     depends_on:
       - postgres
 
@@ -45,8 +48,10 @@ services:
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./cache:/cache
-      - ./projects:/projects
-      - ./projects:/srv/app/projects
+      - ./projects_config:/projects_config
+      - ./projects_data:/projects_data
+      - ./projects_config:/srv/app/projects_config
+      - ./projects_data:/srv/app/projects_data
     depends_on:
       - postgres
     command: bundle exec rails server --pid /dev/shm/server.pid --binding=0.0.0.0 --port 9000
@@ -68,7 +73,8 @@ services:
       - ${NGINX_PORT:-8000}:80
     volumes:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./projects:/projects
+      - ./projects_config:/projects_config
+      - ./projects_data:/projects_data
     depends_on:
       - api
       - frontend

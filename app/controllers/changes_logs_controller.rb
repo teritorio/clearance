@@ -3,6 +3,7 @@
 
 require './lib/time_machine/db/db_conn'
 require './lib/time_machine/osm/types'
+require './app/models/project'
 
 class ChangesLogsController < ApplicationController
   extend T::Sig
@@ -26,7 +27,7 @@ class ChangesLogsController < ApplicationController
   def sets
     project = params['project'].to_s
 
-    config = ::Configuration.load("/projects/#{project}/config.yaml")
+    config = ::Configuration.load("/#{Project.projects_config_path}/#{project}/config.yaml")
     if config.nil?
       render(status: :not_found)
       return

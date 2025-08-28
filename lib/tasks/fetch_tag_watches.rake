@@ -38,10 +38,10 @@ end
 namespace :config do
   desc 'Generate OSM tag watches config from remote datasource'
   task :fetch_tag_watches, [] => :environment do
-    projects = ENV['project'] ? [ENV['project']] : Dir.glob('../projects/*/')
+    projects = ENV['project'] ? [ENV['project']] : Dir.glob('../projects_config/*/')
     projects.each{ |project|
-      merged = merge_tag_watches("../projects/#{project}/config.yaml")
-      File.write("../projects/#{project}/config-watches.yaml", YAML.dump(merged))
+      merged = merge_tag_watches("../projects_config/#{project}/config.yaml")
+      File.write("../projects_config/#{project}/config-watches.yaml", YAML.dump(merged))
     }
   end
 end

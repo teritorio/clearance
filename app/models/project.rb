@@ -4,14 +4,23 @@
 require './lib/time_machine/configuration'
 require './lib/time_machine/osm/state_file'
 require './lib/time_machine/db/db_conn'
+require 'active_hash'
 
 class Project < ActiveFile::Base
   class << self
-    def projects_path
+    def projects_config_path
       if ENV['RAILS_ENV'] == 'test'
-        'projects_template'
+        'projects_config_template'
       else
-        ENV['PROJECT_PATH'].presence || 'projects'
+        ENV['PROJECTS_CONFIG_PATH'].presence || 'projects_config'
+      end
+    end
+
+    def projects_data_path
+      if ENV['RAILS_ENV'] == 'test'
+        'projects_config_template'
+      else
+        ENV['PROJECTS_DATA_PATH'].presence || 'projects_data'
       end
     end
 
@@ -20,10 +29,10 @@ class Project < ActiveFile::Base
     end
 
     def load_file
-      Dir.glob('*/', base: "#{projects_path}/").collect{ |project|
+      Dir.glob('*/', base: "#{projects_config_path}/").collect{ |project|
         project = project[..-2]
-        c = ::Configuration.load("#{projects_path}/#{project}/config.yaml")
-        date_last_update = Osm::StateFile.from_file("projects/#{project}/export/state.txt")
+        c = ::Configuration.load("#{projects_config_path}/#{project}/config.yaml")
+        date_last_update = Osm::StateFile.from_file("#{projects_data_path}/#{project}/export/state.txt")
 
         {
           id: project,

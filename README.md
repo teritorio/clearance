@@ -60,20 +60,20 @@ docker compose run --rm script ./bin/update-schema.sh
 ## Projects
 
 ### Configure
-Create at least one project inside `projects` from the `projects_template` directory.
+Create at least one project inside `projects_config` from the `projects_config_template` directory.
 Adjust the `config.yaml` and the `export*.osm_tags.json` files.
 
 ### Init
-Set up the initial OSM extract in the database. Use the project directory name from `projects` and one or more URLs to OSM PBF extracts.
+Set up the initial OSM extract in the database. Use the project directory name from `projects_config`.
 ```
-docker compose run --rm script ./bin/setup.sh projects/emergency
+docker compose run --rm script ./bin/setup.sh emergency
 ```
 
 Note: PBFs from Geofabrik have daily diffs, while OSM-FR have minutely updates.
 
 If you plan to use extract and diff from Clearance, dump the first extract. In all cases, you can use the Overpass-like API.
 ```
-docker compose run --rm script ./bin/dump.sh projects/emergency
+docker compose run --rm script ./bin/dump.sh emergency
 ```
 
 ### Data Update
@@ -84,7 +84,7 @@ Get Update, Import, and Generate Validation report in the database:
 docker compose run --rm script ./bin/update.sh
 
 # Only one project
-docker compose run --rm script ./bin/update.sh projects/emergency
+docker compose run --rm script ./bin/update.sh emergency
 ```
 
 Run update for all projects from cron every 2 minutes:
@@ -99,13 +99,13 @@ Note 2: To lower CPU usage, you can lower the update frequency. It is not requir
 ### Drop
 Drop a project.
 ```
-docker compose run --rm script ./bin/drop.sh projects/emergency
+docker compose run --rm script ./bin/drop.sh emergency
 ```
 
 ### Test data integrity
 Check if the imported extract update with diff is the same data as dump from Clearance with retained objects.
 ```
-docker compose run --rm script ./bin/check-integrity.sh projects/emergency
+docker compose run --rm script ./bin/check-integrity.sh emergency
 ```
 
 ## Dev

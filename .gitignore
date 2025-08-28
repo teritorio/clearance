@@ -1,4 +1,5 @@
-projects/*
+projects_config/
+projects_data/
 cache/*
 ./log*
 tmp/

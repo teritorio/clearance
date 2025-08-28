@@ -2,6 +2,7 @@
 # typed: strict
 
 require 'sorbet-runtime'
+require './app/models/project'
 require './lib/time_machine/osm/state_file'
 require 'nokogiri'
 require 'zlib'
@@ -233,9 +234,9 @@ module Db
     ).void
   }
   def self.export_update(conn, project)
-    import_state_file = T.must(Osm::StateFile.from_file("/projects/#{project}/import/state.txt"))
+    import_state_file = T.must(Osm::StateFile.from_file("/#{Project.projects_data_path}/#{project}/import/state.txt"))
 
-    export_path = "/projects/#{project}/export/update"
+    export_path = "/#{Project.projects_data_path}/#{project}/export/update"
     export_state_file_path = "#{export_path}/state.txt"
     export_state_file = Osm::StateFile.from_file(export_state_file_path)
 

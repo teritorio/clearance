@@ -5,6 +5,7 @@ set -e
 source $(dirname $0)/_lib.sh
 
 PROJECT=$1
+project_path # Fills variables PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
 read_config $PROJECT # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
 
 lock_or_wait $PROJECT
@@ -30,7 +31,7 @@ osmium check-refs $IMPORT_MERGE || (echo "osmium check-refs fails on $IMPORT_MER
 
 # Dump Clearance data
 echo "Dumping Clearance data..."
-EXPORT=${PROJECT}/export/$(basename $PROJECT).osm.pbf
+EXPORT=${PROJECTS_DATA_PATH}/${PROJECT}/export/$(basename $PROJECT).osm.pbf
 $(dirname $0)/dump.sh ${PROJECT}
 
 osmium check-refs $EXPORT || (echo "osmium check-refs fails on $EXPORT" && exit 10)
@@ -39,7 +40,7 @@ osmium check-refs $EXPORT || (echo "osmium check-refs fails on $EXPORT" && exit 
 echo "Dump Clearance retained data..."
 RETAINED=${EXPORT%.osm.pbf}-retained.osc.gz
 EXPORT_WITH_RETAINED=${EXPORT%.osm.pbf}-with_retained.osm.pbf
-bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-retained-diff=${RETAINED}
+bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --export-retained-diff=${RETAINED}
 osmium apply-changes ${EXPORT} ${RETAINED} --overwrite -o ${EXPORT_WITH_RETAINED} || (echo "osmium apply-changes fails" && exit 11)
 
 osmium check-refs $EXPORT_WITH_RETAINED || (echo "osmium check-refs fails on $EXPORT_WITH_RETAINED" && exit 12)

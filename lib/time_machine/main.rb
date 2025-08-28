@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'sentry-ruby'
 require 'optparse'
+require './app/models/project'
 require './lib/time_machine/validation/time_machine'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/configuration'
@@ -27,7 +28,7 @@ OptionParser.new { |opts|
   opts.on('-h', '--help', 'Help') do
     @options[:help] = true
   end
-  opts.on('-pPROJECT', '--project=PROJECT', 'Project directory to use.') do |project|
+  opts.on('-pPROJECT', '--project=PROJECT', 'Project to use.') do |project|
     @options[:project] = project
     Sentry.set_tags(project: project)
   end
@@ -85,7 +86,7 @@ class MainMain
       end
 
       if options[:apply_unclibled_changes]
-        config ||= Configuration.load("#{options[:project]}/config.yaml")
+        config ||= Configuration.load("#{Project.projects_config_path}/#{options[:project]}/config.yaml")
         osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
         polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
         Db::DbConnWrite.conn(project){ |conn|
@@ -95,7 +96,7 @@ class MainMain
 
       if options[:validate]
         Db::DbConnWrite.conn(project){ |conn|
-          config ||= Configuration.load("#{options[:project]}/config.yaml")
+          config ||= Configuration.load("#{Project.projects_config_path}/#{options[:project]}/config.yaml")
           Validation.validate(conn, config)
         }
       end

@@ -4,14 +4,16 @@ set -e
 
 source $(dirname $0)/_lib.sh
 
-PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects -not -name '.*')}
+PROJECTS_CONFIG_PATH=${PROJECTS_CONFIG_PATH:-projects_config}
+PROJECTS_DATA_PATH=${PROJECTS_DATA_PATH:-projects_data}
+PROJECTS=${1:-$(find ${PROJECTS_CONFIG_PATH}/* -maxdepth 0 -type d | sed -e 's#${PROJECTS_CONFIG_PATH}##')}
 
 function project() {
     PROJECT=$1
-    IMPORT=${PROJECT}/import
+    IMPORT=${PROJECTS_DATA_PATH}/${PROJECT}/import
 
     echo "# State before update"
-    cat ${PROJECT}/import/state.txt
+    cat ${PROJECTS_DATA_PATH}/${PROJECT}/import/state.txt
 
     echo "# Get Updates"
     EXTRACT_PATHS=$(find ${IMPORT}/ -maxdepth 1 -type d -not -name import -name '*')
@@ -84,37 +86,36 @@ function project() {
     if [[ ! -f ${IMPORT}/osm_changes.pgcopy ]]; then
         echo "no osm_changes.pgcopy, skip import"
     else
-        bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --import-changes="/${IMPORT}/osm_changes.pgcopy" && \
+        bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --import-changes="/${IMPORT}/osm_changes.pgcopy" && \
         rm -f ${IMPORT}/osm_changes.pgcopy
     fi
 
     echo "# Validation report"
     echo "== changes-prune ==" && \
-    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --changes-prune && \
+    bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --changes-prune && \
     echo "== apply_unclibled_changes ==" && \
-    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --apply_unclibled_changes && \
+    bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --apply_unclibled_changes && \
     echo "== fetch_changesets ==" && \
-    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --fetch_changesets && \
+    bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --fetch_changesets && \
     echo "== validate ==" && \
-    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --validate && \
+    bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --validate && \
     echo "== export-osm-update ==" && \
-    bundle exec ruby lib/time_machine/main.rb --project=/${PROJECT} --export-osm-update && \
-    cp ${IMPORT}/state.txt /${PROJECT}/export/state.txt
+    bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --export-osm-update && \
+    cp ${IMPORT}/state.txt /${PROJECTS_DATA_PATH}/${PROJECT}/export/state.txt
 }
 
-exec {G_LOCK_FD}> projects/lock
+exec {G_LOCK_FD}> ${PROJECTS_DATA_PATH}/lock
 if flock --nonblock $G_LOCK_FD; then
 
     for PROJECT in $PROJECTS; do
+        PROJECT=$(basename "$PROJECT")
         echo
         echo $PROJECT
         echo
-        IMPORT=${PROJECT}/import
-        CONFIG=${PROJECT}/conf.yaml
+        IMPORT=${PROJECTS_DATA_PATH}/${PROJECT}/import
+        CONFIG=${PROJECTS_CONFIG_PATH}/${PROJECT}/conf.yaml
 
-        PROJECT_NAME=$(basename "$PROJECT")
-
-        exec {LOCK_FD}> ${PROJECT}/lock
+        exec {LOCK_FD}> ${PROJECTS_DATA_PATH}/${PROJECT}/lock
         if flock --nonblock $LOCK_FD; then
             project ${PROJECT} || echo "${PROJECT} Update failed ($?)"
         else

@@ -2,7 +2,9 @@
 
 set -e
 
-PROJECTS=${1:-$(find projects/ -maxdepth 1 -type d -not -name projects)}
+PROJECTS_CONFIG_PATH=${PROJECTS_CONFIG_PATH:-projects_config}
+PROJECTS_DATA_PATH=${PROJECTS_DATA_PATH:-projects_data}
+PROJECTS=${1:-$(find ${PROJECTS_CONFIG_PATH}/* -maxdepth 0 -type d | sed -e 's#${PROJECTS_CONFIG_PATH}##')}
 
 for PROJECT in $PROJECTS; do
     PROJECT=$(basename "$PROJECT")
@@ -10,7 +12,7 @@ for PROJECT in $PROJECTS; do
     echo $PROJECT
     echo
 
-    exec {LOCK_FD}> projects/${PROJECT}/lock
+    exec {LOCK_FD}> ${PROJECTS_DATA_PATH}/${PROJECT}/lock
     flock $LOCK_FD
 
     # Check if schema/table exist

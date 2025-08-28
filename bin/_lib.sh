@@ -1,9 +1,9 @@
 function lock_or_exit {
     local PROJECT=$1
 
-    exec {LOCK_FD}> ${PROJECT}/lock
+    exec {LOCK_FD}> ${PROJECTS_DATA_PATH}/${PROJECT}/lock
     if ! flock --nonblock $LOCK_FD; then
-        echo "${PROJECT} already locked, abort"
+        echo "${PROJECTS_DATA_PATH}/${PROJECT} already locked, abort"
         exit 1
     fi
 }
@@ -11,15 +11,22 @@ function lock_or_exit {
 function lock_or_wait {
     local PROJECT=$1
 
-    LOCK=${PROJECT}/lock
+    LOCK=${PROJECTS_DATA_PATH}/${PROJECT}/lock
     touch $LOCK
     exec 8>$LOCK;
+}
+
+function project_path {
+    PROJECTS_CONFIG_PATH=${PROJECTS_CONFIG_PATH:-projects_config}
+    PROJECTS_DATA_PATH=${PROJECTS_DATA_PATH:-projects_data}
+
+    # Fills variables PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
 }
 
 function read_config {
     local PROJECT=$1
 
-    local CONFIG=${PROJECT}/config.yaml
+    local CONFIG=${PROJECTS_CONFIG_PATH}/${PROJECT}/config.yaml
     EXTRACT_URLS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
     CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == 'true' || ''"`
 
@@ -33,7 +40,7 @@ function geofabrik_cookie {
             exit 1
         fi
 
-        local GEOFABRIK_COOKIE=${PROJECT}/../geofabrik.cookie
+        local GEOFABRIK_COOKIE=${PROJECTS_DATA_PATH}/${PROJECT}/../geofabrik.cookie
         WGET_OPS="--load-cookies ${GEOFABRIK_COOKIE} --max-redirect 0"
         PYOSMIUM_OPS="--cookie ${GEOFABRIK_COOKIE}"
 
@@ -66,7 +73,7 @@ function download_pbf {
 
     EXTRACT_NAME=$(basename "$EXTRACT_URL")
     EXTRACT_NAME=${EXTRACT_NAME/-internal/}
-    IMPORT=${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
+    IMPORT=${PROJECTS_DATA_PATH}/${PROJECT}/import/${EXTRACT_NAME/-latest.osm.pbf/}
 
     PBF=${IMPORT}/import.osm.pbf
 
@@ -92,7 +99,7 @@ function check_sequenceNumber {
     local PROJECT=$1
     local EXTRACTS=$2
 
-    local STATES=$(find ${PROJECT}/import/ -wholename "*/replication/state.txt")
+    local STATES=$(find ${PROJECTS_DATA_PATH}/${PROJECT}/import/ -wholename "*/replication/state.txt")
 
     echo "# Check all extracts have the same sequenceNumber"
     if [ "$(echo $STATES | wc -w)" != "$(echo $EXTRACTS | wc -w)" ]; then
@@ -105,6 +112,6 @@ function check_sequenceNumber {
         exit 2
     fi
 
-    cp "$(echo ${STATES} | cut -d ' ' -f1)" ${PROJECT}/import/state.txt
-    cat ${PROJECT}/import/state.txt
+    cp "$(echo ${STATES} | cut -d ' ' -f1)" ${PROJECTS_DATA_PATH}/${PROJECT}/import/state.txt
+    cat ${PROJECTS_DATA_PATH}/${PROJECT}/import/state.txt
 }
