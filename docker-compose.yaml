@@ -89,8 +89,3 @@ volumes:
       o: bind
       device: ./projects_config
   projects_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./projects_data
