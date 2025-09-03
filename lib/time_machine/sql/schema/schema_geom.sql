@@ -405,3 +405,7 @@ SELECT
 FROM
     osm_base_r
 );
+
+VACUUM FULL ANALYZE osm_base_n;
+VACUUM FULL ANALYZE osm_base_w;
+VACUUM FULL ANALYZE osm_base_r;
