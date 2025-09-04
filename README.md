@@ -1,6 +1,6 @@
 # Clearance backend
 
-"Clearance" is a tool for producing OSM extracts and keeping them up to date while respecting quality rules. It is based on partial and local updates. Rejected data groups must be corrected in OSM or accepted manually. OSM changes to be revised are handled collaboratively by interest groups.
+"Clearance" is a tool that helps track changes in OSM on tematics, and keep replication extracts up to date, while still following quality rules. Instead of relying on timestamps or changesets, it focuses on partial and local data updates. If some data is rejected, it either needs to be fixed in OSM or approved manually, data edits are only done in OSM. Reviewing and fixing are done collaboratively.
 
 ![](https://raw.githubusercontent.com/teritorio/clearance-frontend/master/public/Clearance-process.svg)
 
