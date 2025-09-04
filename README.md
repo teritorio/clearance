@@ -45,6 +45,11 @@ To use this, you must set the `OSM_GEOFABRIK_USER` and `OSM_GEOFABRIK_PASSWORD` 
 docker compose up -d postgres
 ```
 
+To init the data base, first time only
+```
+docker compose run --rm api bundle exec rails db:schema:load
+```
+
 If required, you can enter into the Postgres shell with:
 ```
 docker compose exec -u postgres postgres psql
