@@ -1,6 +1,6 @@
 SET search_path TO :schema,public;
 
-ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) STORED; -- Pass to VIRTUAL with Postgres 18
 ALTER TABLE osm_base_w ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
 ALTER TABLE osm_base_r ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
 
@@ -46,8 +46,6 @@ CREATE TABLE IF NOT EXISTS osm_base_changes_flag(
 
 CREATE OR REPLACE FUNCTION osm_base_nodes_geom() RETURNS trigger AS $$
 BEGIN
-  NEW.geom := ST_MakePoint(NEW.lon, NEW.lat);
-
   INSERT INTO osm_base_changes_ids VALUES ('n', NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
   INSERT INTO osm_base_changes_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
 
@@ -293,8 +291,6 @@ GROUP BY
 
 
 -- Init geom
-
-UPDATE osm_base_n SET geom=ST_MakePoint(lon, lat);
 
 CREATE TEMP TABLE osm_base_geom_way AS
 SELECT
