@@ -8,6 +8,8 @@ PROJECTS=${1:-$(find ${PROJECTS_CONFIG_PATH}/* -maxdepth 0 -type d | sed -e 's#$
 
 for PROJECT in $PROJECTS; do
     PROJECT=$(basename "$PROJECT")
+    [ ! -d ${PROJECTS_DATA_PATH}/${PROJECT} ] && break
+
     echo
     echo $PROJECT
     echo

@@ -109,6 +109,8 @@ if flock --nonblock $G_LOCK_FD; then
 
     for PROJECT in $PROJECTS; do
         PROJECT=$(basename "$PROJECT")
+        [ ! -d ${PROJECTS_DATA_PATH}/${PROJECT} ] && break
+
         echo
         echo $PROJECT
         echo
