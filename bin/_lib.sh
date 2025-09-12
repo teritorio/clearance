@@ -43,13 +43,12 @@ function geofabrik_cookie {
         fi
 
         local GEOFABRIK_COOKIE=${PROJECTS_DATA_PATH}/${PROJECT}/../geofabrik.cookie
-        WGET_OPS="--load-cookies ${GEOFABRIK_COOKIE} --max-redirect 0"
+        WGET_OPS="--load-cookies ${GEOFABRIK_COOKIE}"
         PYOSMIUM_OPS="--cookie ${GEOFABRIK_COOKIE}"
 
         local HAS_VALID_COOKIE=99
         if [ -s "${GEOFABRIK_COOKIE}" ]; then
-            wget ${WGET_OPS} --quiet https://osm-internal.download.geofabrik.de/cookie_status -O /dev/null
-            HAS_VALID_COOKIE=$?
+            wget ${WGET_OPS} https://osm-internal.download.geofabrik.de/cookie_status -O /dev/null && HAS_VALID_COOKIE=0 || HAS_VALID_COOKIE=98
         fi
 
         if [ "${HAS_VALID_COOKIE}" -ne "0" ]; then
@@ -82,7 +81,7 @@ function download_pbf {
     mkdir -p ${IMPORT}
     geofabrik_cookie ${EXTRACT_URL} # Fills variables WGET_OPS and PYOSMIUM_OPS
     if [ ! -e "${PBF}" ]; then
-        wget ${WGET_OPS} ${EXTRACT_URL} --no-clobber -O ${PBF} || (echo "Fails download $EXTRACT, abort" && exit 1)
+        wget ${WGET_OPS} ${EXTRACT_URL} --no-clobber -O ${PBF} || (echo "Fails download $EXTRACT_URL, abort" && exit 1)
     fi
 
     rm -fr ${IMPORT}/replication
