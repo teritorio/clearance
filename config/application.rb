@@ -55,5 +55,7 @@ module Api
     config.logger = Logger.new($stdout)
 
     config.action_on_unpermitted_parameters = :raise
+
+    config.silence_healthcheck_path = '/up'
   end
 end

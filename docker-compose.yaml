@@ -10,6 +10,13 @@ services:
       - projects_config:/projects_config
       - projects_data:/projects_data
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready
+      start_interval: 1s
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 5
     restart: unless-stopped
 
   script:
@@ -32,6 +39,8 @@ services:
       - projects_data:/projects_data
     depends_on:
       - postgres
+    healthcheck:
+      disable: true
 
   api:
     build:
@@ -58,6 +67,8 @@ services:
     restart: unless-stopped
 
   frontend:
+    build:
+      context: frontend
     image: ghcr.io/teritorio/clearance-frontend:${CLEARANCE_VERSION:-develop}
     environment:
       - NUXT_PUBLIC_API=${PUBLIC_URL}/api/0.1
@@ -78,6 +89,13 @@ services:
     depends_on:
       - api
       - frontend
+    healthcheck:
+      test: service nginx status || exit 1
+      start_interval: 1s
+      start_period: 30s
+      interval: 30s
+      timeout: 20s
+      retries: 5
     restart: unless-stopped
 
 volumes:

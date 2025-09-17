@@ -2,6 +2,8 @@
 # typed: strict
 
 Rails.application.routes.draw do
+  get 'up' => 'rails/health#show'
+
   # API
 
   devise_for :users, controllers: { omniauth_callbacks: 'users/omniauth_callbacks' }
