@@ -35,14 +35,14 @@ cibled_base AS (
         objtype,
         id
     FROM
-        osm_base,
+        osm_base AS _,
         clip
     WHERE
         (
             (:osm_filter_tags) AND
-            (clip.geom IS NULL OR (clip.geom && osm_base.geom AND ST_Intersects(clip.geom, ST_MakeValid(osm_base.geom))))
+            (clip.geom IS NULL OR (clip.geom && _.geom AND ST_Intersects(clip.geom, ST_MakeValid(_.geom))))
         ) OR (
-            osm_base.geom IS NULL
+            _.geom IS NULL
         )
 ),
 -- Select related changes liked to cibled_base
@@ -58,16 +58,16 @@ cibled_changes_from_base AS (
 -- Select only object of interest in the area from osm_changes
 cibled_changes AS (
     SELECT
-        osm_changes_geom_.*
+        _.*
     FROM
-        osm_changes_geom_,
+        osm_changes_geom_ AS _,
         clip
     WHERE
         (
             (:osm_filter_tags) AND
-            (clip.geom IS NULL OR ST_Intersects(clip.geom_proj, osm_changes_geom_.geom))
+            (clip.geom IS NULL OR ST_Intersects(clip.geom_proj, _.geom))
         ) OR (
-            osm_changes_geom_.geom IS NULL
+            _.geom IS NULL
         )
 )
 SELECT DISTINCT ON (changes.objtype, changes.id)

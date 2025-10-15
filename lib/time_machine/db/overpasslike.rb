@@ -21,7 +21,7 @@ module Db
     def self.query(conn, query, srid)
       request = OverpassParserRuby.parse(query)
       sql = File.new('/sql/overpasslike.sql').read
-      sql += request.to_sql('postgres', srid, proc { |s| conn.escape_literal(s) })
+      sql += request.to_sql('postgres', srid, proc { |s| conn.escape_literal(s) }).join("\n")
 
       conn.exec(sql) { |result|
         result.pluck('j')

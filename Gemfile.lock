@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/teritorio/overpass_parser_ruby.git
-  revision: 7de5c151ce5ec39417612686b7ca3a0aff94ef90
+  revision: e6f5355bf9b5aa78ff88cdff3751469f9d20c895
   specs:
     overpass_parser_ruby (0.1.0)
       rb_sys (~> 0.9.91)

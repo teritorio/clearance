@@ -101,12 +101,13 @@ module Osm
     sig {
       params(
         sql_dialect: String,
+        table: String,
         escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
       ).returns(String)
     }
-    def to_sql(sql_dialect, escape_literal)
+    def to_sql(sql_dialect, table, escape_literal)
       pp = @selector_matches.collect{ |selectors|
-        p = selectors.to_sql(sql_dialect, 0, escape_literal)
+        p = selectors.to_sql(sql_dialect, table, 0, escape_literal)
         "(#{p})"
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
@@ -150,14 +151,15 @@ module Osm
     sig {
       params(
         sql_dialect: String,
+        table: String,
         escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
       ).returns(String)
     }
-    def to_sql(sql_dialect, escape_literal)
+    def to_sql(sql_dialect, table, escape_literal)
       if @matches.blank?
         'true'
       else
-        @matches.collect{ |match| match.to_sql(sql_dialect, escape_literal) }.join(' OR ')
+        @matches.collect{ |match| match.to_sql(sql_dialect, table, escape_literal) }.join(' OR ')
       end
     end
   end
