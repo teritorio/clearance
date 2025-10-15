@@ -56,19 +56,19 @@ class TestTagsMatchs < Test::Unit::TestCase
       Osm::TagsMatch.new(['[shop~"pizza.*"]']),
       Osm::TagsMatch.new(['[highway=footway][footway=traffic_island]']),
     ])
-    sql = matches.to_sql('postgres', nil)
-    assert_equal("(tags?'amenity') OR ((tags?'shop' AND tags->>'shop' = 'florist')) OR ((tags?'shop' AND tags->>'shop' ~ 'pizza.*')) OR ((tags?'highway' AND tags->>'highway' = 'footway') AND (tags?'footway' AND tags->>'footway' = 'traffic_island'))", sql)
+    sql = matches.to_sql('postgres', '_', nil)
+    assert_equal("(_.tags?'amenity') OR ((_.tags?'shop' AND _.tags->>'shop' = 'florist')) OR ((_.tags?'shop' AND _.tags->>'shop' ~ 'pizza.*')) OR ((_.tags?'highway' AND _.tags->>'highway' = 'footway') AND (_.tags?'footway' AND _.tags->>'footway' = 'traffic_island'))", sql)
 
     matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[amenity]', '[shop]']),
     ])
-    sql = matches.to_sql('postgres', nil)
-    assert_equal("((tags?'amenity') OR (tags?'shop'))", sql)
+    sql = matches.to_sql('postgres', '_', nil)
+    assert_equal("((_.tags?'amenity') OR (_.tags?'shop'))", sql)
 
     matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[!amenity]']),
     ])
-    sql = matches.to_sql('postgres', nil)
-    assert_equal("(NOT tags?'amenity')", sql)
+    sql = matches.to_sql('postgres', '_', nil)
+    assert_equal("(NOT _.tags?'amenity')", sql)
   end
 end

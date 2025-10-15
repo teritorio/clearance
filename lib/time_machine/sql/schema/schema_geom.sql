@@ -267,7 +267,9 @@ poly AS (
     version,
     created,
     tags,
-    ST_MakePolygon(geom) AS geom
+    CASE WHEN ST_IsValid(st_makepolygon(parts.geom))
+      THEN ST_MakePolygon(geom)
+    END AS geom
   FROM
     parts
   WHERE
