@@ -80,7 +80,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: [test]
-    if: github.ref == 'refs/heads/dev' || startsWith(github.event.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev' || startsWith(github.event.ref, 'refs/tags/v')
 
     permissions:
       contents: read
