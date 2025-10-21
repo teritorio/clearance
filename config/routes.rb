@@ -4,23 +4,27 @@
 Rails.application.routes.draw do
   get 'up' => 'rails/health#show'
 
-  # API
-
   devise_for :users, controllers: { omniauth_callbacks: 'users/omniauth_callbacks' }
-  get '/api/0.1/users/me', controller: 'users', action: 'me'
 
-  # DATA
+  scope path: '/api/0.1' do
+    # API
+    get 'users/me', controller: 'users', action: 'me'
 
-  get '/api/0.1/projects', controller: 'projects', action: 'index'
-  get '/api/0.1/projects/:project/', controller: 'projects', action: 'project'
-  get '/api/0.1/projects/:project/changes_logs', controller: 'changes_logs', action: 'index'
-  post '/api/0.1/projects/:project/changes_logs/accept', controller: 'changes_logs', action: 'sets'
+    scope path: '/projects' do
+      get '/', controller: 'projects', action: 'index'
+      scope path: '/:project' do
+        # Data
+        get '/', controller: 'projects', action: 'project'
+        get '/changes_logs', controller: 'changes_logs', action: 'index'
+        post '/changes_logs/accept', controller: 'changes_logs', action: 'sets'
 
-  get '/api/0.1/projects/:project/validators/', to: 'validators#index'
+        get '/validators/', to: 'validators#index'
 
-  # Overpass like API
-
-  get '/api/0.1/projects/:project/overpasslike', to: 'overpasslike#interpreter'
-  get '/api/0.1/projects/:project/overpasslike/interpreter', to: 'overpasslike#interpreter'
-  post '/api/0.1/projects/:project/overpasslike/interpreter', to: 'overpasslike#interpreter'
+        # Overpass like API
+        get '/overpasslike', to: 'overpasslike#interpreter'
+        get '/overpasslike/interpreter', to: 'overpasslike#interpreter'
+        post '/overpasslike/interpreter', to: 'overpasslike#interpreter'
+      end
+    end
+  end
 end
