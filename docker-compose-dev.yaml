@@ -8,6 +8,8 @@ services:
       - ./:/srv/app
     ports:
       - 9000:9000
+    healthcheck:
+      test: "echo ok"
 
   frontend:
     ports:
