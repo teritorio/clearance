@@ -114,3 +114,6 @@ Rails/Output:
 
 Style/MultilineTernaryOperator:
   Enabled: false
+
+Rails/SquishedSQLHeredocs:
+  Enabled: false
