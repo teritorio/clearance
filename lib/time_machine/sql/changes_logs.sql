@@ -3,7 +3,9 @@ SET search_path TO :schema,public;
 DROP FUNCTION IF EXISTS changes_logs();
 CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     id bigint,
-    objects jsonb
+    objects jsonb,
+    point_x double precision,
+    point_y double precision
 ) AS $$
     WITH objects AS (
     SELECT
@@ -50,7 +52,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         validations_log.matches,
         validations_log.action,
         validations_log.diff_attribs,
-        validations_log.diff_tags
+        validations_log.diff_tags,
+        ST_PointOnSurface(coalesce(osm_changes.geom, osm_base.geom)) AS point
     FROM
         validations_log
         LEFT JOIN osm_base ON
@@ -73,7 +76,9 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         jsonb_agg(
             row_to_json(objects)::jsonb - 'locha_id'
             ORDER BY change->>'created'
-        )::jsonb
+        )::jsonb,
+        ST_X(ST_PointOnSurface(ST_Union(point))) AS point_x,
+        ST_Y(ST_PointOnSurface(ST_Union(point))) AS point_y
     FROM
         objects
     GROUP BY

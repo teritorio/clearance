@@ -419,6 +419,7 @@ DEPENDENCIES
   activerecord
   activesupport
   bootsnap
+  builder (~> 3.3)
   byebug
   bzip2-ffi
   debug

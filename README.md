@@ -222,7 +222,6 @@ Validation evaluation scoring
 
 UI / UX
   * Partial validation of LoCha
-  * RSS by user groups
   * Validation review UI / UX
   * Configuration UI:
     * Display

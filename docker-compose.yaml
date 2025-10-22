@@ -27,7 +27,6 @@ services:
       context: .
     environment:
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
-      - PUBLIC_URL=${PUBLIC_URL}
       - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS:-}
       - OSM_GEOFABRIK_PASSWORD=${OSM_GEOFABRIK_PASSWORD:-}
       - OSM_GEOFABRIK_USER=${OSM_GEOFABRIK_USER:-}
@@ -49,6 +48,7 @@ services:
     environment:
       - RAILS_ENV=${RAILS_ENV:-production}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-Toe8eihai5ieShai}
+      - PUBLIC_URL=${PUBLIC_URL}
       - OSM_OAUTH2_ID=${OSM_OAUTH2_ID}
       - OSM_OAUTH2_SECRET=${OSM_OAUTH2_SECRET}
       - OSM_OAUTH2_REDIRECT=${OSM_OAUTH2_REDIRECT}
