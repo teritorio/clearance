@@ -65,7 +65,7 @@ module Validation
   def self.time_machine_locha(config, lo_cha, accept_all_validators)
     befores = lo_cha.collect(&:first).compact
     afters = lo_cha.collect(&:last).compact
-    conflations = LogicalHistory::Conflation.conflate_with_simplification(befores, afters, config.local_srid, 200.0)
+    conflations = LogicalHistory::Conflation.conflate_with_simplification(befores, afters, 200.0)
 
     Enumerator.new { |yielder|
       conflations.each{ |conflation|

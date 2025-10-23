@@ -13,11 +13,14 @@ module Validation
   extend T::Sig
 
   class OSMChangeProperties < T::Struct
+    extend T::Sig
+
     const :locha_id, Integer
     const :objtype, String
     const :id, Integer
     const :geom, T.nilable(String)
-    const :geos, T.nilable(RGeo::Feature::Geometry)
+    prop :geos, T.nilable(RGeo::Feature::Geometry)
+    const :geos_factory, T.proc.params(geom: String).returns(T.nilable(RGeo::Feature::Geometry))
     prop :geom_distance, T.nilable(T.any(Float, Integer))
     const :deleted, T::Boolean
     const :members, T.nilable(T::Array[Integer])
@@ -29,26 +32,61 @@ module Validation
     const :is_change, T::Boolean
     const :group_ids, T.nilable(T::Array[String])
 
-    extend T::Sig
+    prop :has_geos, T::Boolean, default: false
 
-    sig { params(other: OSMChangeProperties).returns(T::Boolean) }
-    def eql?(other)
-      objtype == other.objtype && id == other.id && (geos || geom) == (other.geos || other.geom)
+    sig { returns(T.nilable(RGeo::Feature::Geometry)) }
+    def geos
+      geom_ = geom
+      return if geom_.nil?
+
+      if T.unsafe(@geos).nil? && !has_geos
+        @has_geos = true
+        @geos = geos_factory.call(geom_)
+      end
+
+      @geos
     end
 
-    sig { returns(Integer) }
+    sig { overridable.params(other: OSMChangeProperties).returns(T::Boolean) }
+    def eql?(other)
+      objtype == other.objtype && id == other.id && version == other.version && geom == other.geom
+    end
+    alias == eql?
+
+    sig { overridable.returns(Integer) }
     def hash
-      [objtype, id, geos&.as_text || geom].hash
+      [objtype, id, version, geom].hash
+    end
+
+    sig {
+      params(
+      local_srid: Integer
+    ).returns(
+        T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry))
+      )
+    }
+    def self.build_geos_factory(local_srid)
+      geo_factory = RGeo::Geos.factory(srid: 4326)
+      projection = RGeo::Geos.factory(srid: local_srid)
+
+      proc do |geojson_geometry|
+        decode = RGeo::GeoJSON.decode(geojson_geometry, geo_factory: geo_factory)
+        RGeo::Feature.cast(decode, project: true, factory: projection) if !decode.nil?
+      rescue RGeo::Error::InvalidGeometry
+        nil
+      end
     end
   end
 
   sig {
     params(
       osm_change_object: T.untyped,
+      local_srid: Integer
     ).returns([T.nilable(OSMChangeProperties), OSMChangeProperties])
   }
-  def self.convert_locha_item(osm_change_object)
-    ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'] }
+  def self.convert_locha_item(osm_change_object, local_srid)
+    geos_factory = OSMChangeProperties.build_geos_factory(local_srid)
+    ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'], 'geos_factory' => geos_factory }
     before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
     after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
     [before, after]
@@ -78,7 +116,7 @@ module Validation
           results = []
         end
 
-        results << convert_locha_item(osm_change_object)
+        results << convert_locha_item(osm_change_object, local_srid)
         last_locha_id = osm_change_object['locha_id']
       }
 
