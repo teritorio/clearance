@@ -71,7 +71,7 @@ class TestValidation < Test::Unit::TestCase
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
-      })
+      }, config.local_srid)
     }
 
     r = Validation.time_machine_locha_propagate_rejection(config, locha, accept_all_validators).to_a
@@ -146,7 +146,7 @@ class TestValidation < Test::Unit::TestCase
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
-      })
+      }, config.local_srid)
     }
 
     r = Validation.time_machine_locha_propagate_rejection(config, locha, accept_all_validators).to_a
@@ -180,7 +180,7 @@ validators: {}"
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
-      })
+      }, config.local_srid)
     }
 
     r = Validation.time_machine_locha(config, locha, accept_all_validators).to_a
