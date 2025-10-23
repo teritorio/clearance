@@ -283,7 +283,6 @@ class TestGeomChanges < Test::Unit::TestCase
 
     diff = Validation.diff_osm_object(before, after)
     diff.attribs['geom_distance'] = []
-    puts diff.inspect
     validator.apply(before, after, diff)
     assert_equal(
       Validation::DiffActions.new(
