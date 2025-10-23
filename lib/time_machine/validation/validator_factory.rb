@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
+require './lib/time_machine/validators/after_delay'
 require './lib/time_machine/validators/deleted'
 require './lib/time_machine/validators/geom_changes'
 require './lib/time_machine/validators/geom_new_object'

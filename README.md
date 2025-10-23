@@ -210,7 +210,6 @@ Validators implementation
   * Geometry validity (self-intersections, crossings, unclosed polygons...)
   * Check for broken network continuity
   * Add detection of new duplicate or similar objects
-  * Pass-through after retention delay: allow automatic validation of non-disputed features / outside change-in-progress areas
   * Validate again OpenData set
   * Validate changes using external rule sets, like MapCSS from JOSM or Osmose-QA validation
 
