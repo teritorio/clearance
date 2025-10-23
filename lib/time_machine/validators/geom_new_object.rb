@@ -10,19 +10,6 @@ module Validators
 
   class GeomNewObject < Validator
     sig {
-      params(
-        id: String,
-        osm_tags_matches: Osm::TagsMatches,
-        action: T.nilable(Validation::ActionType),
-        action_force: T.nilable(Validation::ActionType),
-        description: T.nilable(String),
-      ).void
-    }
-    def initialize(id:, osm_tags_matches:, action: nil, action_force: nil, description: nil)
-      super
-    end
-
-    sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),
         _after: T.nilable(Validation::OSMChangeProperties),
