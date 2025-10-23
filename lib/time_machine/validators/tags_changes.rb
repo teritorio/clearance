@@ -13,19 +13,6 @@ module Validators
     attr_reader :osm_tags_matches
 
     sig {
-      params(
-        id: String,
-        osm_tags_matches: Osm::TagsMatches,
-        accept: String,
-        reject: String,
-        description: T.nilable(String),
-      ).void
-    }
-    def initialize(id:, osm_tags_matches:, accept:, reject:, description: nil)
-      super
-    end
-
-    sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),
         after: T.nilable(Validation::OSMChangeProperties),
