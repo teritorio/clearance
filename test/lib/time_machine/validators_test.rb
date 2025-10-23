@@ -51,6 +51,9 @@ end
 class TestUserList < Test::Unit::TestCase
   extend T::Sig
 
+  @@srid = T.let(4326, Integer) # No projection
+  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+
   sig { void }
   def test_simple
     id = 'foo'
@@ -70,6 +73,7 @@ class TestUserList < Test::Unit::TestCase
       objtype: 'n',
       id: 1,
       geom: '{"type":"Point","coordinates":[0,0]}',
+      geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
       members: nil,
@@ -109,6 +113,9 @@ end
 class TestTagsChanges < Test::Unit::TestCase
   extend T::Sig
 
+  @@srid = T.let(4326, Integer) # No projection
+  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+
   sig { void }
   def test_simple
     id = 'foo'
@@ -135,6 +142,7 @@ class TestTagsChanges < Test::Unit::TestCase
       objtype: 'n',
       id: 1,
       geom: '{"type":"Point","coordinates":[0,0]}',
+      geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
       members: nil,
@@ -177,6 +185,9 @@ end
 class TestGeomNewObject < Test::Unit::TestCase
   extend T::Sig
 
+  @@srid = T.let(4326, Integer) # No projection
+  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+
   sig { void }
   def test_simple
     id = 'foo'
@@ -198,6 +209,7 @@ class TestGeomNewObject < Test::Unit::TestCase
       objtype: 'n',
       id: 1,
       geom: '{"type":"Point","coordinates":[0,0]}',
+      geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
       members: nil,
@@ -227,6 +239,9 @@ end
 class TestGeomChanges < Test::Unit::TestCase
   extend T::Sig
 
+  @@srid = T.let(4326, Integer) # No projection
+  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+
   sig { void }
   def test_dist
     id = 'foo'
@@ -249,6 +264,7 @@ class TestGeomChanges < Test::Unit::TestCase
       objtype: 'n',
       id: 1,
       geom: '{"type":"Point","coordinates":[10,10]}',
+      geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
       members: nil,
@@ -268,6 +284,7 @@ class TestGeomChanges < Test::Unit::TestCase
       objtype: 'n',
       id: 1,
       geom: '{"type":"Point","coordinates":[0,0]}',
+      geos_factory: @@geos_factory,
       geom_distance: 10,
       deleted: false,
       members: nil,
@@ -298,6 +315,9 @@ end
 class TestAfterDelay < Test::Unit::TestCase
   extend T::Sig
 
+  @@srid = T.let(4326, Integer) # No projection
+  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+
   sig { void }
   def test_after_delay
     id = 'foo'
@@ -313,6 +333,7 @@ class TestAfterDelay < Test::Unit::TestCase
       objtype: 'n',
       id: 1,
       geom: '{"type":"Point","coordinates":[0,0]}',
+      geos_factory: @@geos_factory,
       geom_distance: 10,
       deleted: false,
       members: nil,
