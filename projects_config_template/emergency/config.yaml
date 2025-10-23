@@ -95,3 +95,8 @@ validators:
   # Always consider deletion as unsafe.
   deleted:
     action_force: reject
+
+  # Accept all changes after a retention delay
+  after_delay:
+    retention_delay: 86400 # 1 day
+    action_force: accept
