@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/after_delay'
 require './lib/time_machine/validators/geom_changes'
 require './lib/time_machine/validators/tags_changes'
 require './lib/time_machine/validators/user_list'
@@ -288,6 +289,72 @@ class TestGeomChanges < Test::Unit::TestCase
       Validation::DiffActions.new(
         attribs: { 'geom_distance' => validation_action_accept },
         tags: {}
+      ).inspect,
+      diff.inspect
+    )
+  end
+end
+
+class TestAfterDelay < Test::Unit::TestCase
+  extend T::Sig
+
+  sig { void }
+  def test_after_delay
+    id = 'foo'
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(
+        ['[shop=florist]'],
+        selector_extra: { 'phone' => nil, 'fee' => nil },
+      ),
+    ])
+
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: '{"type":"Point","coordinates":[0,0]}',
+      geom_distance: 10,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: '2025-01-01T00:00:00Z',
+      tags: {
+        'shop' => 'florist',
+      },
+      is_change: true,
+      group_ids: nil,
+    )
+
+    # Same created date
+    validator = Validators::AfterDelay.new(id: id, osm_tags_matches: osm_tags_matches, retention_delay: 1, action_force: 'accept', now: '2025-01-01T00:00:00Z')
+
+    diff = Validation.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        tags: { 'shop' => [] }
+      ).inspect,
+      diff.inspect
+    )
+
+    # After created date
+    validator = Validators::AfterDelay.new(id: id, osm_tags_matches: osm_tags_matches, retention_delay: 1, action_force: 'accept', now: '2025-01-01T00:00:00Z')
+    after = after.with(created: '2024-12-31T00:00:00Z')
+    validation_action_accept = [Validation::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'accept',
+    )]
+
+    diff = Validation.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        tags: { 'shop' => validation_action_accept }
       ).inspect,
       diff.inspect
     )
