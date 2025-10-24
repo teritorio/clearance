@@ -6,6 +6,7 @@ require 'test/unit'
 require './lib/time_machine/validators/validator'
 require './lib/time_machine/validators/after_delay'
 require './lib/time_machine/validators/geom_changes'
+require './lib/time_machine/validators/geom_invalid'
 require './lib/time_machine/validators/tags_changes'
 require './lib/time_machine/validators/user_list'
 require './lib/time_machine/validation/time_machine'
@@ -376,6 +377,97 @@ class TestAfterDelay < Test::Unit::TestCase
       Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom_distance' => [] },
         tags: { 'shop' => validation_action_accept }
+      ).inspect,
+      diff.inspect
+    )
+  end
+end
+
+class TestGeomInvalid < Test::Unit::TestCase
+  extend T::Sig
+
+  @@srid = T.let(4326, Integer) # No projection
+  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+
+  sig { void }
+  def test_after_delay
+    id = 'foo'
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(
+        ['[shop=florist]'],
+        selector_extra: { 'phone' => nil, 'fee' => nil },
+      ),
+    ])
+
+    after = Validation::OSMChangeProperties.new(
+      locha_id: 1,
+      objtype: 'n',
+      id: 1,
+      geom: '{"type":"Point","coordinates":[0,0]}',
+      geos_factory: @@geos_factory,
+      geom_distance: 10,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changesets: nil,
+      username: 'bob',
+      created: '2025-01-01T00:00:00Z',
+      tags: {
+        'shop' => 'florist',
+      },
+      is_change: true,
+      group_ids: nil,
+    )
+
+    # Valid
+    validator = Validators::GeomInvalid.new(id: id, osm_tags_matches: osm_tags_matches, action: 'reject')
+
+    diff = Validation.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        tags: { 'shop' => [] }
+      ).inspect,
+      diff.inspect
+    )
+
+    # Invalid geom, self-intersecting polygon
+    validator = Validators::GeomInvalid.new(id: id, osm_tags_matches: osm_tags_matches, action: 'reject')
+    after = after.with(geom: '{"type":"Polygon","coordinates":[[[0,0],[1,1],[1,0],[0,1],[0,0]]]}', geos: nil, has_geos: false)
+    validation_action_accept = [Validation::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'reject',
+      options: { 'reason' => 'Self-intersection' },
+    )]
+
+    diff = Validation.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'deleted' => [], 'geom_distance' => [], 'geom' => validation_action_accept },
+        tags: { 'shop' => [] }
+      ).inspect,
+      diff.inspect
+    )
+
+    # Missing geom
+    validator = Validators::GeomInvalid.new(id: id, osm_tags_matches: osm_tags_matches, action: 'reject')
+    after = after.with(geom: '{}', geos: nil, has_geos: false)
+    validation_action_accept = [Validation::Action.new(
+      validator_id: id,
+      description: nil,
+      action: 'reject',
+      options: { 'reason' => 'Fails to build geometry' },
+    )]
+
+    diff = Validation.diff_osm_object(nil, after)
+    validator.apply(nil, after, diff)
+    assert_equal(
+      Validation::DiffActions.new(
+        attribs: { 'deleted' => [], 'geom_distance' => [], 'geom' => validation_action_accept },
+        tags: { 'shop' => [] }
       ).inspect,
       diff.inspect
     )
