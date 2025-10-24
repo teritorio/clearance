@@ -35,7 +35,7 @@ class TestConflation < Test::Unit::TestCase
         objtype: 'n',
         id: id,
         geojson_geometry: geom,
-        geos_factory: Validation::OSMChangeProperties.build_geos_factory(srid),
+        geos_factory: OSMLogicalHistory.build_geos_factory(srid),
         geom_distance: 0,
         deleted: false,
         members: nil,
