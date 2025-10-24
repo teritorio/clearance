@@ -73,7 +73,7 @@ class TestUserList < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[0,0]}',
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
@@ -142,7 +142,7 @@ class TestTagsChanges < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[0,0]}',
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
@@ -209,7 +209,7 @@ class TestGeomNewObject < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[0,0]}',
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
@@ -264,7 +264,7 @@ class TestGeomChanges < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[10,10]}',
+      geojson_geometry: '{"type":"Point","coordinates":[10,10]}',
       geos_factory: @@geos_factory,
       geom_distance: 0,
       deleted: false,
@@ -284,7 +284,7 @@ class TestGeomChanges < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[0,0]}',
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
       geom_distance: 10,
       deleted: false,
@@ -333,7 +333,7 @@ class TestAfterDelay < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[0,0]}',
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
       geom_distance: 10,
       deleted: false,
@@ -403,7 +403,7 @@ class TestGeomInvalid < Test::Unit::TestCase
       locha_id: 1,
       objtype: 'n',
       id: 1,
-      geom: '{"type":"Point","coordinates":[0,0]}',
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
       geom_distance: 10,
       deleted: false,
@@ -434,7 +434,7 @@ class TestGeomInvalid < Test::Unit::TestCase
 
     # Invalid geom, self-intersecting polygon
     validator = Validators::GeomInvalid.new(id: id, osm_tags_matches: osm_tags_matches, action: 'reject')
-    after = after.with(geom: '{"type":"Polygon","coordinates":[[[0,0],[1,1],[1,0],[0,1],[0,0]]]}', geos: nil, has_geos: false)
+    after = after.with(geojson_geometry: '{"type":"Polygon","coordinates":[[[0,0],[1,1],[1,0],[0,1],[0,0]]]}', geos: nil, has_geos: false)
     validation_action_accept = [Validation::Action.new(
       validator_id: id,
       description: nil,
@@ -454,7 +454,7 @@ class TestGeomInvalid < Test::Unit::TestCase
 
     # Missing geom
     validator = Validators::GeomInvalid.new(id: id, osm_tags_matches: osm_tags_matches, action: 'reject')
-    after = after.with(geom: '{}', geos: nil, has_geos: false)
+    after = after.with(geojson_geometry: '{}', geos: nil, has_geos: false)
     validation_action_accept = [Validation::Action.new(
       validator_id: id,
       description: nil,

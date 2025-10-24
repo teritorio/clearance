@@ -18,7 +18,7 @@ module Validation
     const :locha_id, Integer
     const :objtype, String
     const :id, Integer
-    const :geom, T.nilable(String)
+    const :geojson_geometry, T.nilable(String)
     prop :geos, T.nilable(RGeo::Feature::Geometry)
     const :geos_factory, T.proc.params(geom: String).returns(T.nilable(RGeo::Feature::Geometry))
     prop :geom_distance, T.nilable(T.any(Float, Integer))
@@ -36,12 +36,12 @@ module Validation
 
     sig { returns(T.nilable(RGeo::Feature::Geometry)) }
     def geos
-      geom_ = geom
-      return if geom_.nil?
+      geojson_geometry_ = geojson_geometry
+      return if geojson_geometry_.nil?
 
       if T.unsafe(@geos).nil? && !has_geos
         @has_geos = true
-        @geos = geos_factory.call(geom_)
+        @geos = geos_factory.call(geojson_geometry_)
       end
 
       @geos
@@ -49,13 +49,13 @@ module Validation
 
     sig { overridable.params(other: OSMChangeProperties).returns(T::Boolean) }
     def eql?(other)
-      objtype == other.objtype && id == other.id && version == other.version && geom == other.geom
+      objtype == other.objtype && id == other.id && version == other.version && geojson_geometry == other.geojson_geometry
     end
     alias == eql?
 
     sig { overridable.returns(Integer) }
     def hash
-      [objtype, id, version, geom].hash
+      [objtype, id, version, geojson_geometry].hash
     end
 
     sig {
