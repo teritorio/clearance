@@ -207,7 +207,6 @@ Configuration
     * Evaluation of geometry change thresholds
 
 Validators implementation
-  * Geometry validity (self-intersections, crossings, unclosed polygons...)
   * Check for broken network continuity
   * Add detection of new duplicate or similar objects
   * Validate again OpenData set
