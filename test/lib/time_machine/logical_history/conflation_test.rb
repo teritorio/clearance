@@ -414,7 +414,6 @@ class TestConflation < Test::Unit::TestCase
     ]
 
     conflations = Conflation.conflate_with_simplification(before, after, @@srid, @@demi_distance)
-    puts conflations.inspect
     assert_equal(1, conflations.size, conflations)
     assert_equal(
       [[before[0], after[0], after[0]]].collect{ |t| t.collect(&:id) },
