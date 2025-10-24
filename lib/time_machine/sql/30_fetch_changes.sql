@@ -100,7 +100,7 @@ CREATE OR REPLACE FUNCTION fetch_changes(
                 t.username,
                 t.tags,
                 t.members,
-                t.geom,
+                t.geom AS geojson_geometry,
                 t.changesets,
                 t.is_change,
                 (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
@@ -117,7 +117,7 @@ CREATE OR REPLACE FUNCTION fetch_changes(
     SELECT
         state.objtype,
         state.id,
-        ST_Union(state.geom) AS geom,
+        ST_Union(state.geojson_geometry) AS geom,
         jsonb_agg(row_to_json(state)::jsonb - 'objtype' - 'id') AS p
     FROM
         state
