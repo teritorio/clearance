@@ -104,13 +104,13 @@ module LogicalHistory
       a_arr = afters.to_a
       0.upto(b_arr.length - 1).each{ |b_i|
         b = T.must(b_arr[b_i])
-        next if b.geom.nil?
+        next if b.geojson_geometry.nil?
 
         next if T.unsafe(b.geos).nil?
 
         0.upto(a_arr.length - 1).each{ |a_i|
           a = T.must(a_arr[a_i])
-          next if a.geom.nil?
+          next if a.geojson_geometry.nil?
 
           t_dist = LogicalHistory::Tags.tags_distance(b.tags, a.tags)
           next if t_dist.nil?
