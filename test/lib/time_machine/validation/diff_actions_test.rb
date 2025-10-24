@@ -13,7 +13,7 @@ class TestValidation < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   @@fixture_changeset1 = T.let({
     'id' => 1,
