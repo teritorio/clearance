@@ -34,7 +34,7 @@ class TestConflation < Test::Unit::TestCase
         locha_id: 1,
         objtype: 'n',
         id: id,
-        geom: geom,
+        geojson_geometry: geom,
         geos_factory: Validation::OSMChangeProperties.build_geos_factory(srid),
         geom_distance: 0,
         deleted: false,
