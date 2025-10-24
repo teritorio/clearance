@@ -53,7 +53,7 @@ class TestUserList < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   sig { void }
   def test_simple
@@ -115,7 +115,7 @@ class TestTagsChanges < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   sig { void }
   def test_simple
@@ -187,7 +187,7 @@ class TestGeomNewObject < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   sig { void }
   def test_simple
@@ -241,7 +241,7 @@ class TestGeomChanges < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   sig { void }
   def test_dist
@@ -317,7 +317,7 @@ class TestAfterDelay < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   sig { void }
   def test_after_delay
@@ -387,7 +387,7 @@ class TestGeomInvalid < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
-  @@geos_factory = T.let(Validation::OSMChangeProperties.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
+  @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
   sig { void }
   def test_after_delay
