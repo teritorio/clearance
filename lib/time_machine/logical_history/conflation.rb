@@ -7,9 +7,9 @@ require 'set'
 require 'rgeo'
 require 'rgeo/geo_json'
 require 'rgeo/proj4'
+require 'openstreetmap_logical_history'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/logical_history/conflation'
-require './lib/time_machine/logical_history/refs'
 require './lib/time_machine/logical_history/tags'
 require './lib/time_machine/logical_history/geom'
 
@@ -62,10 +62,10 @@ module LogicalHistory
       ])
     }
     def self.conflate_by_refs(befores, afters, afters_index)
-      befores_refs = befores.group_by{ |b| LogicalHistory::Refs.refs(b.tags) }
+      befores_refs = befores.group_by{ |b| OSMLogicalHistory::Refs.refs(b.tags) }
       befores_refs.delete({})
       befores_refs = befores_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
-      afters_refs = afters.group_by{ |a| LogicalHistory::Refs.refs(a.tags) }
+      afters_refs = afters.group_by{ |a| OSMLogicalHistory::Refs.refs(a.tags) }
       afters_refs.delete({})
       afters_refs = afters_refs.select{ |_k, v| v.size == 1 }.transform_values{ |v| T.must(v.first) }
 
