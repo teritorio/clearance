@@ -28,7 +28,7 @@ class TestLoCha < Test::Unit::TestCase
       project: true,
       factory: projection,
     )
-    d = Geom.geom_distance(before, after, demi_distance)
+    d = Geom.geom_score(before, after, demi_distance)
 
     assert(T.must(d&.first) < 0.5)
     assert(T.must(d&.first) > 0.0)
