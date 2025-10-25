@@ -93,13 +93,13 @@ module LogicalHistory
         afters: T::Enumerable[Validation::OSMChangeProperties],
         demi_distance: Float,
       ).returns([
-        T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]],
+        T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, LogicalHistory::Geom::DistanceMeusure, Float]],
         T::Set[Validation::OSMChangeProperties],
         T::Set[Validation::OSMChangeProperties],
       ])
     }
     def self.conflate_matrix(befores, afters, demi_distance)
-      distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)], Float]])
+      distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, LogicalHistory::Geom::DistanceMeusure, Float]])
 
       b_arr = befores.to_a
       a_arr = afters.to_a
@@ -125,7 +125,7 @@ module LogicalHistory
               # Geom distance does not matter on 1x1 matrix, fast return
               [0.0, nil, nil]
             else
-              LogicalHistory::Geom.geom_distance(T.must(b.geos), T.must(a.geos), demi_distance)
+              LogicalHistory::Geom.geom_score(T.must(b.geos), T.must(a.geos), demi_distance)
             end
           )
 
@@ -147,7 +147,7 @@ module LogicalHistory
         key_min: [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
         befores: T::Set[Validation::OSMChangeProperties],
         afters: T::Set[Validation::OSMChangeProperties],
-        dist_geom: [Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)],
+        dist_geom: LogicalHistory::Geom::DistanceMeusure,
       ).returns(T::Array[[
         T::Enumerable[Validation::OSMChangeProperties],
         T::Enumerable[Validation::OSMChangeProperties]
