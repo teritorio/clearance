@@ -86,8 +86,8 @@ module LogicalHistory
       if !intersection.empty? && intersection.dimension == r_geom_a.dimension && intersection.dimension == r_geom_b.dimension
         # Compute: 1 - intersection / union
         # Compute buffered symetrical difference
-        a_over_b = T.let(r_geom_a - r_geom_b.buffer(geom_diameter(r_geom_b) * 0.05), RGeo::Feature::Geometry)
-        b_over_a = T.let(r_geom_b - r_geom_a.buffer(geom_diameter(r_geom_a) * 0.05), RGeo::Feature::Geometry)
+        a_over_b = T.let(r_geom_a - r_geom_b.buffer(20), RGeo::Feature::Geometry)
+        b_over_a = T.let(r_geom_b - r_geom_a.buffer(20), RGeo::Feature::Geometry)
 
         if a_over_b.empty? || b_over_a.empty?
           # One subpart of the other
