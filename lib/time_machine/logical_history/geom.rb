@@ -9,6 +9,14 @@ module LogicalHistory
   module Geom
     extend T::Sig
 
+    DistanceMeusure = T.type_alias {
+      [
+        Float, # Meusure of difference
+        T.nilable(RGeo::Feature::Geometry),
+        T.nilable(RGeo::Feature::Geometry),
+      ]
+    }
+
     sig {
       params(
         geom: RGeo::Feature::Geometry,
@@ -42,7 +50,7 @@ module LogicalHistory
         b_over_a: RGeo::Feature::Geometry,
         union: RGeo::Feature::Geometry,
         _block: T.proc.params(arg0: RGeo::Feature::Geometry).returns(Float),
-      ).returns([Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)])
+      ).returns(DistanceMeusure)
     }
     def self.exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union, &_block)
       buffered_distance = (yield(a_over_b) + yield(b_over_a)) / yield(union) / 2
@@ -69,9 +77,9 @@ module LogicalHistory
         r_geom_a: RGeo::Feature::Geometry,
         r_geom_b: RGeo::Feature::Geometry,
         demi_distance: Float,
-      ).returns(T.nilable([Float, T.nilable(RGeo::Feature::Geometry), T.nilable(RGeo::Feature::Geometry)]))
+      ).returns(T.nilable(DistanceMeusure))
     }
-    def self.geom_distance(r_geom_a, r_geom_b, demi_distance)
+    def self.geom_score(r_geom_a, r_geom_b, demi_distance)
       return [0.0, nil, nil] if r_geom_a.equals?(r_geom_b)
 
       if r_geom_a.dimension == 0 && r_geom_b.dimension == 0
