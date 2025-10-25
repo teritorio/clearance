@@ -11,6 +11,7 @@ module Validators
 
   class ValidatorBase
     extend T::Sig
+
     sig {
       params(
         id: String,
@@ -45,6 +46,7 @@ module Validators
 
   class Validator < ValidatorBase
     extend T::Sig
+
     sig {
       params(
         id: String,
@@ -89,6 +91,7 @@ module Validators
 
   class ValidatorDual < ValidatorBase
     extend T::Sig
+
     sig {
       params(
         id: String,
