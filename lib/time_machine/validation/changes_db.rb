@@ -2,60 +2,125 @@
 # typed: strict
 
 require 'sorbet-runtime'
+require 'json'
+require 'webcache'
+require 'openstreetmap_logical_history'
 require './lib/time_machine/validation/types'
 require './lib/time_machine/osm/types'
-require 'json'
 require './lib/time_machine/db/db_conn'
-require 'webcache'
+require 'rgeo'
 
 
 module Validation
   extend T::Sig
 
-  class OSMChangeProperties < T::Struct
+  class OSMChangeProperties < OSMLogicalHistory::OSMObject
     extend T::Sig
 
-    const :locha_id, Integer
-    const :objtype, String
-    const :id, Integer
-    const :geojson_geometry, T.nilable(String)
-    prop :geos, T.nilable(RGeo::Feature::Geometry)
-    const :geos_factory, T.proc.params(geom: String).returns(T.nilable(RGeo::Feature::Geometry))
-    prop :geom_distance, T.nilable(T.any(Float, Integer))
-    const :deleted, T::Boolean
-    const :members, T.nilable(T::Array[Integer])
-    const :version, Integer
-    const :changesets, T.nilable(T::Array[Osm::Changeset])
-    const :username, String
-    const :created, String
-    const :tags, T::Hash[String, String]
-    const :is_change, T::Boolean
-    const :group_ids, T.nilable(T::Array[String])
+    sig { returns(Integer) }
+    attr_reader :locha_id
 
-    prop :has_geos, T::Boolean, default: false
+    sig { returns(T.nilable(T.any(Float, Integer))) }
+    attr_accessor :geom_distance
 
-    sig { returns(T.nilable(RGeo::Feature::Geometry)) }
-    def geos
-      geojson_geometry_ = geojson_geometry
-      return if geojson_geometry_.nil?
+    sig { returns(T.nilable(T::Array[Osm::Changeset])) }
+    attr_reader :changesets
 
-      if T.unsafe(@geos).nil? && !has_geos
-        @has_geos = true
-        @geos = geos_factory.call(geojson_geometry_)
-      end
+    sig { returns(T::Boolean) }
+    attr_reader :is_change
 
-      @geos
+    sig { returns(T.nilable(T::Array[String])) }
+    attr_reader :group_ids
+
+    sig {
+      params(
+        objtype: String,
+        id: Integer,
+        geojson_geometry: T.nilable(String),
+        geos_factory: T.proc.params(geom: String).returns(T.nilable(RGeo::Feature::Geometry)),
+        deleted: T::Boolean,
+        members: T.nilable(T::Array[Integer]),
+        version: Integer,
+        username: T.nilable(String),
+        created: String,
+        tags: T::Hash[String, String],
+        locha_id: Integer,
+        changesets: T.nilable(T::Array[Osm::Changeset]),
+        is_change: T::Boolean,
+        group_ids: T.nilable(T::Array[String]),
+        geom_distance: T.nilable(T.any(Float, Integer)),
+      ).void
+    }
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, locha_id:, changesets:, is_change:, group_ids:, geom_distance: nil) # rubocop:disable Metrics/ParameterLists
+      super(
+        objtype: objtype,
+        id: id,
+        geojson_geometry: geojson_geometry,
+        geos_factory: geos_factory,
+        deleted: deleted,
+        members: members,
+        version: version,
+        username: username,
+        created: created,
+        tags: tags,
+      )
+      @locha_id = locha_id
+      @geom_distance = geom_distance
+      @changesets = changesets
+      @is_change = is_change
+      @group_ids = group_ids
     end
 
-    sig { overridable.params(other: OSMChangeProperties).returns(T::Boolean) }
-    def eql?(other)
-      objtype == other.objtype && id == other.id && version == other.version && geojson_geometry == other.geojson_geometry
+    sig {
+      params(
+        hash: T::Hash[String, T.untyped]
+      ).returns(OSMChangeProperties)
+    }
+    def self.from_hash(hash)
+      OSMChangeProperties.new(
+        objtype: hash['objtype'],
+        id: hash['id'],
+        geojson_geometry: hash['geojson_geometry'],
+        geos_factory: hash['geos_factory'],
+        deleted: hash['deleted'],
+        members: hash['members'],
+        version: hash['version'],
+        username: hash['username'],
+        created: hash['created'],
+        tags: hash['tags'],
+        locha_id: hash['locha_id'],
+        changesets: hash['changesets'],
+        is_change: hash['is_change'],
+        group_ids: hash['group_ids'],
+        geom_distance: hash['geom_distance'],
+      )
     end
-    alias == eql?
 
-    sig { overridable.returns(Integer) }
-    def hash
-      [objtype, id, version, geojson_geometry].hash
+    sig {
+      params(
+        kwargs: T.untyped
+      ).returns(OSMChangeProperties)
+    }
+    def with(**kwargs)
+      o = OSMChangeProperties.new(
+        objtype: kwargs.fetch(:objtype, objtype),
+        id: kwargs.fetch(:id, id),
+        geojson_geometry: kwargs.fetch(:geojson_geometry, geojson_geometry),
+        geos_factory: kwargs.fetch(:geos_factory, geos_factory),
+        deleted: kwargs.fetch(:deleted, deleted),
+        members: kwargs.fetch(:members, members),
+        version: kwargs.fetch(:version, version),
+        username: kwargs.fetch(:username, username),
+        created: kwargs.fetch(:created, created),
+        tags: kwargs.fetch(:tags, tags),
+        locha_id: kwargs.fetch(:locha_id, locha_id),
+        changesets: kwargs.fetch(:changesets, changesets),
+        is_change: kwargs.fetch(:is_change, is_change),
+        group_ids: kwargs.fetch(:group_ids, group_ids),
+        geom_distance: kwargs.fetch(:geom_distance, geom_distance),
+      )
+      o.geos = kwargs[:geos] if kwargs[:geos]
+      o
     end
   end
 
