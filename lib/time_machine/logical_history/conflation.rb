@@ -24,6 +24,7 @@ module LogicalHistory
       prop :after, Validation::OSMChangeProperties
 
       extend T::Sig
+
       sig { returns(T::Array[Validation::OSMChangeProperties]) }
       def to_a
         [before, before_at_now, after]
@@ -38,6 +39,7 @@ module LogicalHistory
       prop :after, T.nilable(Validation::OSMChangeProperties)
 
       extend T::Sig
+
       sig { returns(T::Array[T.nilable(Validation::OSMChangeProperties)]) }
       def to_a
         [before, before_at_now, after]
