@@ -117,3 +117,6 @@ Style/MultilineTernaryOperator:
 
 Rails/SquishedSQLHeredocs:
   Enabled: false
+
+Style/EmptyStringInsideInterpolation:
+  Enabled: false
