@@ -20,16 +20,6 @@ module LogicalHistory
 
     sig {
       params(
-        geom: RGeo::Feature::Geometry,
-      ).returns(Float)
-    }
-    def self.geom_diameter(geom)
-      ring = geom.envelope.exterior_ring
-      ring.point_n(0).distance(ring.point_n(2))
-    end
-
-    sig {
-      params(
         geom_a: RGeo::Feature::Geometry,
         geom_b: RGeo::Feature::Geometry,
         demi_distance: Float,
@@ -101,8 +91,8 @@ module LogicalHistory
         if a_over_b.empty? || b_over_a.empty?
           # One subpart of the other
           union = r_geom_a.union(r_geom_b)
-          parts = exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom|
-            intersection.dimension == 1 ? T.unsafe(geom).length : T.unsafe(geom).area
+          parts = exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geos|
+            intersection.dimension == 1 ? T.unsafe(geos).length : T.unsafe(geos).area
           }
           [0.0, parts[1], parts[2], 'buffered subpart']
         else
@@ -115,9 +105,9 @@ module LogicalHistory
             raise 'Non equal intersecting points, should never happen.'
           elsif dim_a == 1 && dim_b == 1 && dim_union == 1
             # Lines
-            exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom| T.unsafe(geom).length }
+            exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geos| T.unsafe(geos).length }
           elsif dim_a == 2 && dim_b == 2 && dim_union == 2
-            exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom| T.unsafe(geom).area }
+            exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geos| T.unsafe(geos).area }
           else
             raise 'Diff dimension geom should not happen.'
           end
@@ -127,6 +117,8 @@ module LogicalHistory
         d = 0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
         [d, nil, nil, 'log euclidean distance + bias']
       end
+    rescue RGeo::Error::InvalidGeometry
+      nil
     end
   end
 end
