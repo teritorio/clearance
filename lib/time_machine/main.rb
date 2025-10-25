@@ -61,6 +61,7 @@ OptionParser.new { |opts|
 
 class MainMain
   extend T::Sig
+
   sig {
     params(
       options: T::Hash[Symbol, T.untyped]
