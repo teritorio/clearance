@@ -13,7 +13,7 @@ class ChangesLogsController < ApplicationController
   before_action :authenticate_user!, except: [:index]
 
   def index
-    project = params['project']
+    project = params['project'].to_s
 
     sql = 'SELECT * FROM changes_logs()'
     Db::DbConnRead.conn(project) { |conn|
@@ -64,7 +64,7 @@ class ChangesLogsController < ApplicationController
   private
 
   def atom(project, project_object, contents, public_url)
-    xml = Builder::XmlMarkup.new
+    xml = T.let(Builder::XmlMarkup.new, T.untyped) # Avoid typing error on builder
     xml.instruct!(:xml, version: '1.0')
     xml.feed(xmlns: 'http://www.w3.org/2005/Atom', 'xmlns:georss': 'http://www.georss.org/georss') {
       xml.title(project_object.title[I18n.locale.to_s] || project_object.title['en'] || project_object.first.value)
