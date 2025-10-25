@@ -14,6 +14,7 @@ module LogicalHistory
         Float, # Meusure of difference
         T.nilable(RGeo::Feature::Geometry),
         T.nilable(RGeo::Feature::Geometry),
+        String, # Reason
       ]
     }
 
@@ -57,7 +58,7 @@ module LogicalHistory
 
       if r_geom_a.intersection(r_geom_b).dimension < r_geom_a.dimension
         # Excact distance give a lower dimension geom, use buffered distance
-        return [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? a_over_b : nil]
+        return [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? a_over_b : nil, 'intersection over union, distance to lower dimension']
       end
 
       exact_a_over_b = r_geom_a - r_geom_b
@@ -66,9 +67,9 @@ module LogicalHistory
 
       # Prefer exact distance if it's more than 60% of the buffered distance
       if exact_distance / buffered_distance > 0.6
-        [exact_distance, exact_a_over_b.empty? ? nil : exact_a_over_b, exact_b_over_a.empty? ? nil : exact_b_over_a]
+        [exact_distance, exact_a_over_b.empty? ? nil : exact_a_over_b, exact_b_over_a.empty? ? nil : exact_b_over_a, 'intersection over union, exact intersection']
       else
-        [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? b_over_a : nil]
+        [buffered_distance, a_over_b.empty? ? nil : a_over_b, b_over_a.empty? ? b_over_a : nil, 'intersection over union, distance buffered intersection']
       end
     end
 
@@ -80,12 +81,12 @@ module LogicalHistory
       ).returns(T.nilable(DistanceMeusure))
     }
     def self.geom_score(r_geom_a, r_geom_b, demi_distance)
-      return [0.0, nil, nil] if r_geom_a.equals?(r_geom_b)
+      return [0.0, nil, nil, 'same'] if r_geom_a.equals?(r_geom_b)
 
       if r_geom_a.dimension == 0 && r_geom_b.dimension == 0
         # Point never intersects, unless they are the same
         d = log_distance(r_geom_a, r_geom_b, demi_distance)
-        return d <= 0.5 ? [d * 2, nil, nil] : nil
+        return d <= 0.5 ? [d * 2, nil, nil, 'point distance'] : nil
       end
 
       intersection = r_geom_a.intersection(r_geom_b)
@@ -103,7 +104,7 @@ module LogicalHistory
           parts = exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geom|
             intersection.dimension == 1 ? T.unsafe(geom).length : T.unsafe(geom).area
           }
-          [0.0, parts[1], parts[2]]
+          [0.0, parts[1], parts[2], 'buffered subpart']
         else
           dim_a = a_over_b.dimension
           dim_b = b_over_a.dimension
@@ -124,7 +125,7 @@ module LogicalHistory
       else
         # Else, use real distance + bias because no intersection
         d = 0.5 + log_distance(r_geom_a, r_geom_b, demi_distance) / 2
-        [d, nil, nil]
+        [d, nil, nil, 'log euclidean distance + bias']
       end
     end
   end
