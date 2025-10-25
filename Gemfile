@@ -64,6 +64,7 @@ group :development do
   gem 'psych'
   gem 'racc'
   gem 'rbi'
+  gem 'ruby_parser', '~> 3.21'
 
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem 'byebug'

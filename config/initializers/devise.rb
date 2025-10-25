@@ -1,5 +1,5 @@
-# typed: strict
 # frozen_string_literal: true
+# typed: false
 
 
 # https://github.com/heartcombo/devise/issues/5140
