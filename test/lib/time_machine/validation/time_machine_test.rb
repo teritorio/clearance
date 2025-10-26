@@ -10,6 +10,41 @@ require './lib/time_machine/validation/time_machine'
 class TestValidation < Test::Unit::TestCase
   extend T::Sig
 
+  sig {
+    params(
+      id: Integer,
+      tags: T::Hash[String, String],
+      geojson_geometry: String,
+      is_change: T::Boolean,
+      version: Integer,
+      deleted: T::Boolean,
+      srid: Integer,
+    ).returns(Validation::OSMChangeProperties)
+  }
+  def build_object(
+    id:, tags:, geojson_geometry:, is_change:,
+    version: 1, deleted: false,
+    srid: 4326
+  )
+    Validation::OSMChangeProperties.new(
+        locha_id: 1,
+        objtype: 'n',
+        id: id,
+        geojson_geometry: geojson_geometry,
+        geos_factory: OSMLogicalHistory.build_geos_factory(srid),
+        geom_distance: 0,
+        deleted: deleted,
+        members: nil,
+        version: version,
+        changesets: nil,
+        username: 'bob',
+        created: 'today',
+        tags: tags,
+        is_change: is_change,
+        group_ids: nil,
+      )
+  end
+
   CONFIG_YAML_HEADER = <<~YAML
     title:
       en: España Navarra
@@ -86,42 +121,40 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_time_machine_locha_propagate_rejection
-    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
+    validator = Validators::All.new(id: 'v', osm_tags_matches: Osm::TagsMatches.new([]), action: 'reject') { |_before, after, _diff|
+      after && after.id == 2 || false
+    }
+    reject_tag_validators = [validator]
 
     yaml = CONFIG_YAML_HEADER + <<~YAML
       validators:
-        geom_changes_insignificant:
-          instance: Validators::GeomChanges
-          dist: 2
-          reject: geom_changes_significant
-          accept: geom_changes_insignificant
+        deleted:
+          action_force: reject
     YAML
     config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
 
     locha = [
       [1, [
-        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', version: 1, tags: { 'highway' => 'path' }, is_change: false),
-        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', version: 2, tags: {}, is_change: true, deleted: true),
+        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[0,0],[0,200]]}', version: 1, tags: { 'highway' => 'path' }, is_change: false),
+        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[0,0],[0,100]]}', version: 2, tags: {}, is_change: true),
       ]],
-      [2, [build_object(id: 2, geojson_geometry: '{"type":"LineString","coordinates":[[0,1],[0,2]]}', tags: { 'highway' => 'path' }, is_change: true)]],
+      [2, [build_object(id: 2, geojson_geometry: '{"type":"LineString","coordinates":[[0,100],[0,200]]}', tags: { 'highway' => 'path' }, is_change: true)]],
     ].collect{ |id, p|
       Validation.convert_locha_item({
         'locha_id' => -1,
         'objtype' => 'w',
         'id' => id,
-        'p' => JSON.parse(p),
+        'p' => JSON.parse(p.to_json),
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha_propagate_rejection(config, locha, accept_all_validators).to_a
-    assert_equal(11, r.size)
+    r = Validation.time_machine_locha(config, locha, reject_tag_validators).to_a
+    assert_equal(2, r.size)
+    assert_equal({ 'reject' => 1, nil => 1 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
 
-    duplicate_id = r.group_by{ |_locha_id, _matches, validation_result| validation_result.after_object.id }.find{ |_id, group| group.size > 1 }&.first
-    assert_equal(3, duplicate_id)
-
-    duplicates = r.select{ |_locha_id, _matches, validation_result| validation_result.after_object.id == 3 }
-    assert_equal(3, duplicates.size)
-    assert_equal(['reject'] * 3, duplicates.collect{ |_locha_id, _matches, validation_result| validation_result.action })
+    r = Validation.time_machine_locha_propagate_rejection(config, locha, reject_tag_validators).to_a
+    assert_equal(2, r.size)
+    assert_equal({ 'reject' => 2 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
   end
 
   sig { void }
