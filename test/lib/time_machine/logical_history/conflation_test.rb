@@ -344,12 +344,12 @@ class TestConflation < Test::Unit::TestCase
       'highway' => 'residential',
     }
     before = [
-      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags),
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,200]]}', tags: tags),
     ]
     after = [
-      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,2]]}', tags: tags).with(deleted: true),
-      build_object(id: 2, geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', tags: tags),
-      build_object(id: 3, geom: '{"type":"LineString","coordinates":[[0,1],[0,2]]}', tags: tags),
+      build_object(id: 1, geom: '{"type":"LineString","coordinates":[[0,0],[0,200]]}', tags: tags).with(deleted: true),
+      build_object(id: 2, geom: '{"type":"LineString","coordinates":[[0,0],[0,100]]}', tags: tags),
+      build_object(id: 3, geom: '{"type":"LineString","coordinates":[[0,100],[0,200]]}', tags: tags),
     ]
 
     conflations = Conflation.conflate(before, after, @@demi_distance)
