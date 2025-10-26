@@ -88,7 +88,10 @@ module LogicalHistory
         a_over_b = T.let(r_geom_a - r_geom_b.buffer(20), RGeo::Feature::Geometry)
         b_over_a = T.let(r_geom_b - r_geom_a.buffer(20), RGeo::Feature::Geometry)
 
-        if a_over_b.empty? || b_over_a.empty?
+        if a_over_b.empty? && b_over_a.empty?
+          # Equality
+          [0.0, nil, nil, 'symetrical buffered inclusion']
+        elsif a_over_b.empty? || b_over_a.empty?
           # One subpart of the other
           union = r_geom_a.union(r_geom_b)
           parts = exact_or_buffered_size_over_union(r_geom_a, r_geom_b, a_over_b, b_over_a, union) { |geos|
