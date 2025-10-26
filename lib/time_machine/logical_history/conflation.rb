@@ -15,10 +15,17 @@ module LogicalHistory
   module Conflation
     extend T::Sig
 
+    class ConflationReason < T::InexactStruct
+      prop :geom, T.nilable(T::Hash[Symbol, T.untyped])
+      prop :tags, T.nilable(T::Hash[Symbol, T.untyped])
+      prop :conflate, String
+    end
+
     class Conflation < T::InexactStruct
       prop :before, Validation::OSMChangeProperties
       prop :before_at_now, Validation::OSMChangeProperties
       prop :after, Validation::OSMChangeProperties
+      prop :reason, ConflationReason
 
       extend T::Sig
 
@@ -34,6 +41,7 @@ module LogicalHistory
       prop :before, T.nilable(Validation::OSMChangeProperties)
       prop :before_at_now, T.nilable(Validation::OSMChangeProperties)
       prop :after, T.nilable(Validation::OSMChangeProperties)
+      prop :reason, ConflationReason
 
       extend T::Sig
 
@@ -78,6 +86,7 @@ module LogicalHistory
           before: T.must(befores_refs[ref]),
           before_at_now: T.must(afters_index[before_key]),
           after: T.must(afters_refs[ref]),
+          reason: ConflationReason.new(conflate: 'same refs')
         )
       }
 
@@ -205,7 +214,12 @@ module LogicalHistory
         match = Conflation.new(
           before: key_min[0],
           before_at_now: T.must(afters_index[[key_min[0].objtype, key_min[0].id]]),
-          after: key_min[1]
+          after: key_min[1],
+          reason: ConflationReason.new(
+            tags: { score: dist[0][0], reason: dist[0][3] }.compact,
+            geom: { score: dist[1][0], reason: dist[1][3] }.compact,
+            conflate: 'better score match'
+          )
         )
         match.after.geom_distance = match.before.geos&.distance(match.after.geos)
         match.after.geom_distance = nil if match.after.geom_distance == 0
@@ -348,8 +362,8 @@ module LogicalHistory
       (
         paired_by_refs +
         paired_by_distance +
-        befores.collect{ |b| ConflationNilableOnly.new(before: b, before_at_now: afters_index[[b.objtype, b.id]]) } +
-        afters.collect{ |a| ConflationNilableOnly.new(after: a) }
+        befores.collect{ |b| ConflationNilableOnly.new(before: b, before_at_now: afters_index[[b.objtype, b.id]], reason: ConflationReason.new(conflate: 'same osm object')) } +
+        afters.collect{ |a| ConflationNilableOnly.new(after: a, reason: ConflationReason.new(conflate: 'remeaning only after object')) }
       )
     end
 
