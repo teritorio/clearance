@@ -154,14 +154,40 @@ module Validators
 
   # Dummy Validator
   class All < Validator
+    extend T::Sig
+
+    sig {
+      params(
+        id: String,
+        osm_tags_matches: Osm::TagsMatches,
+        description: T.nilable(String),
+        action: T.nilable(Validation::ActionType),
+        action_force: T.nilable(Validation::ActionType),
+        block: T.nilable(T.proc.params(
+          before: T.nilable(Validation::OSMChangeProperties),
+          after: T.nilable(Validation::OSMChangeProperties),
+          diff: Validation::DiffActions,
+        ).returns(T::Boolean))
+      ).void
+    }
+    def initialize(id:, osm_tags_matches:, description: nil, action: nil, action_force: nil, &block)
+      super
+
+      @block = block
+    end
+
     sig {
       override.params(
-        _before: T.nilable(Validation::OSMChangeProperties),
-        _after: T.nilable(Validation::OSMChangeProperties),
+        before: T.nilable(Validation::OSMChangeProperties),
+        after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
       ).void
     }
-    def apply(_before, _after, diff)
+    def apply(before, after, diff)
+      if @block && !@block.call(before, after, diff)
+        return
+      end
+
       (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)
       }
