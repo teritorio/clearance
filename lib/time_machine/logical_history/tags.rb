@@ -8,6 +8,12 @@ module LogicalHistory
   module Tags
     extend T::Sig
 
+    DistanceMeusure = T.type_alias {
+      [
+        Float,
+      ]
+    }
+
     # OSM main tags from https://github.com/osm-fr/osmose-backend/blob/dev/plugins/TagFix_MultipleTag.py
     # Exluding "building[:*]"
     MAIN_TAGS = T.let(Set.new(['aerialway', 'aeroway', 'amenity', 'barrier', 'boundary', 'craft', 'disc_golf', 'entrance', 'emergency', 'geological', 'highway', 'historic', 'landuse', 'leisure', 'man_made', 'military', 'natural', 'office', 'place', 'power', 'public_transport', 'railway', 'route', 'shop', 'sport', 'tourism', 'waterway', 'mountain_pass', 'traffic_sign', 'golf', 'piste:type', 'junction', 'healthcare', 'health_facility:type', 'indoor', 'club', 'seamark:type', 'attraction', 'information', 'advertising', 'ford', 'cemetery', 'area:highway', 'checkpoint', 'telecom', 'airmark']), T::Set[String])
@@ -77,7 +83,7 @@ module LogicalHistory
       params(
         tags_a: T::Hash[String, String],
         tags_b: T::Hash[String, String],
-      ).returns(T.nilable(Float))
+      ).returns(T.nilable(DistanceMeusure))
     }
     def self.tags_distance(tags_a, tags_b)
       a, b = [tags_a, tags_b].collect{ |tags|
@@ -89,7 +95,7 @@ module LogicalHistory
       return if d_main.nil? || d_main >= 1.0
 
       # Other tags
-      (d_main + key_val_fuzzy_distance(T.must(a)[1] || {}, T.must(b)[1] || {})) / 2
+      [(d_main + key_val_fuzzy_distance(T.must(a)[1] || {}, T.must(b)[1] || {})) / 2]
     end
   end
 end
