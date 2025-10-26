@@ -128,7 +128,7 @@ class TestConflation < Test::Unit::TestCase
     }).compact
     before, after = build_objects(before_tags: bt, after_tags: at)
 
-    assert(T.must(LogicalHistory::Tags.tags_distance(bt, at)) < 0.5)
+    assert(T.must(LogicalHistory::Tags.tags_distance(bt, at))[0] < 0.5)
     assert_equal(
       [[before[0], after[0], after[0]]],
       Conflation.conflate(before, after, @@demi_distance).collect(&:to_a)
