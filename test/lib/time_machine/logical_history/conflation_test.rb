@@ -5,7 +5,6 @@ require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/logical_history/conflation'
 require './lib/time_machine/logical_history/tags'
-require './lib/time_machine/logical_history/geom'
 
 Conflation = LogicalHistory::Conflation
 
@@ -139,7 +138,7 @@ class TestConflation < Test::Unit::TestCase
   sig { void }
   def test_conflate_geom
     before, after = build_objects(before_geom: '{"type":"Point","coordinates":[0,0]}', after_geom: '{"type":"Point","coordinates":[0,1]}')
-    assert_equal(1.0, LogicalHistory::Geom.geom_score(
+    assert_equal(1.0, OSMLogicalHistory::Geom.geom_score(
       T.must(before[0]&.geos),
       T.must(after[0]&.geos),
       @@demi_distance
@@ -150,7 +149,7 @@ class TestConflation < Test::Unit::TestCase
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[1,0]]}', after_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}')
-    assert_equal(0.5, LogicalHistory::Geom.geom_score(
+    assert_equal(0.5, OSMLogicalHistory::Geom.geom_score(
       T.must(before[0]&.geos),
       T.must(after[0]&.geos),
       @@demi_distance
@@ -161,7 +160,7 @@ class TestConflation < Test::Unit::TestCase
     )
 
     before, after = build_objects(before_geom: '{"type":"LineString","coordinates":[[0,0],[0,1]]}', after_geom: '{"type":"LineString","coordinates":[[0,2],[0,3]]}')
-    assert_equal(0.75, LogicalHistory::Geom.geom_score(
+    assert_equal(0.75, OSMLogicalHistory::Geom.geom_score(
       T.must(before[0]&.geos),
       T.must(after[0]&.geos),
       @@demi_distance
