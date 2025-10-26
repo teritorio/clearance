@@ -92,13 +92,19 @@ module LogicalHistory
         afters: T::Enumerable[Validation::OSMChangeProperties],
         demi_distance: Float,
       ).returns([
-        T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, OSMLogicalHistory::Geom::DistanceMeusure, Float]],
+        T::Hash[
+          [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
+          [LogicalHistory::Tags::DistanceMeusure, OSMLogicalHistory::Geom::DistanceMeusure, Float]
+        ],
         T::Set[Validation::OSMChangeProperties],
         T::Set[Validation::OSMChangeProperties],
       ])
     }
     def self.conflate_matrix(befores, afters, demi_distance)
-      distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, OSMLogicalHistory::Geom::DistanceMeusure, Float]])
+      distance_matrix = T.let({}, T::Hash[
+        [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
+        [LogicalHistory::Tags::DistanceMeusure, OSMLogicalHistory::Geom::DistanceMeusure, Float]
+      ])
 
       b_arr = befores.to_a
       a_arr = afters.to_a
@@ -197,7 +203,7 @@ module LogicalHistory
 
       paired = T.let([], Conflations)
       until distance_matrix.empty? || befores.empty? || afters.empty?
-        key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0] + coefs[1][0] + coefs[2] })
+        key_min, dist = T.must(distance_matrix.to_a.min_by{ |_keys, coefs| coefs[0][0] + coefs[1][0] + coefs[2] })
         match = Conflation.new(
           before: key_min[0],
           before_at_now: T.must(afters_index[[key_min[0].objtype, key_min[0].id]]),
