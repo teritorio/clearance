@@ -11,7 +11,6 @@ require 'openstreetmap_logical_history'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/logical_history/conflation'
 require './lib/time_machine/logical_history/tags'
-require './lib/time_machine/logical_history/geom'
 
 
 module LogicalHistory
@@ -93,13 +92,13 @@ module LogicalHistory
         afters: T::Enumerable[Validation::OSMChangeProperties],
         demi_distance: Float,
       ).returns([
-        T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, LogicalHistory::Geom::DistanceMeusure, Float]],
+        T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, OSMLogicalHistory::Geom::DistanceMeusure, Float]],
         T::Set[Validation::OSMChangeProperties],
         T::Set[Validation::OSMChangeProperties],
       ])
     }
     def self.conflate_matrix(befores, afters, demi_distance)
-      distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, LogicalHistory::Geom::DistanceMeusure, Float]])
+      distance_matrix = T.let({}, T::Hash[[Validation::OSMChangeProperties, Validation::OSMChangeProperties], [Float, OSMLogicalHistory::Geom::DistanceMeusure, Float]])
 
       b_arr = befores.to_a
       a_arr = afters.to_a
@@ -125,7 +124,7 @@ module LogicalHistory
               # Geom distance does not matter on 1x1 matrix, fast return
               [0.0, nil, nil, 'same or 1x1']
             else
-              LogicalHistory::Geom.geom_score(T.must(b.geos), T.must(a.geos), demi_distance)
+              OSMLogicalHistory::Geom.geom_score(T.must(b.geos), T.must(a.geos), demi_distance)
             end
           )
 
@@ -147,7 +146,7 @@ module LogicalHistory
         key_min: [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
         befores: T::Set[Validation::OSMChangeProperties],
         afters: T::Set[Validation::OSMChangeProperties],
-        dist_geom: LogicalHistory::Geom::DistanceMeusure,
+        dist_geom: OSMLogicalHistory::Geom::DistanceMeusure,
       ).returns(T::Array[[
         T::Enumerable[Validation::OSMChangeProperties],
         T::Enumerable[Validation::OSMChangeProperties]
