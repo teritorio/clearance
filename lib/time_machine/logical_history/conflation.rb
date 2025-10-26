@@ -2,7 +2,6 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require 'levenshtein'
 require 'set'
 require 'rgeo'
 require 'rgeo/geo_json'
@@ -10,7 +9,6 @@ require 'rgeo/proj4'
 require 'openstreetmap_logical_history'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/logical_history/conflation'
-require './lib/time_machine/logical_history/tags'
 
 
 module LogicalHistory
@@ -94,7 +92,7 @@ module LogicalHistory
       ).returns([
         T::Hash[
           [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
-          [LogicalHistory::Tags::DistanceMeusure, OSMLogicalHistory::Geom::DistanceMeusure, Float]
+          [OSMLogicalHistory::Tags::DistanceMeusure, OSMLogicalHistory::Geom::DistanceMeusure, Float]
         ],
         T::Set[Validation::OSMChangeProperties],
         T::Set[Validation::OSMChangeProperties],
@@ -103,7 +101,7 @@ module LogicalHistory
     def self.conflate_matrix(befores, afters, demi_distance)
       distance_matrix = T.let({}, T::Hash[
         [Validation::OSMChangeProperties, Validation::OSMChangeProperties],
-        [LogicalHistory::Tags::DistanceMeusure, OSMLogicalHistory::Geom::DistanceMeusure, Float]
+        [OSMLogicalHistory::Tags::DistanceMeusure, OSMLogicalHistory::Geom::DistanceMeusure, Float]
       ])
 
       b_arr = befores.to_a
@@ -118,7 +116,7 @@ module LogicalHistory
           a = T.must(a_arr[a_i])
           next if a.geojson_geometry.nil?
 
-          t_dist = LogicalHistory::Tags.tags_distance(b.tags, a.tags)
+          t_dist = OSMLogicalHistory::Tags.tags_distance(b.tags, a.tags)
           next if t_dist.nil?
 
           next if T.unsafe(a.geos).nil?

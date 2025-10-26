@@ -4,7 +4,6 @@
 require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/logical_history/conflation'
-require './lib/time_machine/logical_history/tags'
 
 Conflation = LogicalHistory::Conflation
 
@@ -128,7 +127,7 @@ class TestConflation < Test::Unit::TestCase
     }).compact
     before, after = build_objects(before_tags: bt, after_tags: at)
 
-    assert(T.must(LogicalHistory::Tags.tags_distance(bt, at))[0] < 0.5)
+    assert(T.must(OSMLogicalHistory::Tags.tags_distance(bt, at))[0] < 0.5)
     assert_equal(
       [[before[0], after[0], after[0]]],
       Conflation.conflate(before, after, @@demi_distance).collect(&:to_a)
@@ -212,7 +211,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0]}'
     )
-    assert_equal(nil, LogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
+    assert_equal(nil, OSMLogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
     conflate_distances = Conflation.conflate_matrix(before.to_set, after.to_set, @@demi_distance).first
     assert_equal({}, conflate_distances)
     assert_equal(
@@ -229,7 +228,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'bicycle_parking' },
       after_geom: '{"type":"Point","coordinates":[0, 2]}'
     )
-    assert_equal([0.0, nil, nil, 'matched tags: amenity=bicycle_parking'], Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
+    assert_equal([0.0, nil, nil, 'matched tags: amenity=bicycle_parking'], OSMLogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
     conflate_distances = Conflation.conflate_matrix(before.to_set, after.to_set, @@demi_distance).first
     assert_equal({}, conflate_distances)
     assert_equal(
@@ -246,7 +245,7 @@ class TestConflation < Test::Unit::TestCase
       after_tags: { 'amenity' => 'bicycle_parking' },
       after_geom: '{"type":"Point","coordinates":[0, 0.5]}'
     )
-    assert_equal([0.0, nil, nil, 'matched tags: amenity=bicycle_parking'], Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
+    assert_equal([0.0, nil, nil, 'matched tags: amenity=bicycle_parking'], OSMLogicalHistory::Tags.tags_distance(T.must(before[0]).tags, T.must(after[0]).tags))
     conflate_distances = Conflation.conflate_matrix(before.to_set, after.to_set, @@demi_distance).first
     assert_equal([[before[0], after[0]]], conflate_distances.keys)
     assert_equal([0.0, nil, nil, 'matched tags: amenity=bicycle_parking'], T.must(conflate_distances.values[0])[0])
