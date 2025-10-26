@@ -451,7 +451,6 @@ DEPENDENCIES
   devise
   http
   json
-  levenshtein-ffi
   nokogiri
   omniauth
   omniauth-osm-oauth2
