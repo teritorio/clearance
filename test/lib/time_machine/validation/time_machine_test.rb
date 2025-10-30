@@ -71,7 +71,7 @@ class TestValidation < Test::Unit::TestCase
         title:
           es: Navarra
         # Use the boundary polygon defined by the corresponding OSM relation id
-        polygon: https://polygons.openstreetmap.fr/get_geojson.py?id=349027&params=0.004000-0.001000-0.001000
+        polygon: ./navarra.geojson
         # Tags definition in the siblings export directory
         osm_tags: ./highway.osm_tags.json
         users: [] # OSM usernames, validation right on this group
