@@ -2,7 +2,6 @@
 # typed: strict
 
 require 'sorbet-runtime'
-require './lib/time_machine/logical_history/conflation'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/validation/diff_actions'
 require './lib/time_machine/validators/validator'
@@ -65,7 +64,7 @@ module Validation
   def self.time_machine_locha(config, lo_cha, accept_all_validators)
     befores = lo_cha.collect(&:first).compact
     afters = lo_cha.collect(&:last).compact
-    conflations = LogicalHistory::Conflation.conflate_with_simplification(befores, afters, 200.0)
+    conflations = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_with_simplification(befores, afters, 200.0)
 
     Enumerator.new { |yielder|
       conflations.each{ |conflation|
