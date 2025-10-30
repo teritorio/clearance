@@ -18,12 +18,13 @@ class TestValidation < Test::Unit::TestCase
       is_change: T::Boolean,
       version: Integer,
       deleted: T::Boolean,
+      group_ids: T.nilable(T::Array[String]),
       srid: Integer,
     ).returns(Validation::OSMChangeProperties)
   }
   def build_object(
     id:, tags:, geojson_geometry:, is_change:,
-    version: 1, deleted: false,
+    version: 1, deleted: false, group_ids: nil,
     srid: 4326
   )
     Validation::OSMChangeProperties.new(
@@ -41,7 +42,7 @@ class TestValidation < Test::Unit::TestCase
         created: 'today',
         tags: tags,
         is_change: is_change,
-        group_ids: nil,
+        group_ids: group_ids,
       )
   end
 
@@ -121,10 +122,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_time_machine_locha_propagate_rejection
-    validator = Validators::All.new(id: 'v', osm_tags_matches: Osm::TagsMatches.new([]), action: 'reject') { |_before, after, _diff|
-      after && after.id == 2 || false
-    }
-    reject_tag_validators = [validator]
+    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
 
     yaml = CONFIG_YAML_HEADER + <<~YAML
       validators:
@@ -135,10 +133,13 @@ class TestValidation < Test::Unit::TestCase
 
     locha = [
       [1, [
-        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[0,0],[0,200]]}', version: 1, tags: { 'highway' => 'path' }, is_change: false),
-        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[0,0],[0,100]]}', version: 2, tags: {}, is_change: true),
+        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[-1.60000, 43.0000],[-1.60000, 43.0001]]}', version: 1, tags: { 'highway' => 'primary', 'name' => 'a' }, is_change: false, group_ids: ['navarra']),
+        build_object(id: 1, geojson_geometry: '{"type":"LineString","coordinates":[[-1.60000, 43.0000],[-1.60000, 43.0002]]}', version: 2, tags: { 'highway' => 'primary', 'name' => 'a' }, is_change: true, group_ids: ['navarra']),
       ]],
-      [2, [build_object(id: 2, geojson_geometry: '{"type":"LineString","coordinates":[[0,100],[0,200]]}', tags: { 'highway' => 'path' }, is_change: true)]],
+      [2, [
+        build_object(id: 2, geojson_geometry: '{"type":"LineString","coordinates":[[-1.60000, 43.0000],[-1.60000, 43.0002]]}', version: 1, tags: { 'highway' => 'primary', 'name' => 'b' }, is_change: false, group_ids: ['navarra']),
+        build_object(id: 2, geojson_geometry: '{"type":"LineString","coordinates":[[-1.60000, 43.0000],[-1.60000, 43.0002]]}', version: 2, tags: { 'highway' => 'primary', 'name' => 'b' }, is_change: true, deleted: true, group_ids: ['navarra'])
+      ]],
     ].collect{ |id, p|
       Validation.convert_locha_item({
         'locha_id' => -1,
@@ -148,13 +149,13 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, locha, reject_tag_validators).to_a
-    assert_equal(2, r.size)
-    assert_equal({ 'reject' => 1, nil => 1 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
+    r = Validation.time_machine_locha(config, locha, accept_all_validators).to_a
+    assert_equal(3, r.size)
+    assert_equal({ 'reject' => 2, nil => 1 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
 
-    r = Validation.time_machine_locha_propagate_rejection(config, locha, reject_tag_validators).to_a
-    assert_equal(2, r.size)
-    assert_equal({ 'reject' => 2 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
+    r = Validation.time_machine_locha_propagate_rejection(config, locha, accept_all_validators).to_a
+    assert_equal(3, r.size)
+    assert_equal({ 'reject' => 3 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
   end
 
   sig { void }
