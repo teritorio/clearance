@@ -154,7 +154,7 @@ module Validation
       .gsub(':distance', locha_cluster_distance.to_s))
     conn.exec(File.new('/sql/31_fetch_changes.sql').read)
     results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
-    last_locha_id = T.let(nil, T.nilable(T::Boolean))
+    last_locha_id = T.let(nil, T.nilable(Integer))
     conn.exec_params(
       'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
     ) { |result|
