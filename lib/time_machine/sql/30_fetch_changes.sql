@@ -118,7 +118,10 @@ CREATE OR REPLACE FUNCTION fetch_changes(
         state.objtype,
         state.id,
         ST_Union(state.geojson_geometry) AS geom,
-        jsonb_agg(row_to_json(state)::jsonb - 'objtype' - 'id') AS p
+        jsonb_agg(
+            row_to_json(state)::jsonb - 'objtype' - 'id' - 'geojson_geometry' ||
+            jsonb_build_object('geojson_geometry', ST_AsGeoJSON(geojson_geometry))
+        ) AS p
     FROM
         state
     GROUP BY
