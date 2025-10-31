@@ -64,32 +64,34 @@ module Validation
   def self.time_machine_locha(config, lo_cha, accept_all_validators)
     befores = lo_cha.collect(&:first).compact
     afters = lo_cha.collect(&:last).compact
-    conflations = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_with_simplification(befores, afters, 200.0)
+    conflation_clusters = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_cluster(befores, afters, 200.0)
 
     Enumerator.new { |yielder|
-      conflations.each{ |conflation|
-        matches = [conflation.before, conflation.after].compact.collect{ |object|
-          config.osm_tags_matches.match(object.tags)
-        }.flatten(1).uniq.collect{ |overpass, match|
-          ValidationLogMatch.new(
-            sources: match.sources&.compact || [],
-            selectors: [overpass],
-            user_groups: match.user_groups.intersection(conflation.to_a.compact.collect(&:group_ids).flatten.uniq),
-            name: match.name,
-            icon: match.icon,
-          )
-        }.flatten(1).uniq
+      conflation_clusters.each{ |conflations|
+        conflations.each{ |conflation|
+          matches = [conflation.before, conflation.after].compact.collect{ |object|
+            config.osm_tags_matches.match(object.tags)
+          }.flatten(1).uniq.collect{ |overpass, match|
+            ValidationLogMatch.new(
+              sources: match.sources&.compact || [],
+              selectors: [overpass],
+              user_groups: match.user_groups.intersection(conflation.to_a.compact.collect(&:group_ids).flatten.uniq),
+              name: match.name,
+              icon: match.icon,
+            )
+          }.flatten(1).uniq
 
-        matching_group = matches.any?{ |match|
-          !match.user_groups&.empty?
+          matching_group = matches.any?{ |match|
+            !match.user_groups&.empty?
+          }
+          validators = matching_group ? config.validators : accept_all_validators
+          validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
+          yielder << [
+            T.must(conflation.before || conflation.after).locha_id,
+            matches,
+            validation_result
+          ]
         }
-        validators = matching_group ? config.validators : accept_all_validators
-        validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
-        yielder << [
-          T.must(conflation.before || conflation.after).locha_id,
-          matches,
-          validation_result
-        ]
       }
     }
   end
