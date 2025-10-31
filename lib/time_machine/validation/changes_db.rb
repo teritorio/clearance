@@ -151,7 +151,7 @@ module Validation
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
     conn.exec(File.new('/sql/30_fetch_changes.sql').read)
     results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
-    last_locha_id = T.let(nil, T.nilable(T::Boolean))
+    last_locha_id = T.let(nil, T.nilable(Integer))
     conn.exec_params(
       'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb, $1, $2)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
       [local_srid, locha_cluster_distance],
