@@ -108,7 +108,7 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha_propagate_rejection(config, 1, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
     assert_equal(1, r.size)
 
     locha_id, matches, validation_result = r[0]
@@ -147,10 +147,6 @@ class TestValidation < Test::Unit::TestCase
     }
 
     r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
-    assert_equal(3, r.size)
-    assert_equal({ 'reject' => 2, nil => 1 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
-
-    r = Validation.time_machine_locha_propagate_rejection(config, 1, locha, accept_all_validators).to_a
     assert_equal(3, r.size)
     assert_equal({ 'reject' => 3 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
   end
