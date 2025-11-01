@@ -15,7 +15,6 @@ module Validation
     const :action, T.nilable(ActionType)
     const :before_object, T.nilable(Osm::ObjectChangeId)
     const :after_object, Osm::ObjectChangeId
-    const :sementic_deletetion, T::Boolean
     prop :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :diff, DiffActions
@@ -47,7 +46,6 @@ module Validation
       after_object: T.must(after.nil? ?
         before_at_now.nil? ? nil : Osm::ObjectChangeId.new(objtype: before_at_now.objtype, id: before_at_now.id, version: before_at_now.version, deleted: before_at_now.deleted) :
         Osm::ObjectChangeId.new(objtype: after.objtype, id: after.id, version: after.version, deleted: after.deleted)),
-      sementic_deletetion: after.nil?,
       changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
       created: T.must(after || before_at_now).created,
       diff: diff,

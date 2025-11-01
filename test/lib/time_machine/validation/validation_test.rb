@@ -80,7 +80,6 @@ class TestValidation < Test::Unit::TestCase
       action: nil,
       before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
       after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
-      sementic_deletetion: true,
       changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
       created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
@@ -101,7 +100,6 @@ class TestValidation < Test::Unit::TestCase
       action: nil,
       before_object: nil,
       after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b.objtype, id: @@fixture_node_b.id, version: @@fixture_node_b.version, deleted: @@fixture_node_b.deleted }),
-      sementic_deletetion: false,
       changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
@@ -120,7 +118,6 @@ class TestValidation < Test::Unit::TestCase
       action: 'accept',
       before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
       after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
-      sementic_deletetion: false,
       changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
       created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
@@ -138,7 +135,6 @@ class TestValidation < Test::Unit::TestCase
       action: nil,
       before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
       after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b.objtype, id: @@fixture_node_b.id, version: @@fixture_node_b.version, deleted: @@fixture_node_b.deleted }),
-      sementic_deletetion: false,
       changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
@@ -166,7 +162,6 @@ class TestValidation < Test::Unit::TestCase
         action: action || 'reject',
         before_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_a.objtype, id: @@fixture_node_a.id, version: @@fixture_node_a.version, deleted: @@fixture_node_a.deleted }),
         after_object: Osm::ObjectChangeId.new({ objtype: @@fixture_node_b.objtype, id: @@fixture_node_b.id, version: @@fixture_node_b.version, deleted: @@fixture_node_b.deleted }),
-        sementic_deletetion: false,
         changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
         created: @@fixture_node_b.created,
         diff: Validation::DiffActions.new(
