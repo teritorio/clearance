@@ -28,7 +28,6 @@ class TestValidation < Test::Unit::TestCase
     srid: 4326
   )
     Validation::OSMChangeProperties.new(
-        locha_id: 1,
         objtype: 'n',
         id: id,
         geojson_geometry: geojson_geometry,
@@ -103,18 +102,17 @@ class TestValidation < Test::Unit::TestCase
       ]'],
     ].collect{ |id, p|
       Validation.convert_locha_item({
-        'locha_id' => -1,
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha_propagate_rejection(config, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha_propagate_rejection(config, 1, locha, accept_all_validators).to_a
     assert_equal(1, r.size)
 
     locha_id, matches, validation_result = r[0]
-    assert_equal(-1, locha_id)
+    assert_equal(1, locha_id)
     assert_equal(1, matches&.size)
     assert_equal('reject', validation_result&.action)
     assert_equal('deleted', validation_result.nil? ? nil : validation_result.diff.attribs.dig('deleted', 0)&.validator_id)
@@ -142,18 +140,17 @@ class TestValidation < Test::Unit::TestCase
       ]],
     ].collect{ |id, p|
       Validation.convert_locha_item({
-        'locha_id' => -1,
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p.to_json),
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
     assert_equal(3, r.size)
     assert_equal({ 'reject' => 2, nil => 1 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
 
-    r = Validation.time_machine_locha_propagate_rejection(config, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha_propagate_rejection(config, 1, locha, accept_all_validators).to_a
     assert_equal(3, r.size)
     assert_equal({ 'reject' => 3 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
   end
@@ -174,14 +171,13 @@ validators: {}"
       ]'],
     ].collect{ |id, p|
       Validation.convert_locha_item({
-        'locha_id' => -1,
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
     assert_equal(1, r.size)
     assert_equal('accept', T.cast(r.dig(0, 2), Validation::ValidationResult).action)
   end
