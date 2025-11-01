@@ -17,9 +17,6 @@ module Validation
   class OSMChangeProperties < OSMLogicalHistory::OSMObject
     extend T::Sig
 
-    sig { returns(Integer) }
-    attr_reader :locha_id
-
     sig { returns(T.nilable(T.any(Float, Integer))) }
     attr_accessor :geom_distance
 
@@ -44,14 +41,13 @@ module Validation
         username: T.nilable(String),
         created: String,
         tags: T::Hash[String, String],
-        locha_id: Integer,
         changesets: T.nilable(T::Array[Osm::Changeset]),
         is_change: T::Boolean,
         group_ids: T.nilable(T::Array[String]),
         geom_distance: T.nilable(T.any(Float, Integer)),
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, locha_id:, changesets:, is_change:, group_ids:, geom_distance: nil) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changesets:, is_change:, group_ids:, geom_distance: nil) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -64,7 +60,6 @@ module Validation
         created: created,
         tags: tags,
       )
-      @locha_id = locha_id
       @geom_distance = geom_distance
       @changesets = changesets
       @is_change = is_change
@@ -88,7 +83,6 @@ module Validation
         username: hash['username'],
         created: hash['created'],
         tags: hash['tags'],
-        locha_id: hash['locha_id'],
         changesets: hash['changesets'],
         is_change: hash['is_change'],
         group_ids: hash['group_ids'],
@@ -113,7 +107,6 @@ module Validation
         username: kwargs.fetch(:username, username),
         created: kwargs.fetch(:created, created),
         tags: kwargs.fetch(:tags, tags),
-        locha_id: kwargs.fetch(:locha_id, locha_id),
         changesets: kwargs.fetch(:changesets, changesets),
         is_change: kwargs.fetch(:is_change, is_change),
         group_ids: kwargs.fetch(:group_ids, group_ids),
@@ -132,7 +125,7 @@ module Validation
   }
   def self.convert_locha_item(osm_change_object, local_srid)
     geos_factory = OSMLogicalHistory.build_geos_factory(local_srid)
-    ids = { 'locha_id' => osm_change_object['locha_id'], 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'], 'geos_factory' => geos_factory }
+    ids = { 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'], 'geos_factory' => geos_factory }
     before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
     after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
     [before, after]
@@ -144,7 +137,10 @@ module Validation
       local_srid: Integer,
       locha_cluster_distance: Integer,
       user_groups: T::Hash[String, Configuration::UserGroupConfig],
-      block: T.proc.params(arg0: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]]).void
+      block: T.proc.params(
+        locha_id: Integer,
+        results: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
+      ).void
     ).void
   }
   def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
@@ -158,7 +154,7 @@ module Validation
     ) { |result|
       result.each{ |osm_change_object|
         if !last_locha_id.nil? && last_locha_id != osm_change_object['locha_id']
-          block.call(results)
+          block.call(last_locha_id, results)
           results = []
         end
 
@@ -167,7 +163,7 @@ module Validation
       }
 
       if !results.empty?
-        block.call(results)
+        block.call(T.must(last_locha_id), results)
       end
     }
   end
