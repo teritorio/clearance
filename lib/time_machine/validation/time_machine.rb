@@ -67,7 +67,8 @@ module Validation
 
     Enumerator.new { |yielder|
       conflation_clusters.each{ |conflations|
-        conflations.each{ |conflation|
+        cluster_reject = T.let(false, T::Boolean)
+        validation_results = conflations.collect{ |conflation|
           matches = [conflation.before, conflation.after].compact.collect{ |object|
             config.osm_tags_matches.match(object.tags)
           }.flatten(1).uniq.collect{ |overpass, match|
@@ -84,56 +85,27 @@ module Validation
             !match.user_groups&.empty?
           }
           validators = matching_group ? config.validators : accept_all_validators
-          validation_result = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
+          validation = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
+          cluster_reject ||= validation.action == 'reject'
+          [matches, validation]
+        }
+
+        if cluster_reject
+          validation_results = validation_results.collect{ |matches, validation|
+            diff_action = Validation::Action.new(validator_id: 'semantic_rejection_propagation', action: 'reject')
+            validation.diff.attribs['id'] = (validation.diff.attribs['id'] || []) + [diff_action]
+            validation = validation.with(action: 'reject')
+            [matches, validation]
+          }
+        end
+
+        validation_results.each{ |matches, validation_result|
           yielder << [
             locha_id,
             matches,
             validation_result
           ]
         }
-      }
-    }
-  end
-
-  sig {
-    params(
-      config: Configuration::Config,
-      locha_id: Integer,
-      lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
-      accept_all_validators: T::Array[Validators::ValidatorBase],
-    ).returns(T::Enumerable[[Integer, T::Array[ValidationLogMatch], ValidationResult]])
-  }
-  def self.time_machine_locha_propagate_rejection(config, locha_id, lo_cha, accept_all_validators)
-    Enumerator.new { |yielder|
-      validations = time_machine_locha(config, locha_id, lo_cha, accept_all_validators).to_a
-
-      # Propagate rejection to other part of the same object
-      validations = validations.group_by{ |_locha_id, _matches, validation|
-        [validation.after_object.objtype, validation.after_object.id]
-      }.values.collect{ |group|
-        if group.size == 1
-          group
-        else
-          rejected = group.find{ |_locha_id, _matches, validation|
-            validation.action != 'accept'
-          }
-          if rejected.nil?
-            group
-          else
-            group.collect{ |locha_id, matches, validation|
-              if validation.action != 'reject'
-                diff_action = Validation::Action.new(validator_id: 'same_object_rejection_propagation', action: 'reject')
-                validation.diff.attribs['geom'] = (validation.diff.attribs['geom'] || []) + [diff_action]
-                validation = validation.with(action: 'reject')
-              end
-              [locha_id, matches, validation]
-            }
-          end
-        end
-      }.flatten(1)
-
-      validations.each{ |locha_id, matches, validation|
-        yielder << [locha_id, matches, validation]
       }
     }
   end
@@ -148,7 +120,7 @@ module Validation
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |locha_id, lo_cha|
-        time_machine_locha_propagate_rejection(config, locha_id, lo_cha, accept_all_validators).each { |locha_id, matches, validation|
+        time_machine_locha(config, locha_id, lo_cha, accept_all_validators).each { |locha_id, matches, validation|
           yielder << [locha_id, matches, validation]
         }
       }
