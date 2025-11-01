@@ -70,7 +70,6 @@ class TestUserList < Test::Unit::TestCase
     )]
 
     after = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
@@ -139,7 +138,6 @@ class TestTagsChanges < Test::Unit::TestCase
     )]
 
     after = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
@@ -206,7 +204,6 @@ class TestGeomNewObject < Test::Unit::TestCase
     )]
 
     after = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
@@ -261,7 +258,6 @@ class TestGeomChanges < Test::Unit::TestCase
     )]
 
     before = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[10,10]}',
@@ -281,7 +277,6 @@ class TestGeomChanges < Test::Unit::TestCase
     )
 
     after = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
@@ -330,7 +325,6 @@ class TestAfterDelay < Test::Unit::TestCase
     ])
 
     after = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
@@ -400,7 +394,6 @@ class TestGeomInvalid < Test::Unit::TestCase
     ])
 
     after = Validation::OSMChangeProperties.new(
-      locha_id: 1,
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
