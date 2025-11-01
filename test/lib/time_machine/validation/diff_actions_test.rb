@@ -32,7 +32,6 @@ class TestValidation < Test::Unit::TestCase
   }, Osm::Changeset)
 
   @@fixture_node_a = T.let(Validation::OSMChangeProperties.new(
-    locha_id: 1,
     objtype: 'n',
     id: 1,
     geojson_geometry: '',
@@ -52,7 +51,6 @@ class TestValidation < Test::Unit::TestCase
   ), Validation::OSMChangeProperties)
 
   @@fixture_node_b = T.let(Validation::OSMChangeProperties.new(
-    locha_id: 1,
     objtype: 'n',
     id: 1,
     geojson_geometry: '{"type":"Point","coordinates":[1,1]}',
