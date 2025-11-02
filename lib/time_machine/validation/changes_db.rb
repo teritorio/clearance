@@ -91,6 +91,27 @@ module Validation
     end
 
     sig {
+      returns(T::Hash[String, T.untyped])
+    }
+    def to_h
+      {
+        'objtype' => objtype,
+        'id' => id,
+        'geojson_geometry' => geojson_geometry,
+        'deleted' => deleted,
+        'members' => members,
+        'version' => version,
+        'username' => username,
+        'created' => created,
+        'tags' => tags,
+        'changesets' => changesets,
+        'is_change' => is_change,
+        'group_ids' => group_ids,
+        'geom_distance' => geom_distance,
+      }
+    end
+
+    sig {
       params(
         kwargs: T.untyped
       ).returns(OSMChangeProperties)
