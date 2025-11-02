@@ -108,14 +108,13 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(1, r.size)
 
-    locha_id, matches, validation_result = r[0]
-    assert_equal(1, locha_id)
-    assert_equal(1, matches&.size)
-    assert_equal('reject', validation_result&.action)
-    assert_equal('deleted', validation_result.nil? ? nil : validation_result.diff.attribs.dig('deleted', 0)&.validator_id)
+    link = T.must(r[0])
+    assert_equal(1, link.validations.size)
+    assert_equal('reject', link.result.action)
+    assert_equal('deleted', link.result.nil? ? nil : link.result.diff.attribs.dig('deleted', 0)&.validator_id)
   end
 
   sig { void }
@@ -146,9 +145,9 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(3, r.size)
-    assert_equal({ 'reject' => 3 }, r.group_by{ |_locha_id, _matches, validation_result| validation_result.action }.transform_values(&:size))
+    assert_equal({ 'reject' => 3 }, r.group_by{ |link| link.result.action }.transform_values(&:size))
   end
 
   sig { void }
@@ -173,8 +172,8 @@ validators: {}"
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).to_a
+    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(1, r.size)
-    assert_equal('accept', T.cast(r.dig(0, 2), Validation::ValidationResult).action)
+    assert_equal('accept', r[0]&.result&.action)
   end
 end
