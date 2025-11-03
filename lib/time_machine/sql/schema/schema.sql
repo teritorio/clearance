@@ -97,7 +97,9 @@ CREATE TABLE validations_log (
     -- version INTEGER NOT NULL,
     -- deleted BOOLEAN NOT NULL,
     before_object JSONB,
-    after_object JSONB
+    after_object JSONB,
+    semantic_group INTEGER NOT NULL,
+    conflation JSONB NOT NULL
 );
 
 DROP TABLE IF EXISTS osm_changes_applyed CASCADE;
