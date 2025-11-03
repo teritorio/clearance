@@ -167,14 +167,16 @@ module Validation
     validations = time_machine(conn, config)
 
     apply_logs(conn, validations.collect{ |locha|
-      locha.semantic_clusters.collect{ |cluster|
+      locha.semantic_clusters.each_with_index.collect{ |cluster, semantic_group_index|
         cluster.links.collect{ |link|
           ValidationLog.new(
             locha_id: locha.locha_id,
+            semantic_group: ((locha.locha_id + semantic_group_index) + 2**31) % 2**32 - 2**31,
             before_objects: (Osm::ObjectChangeId.from_hash(link.conflation.before.to_h) if !link.conflation.before.nil?),
             after_objects: (Osm::ObjectChangeId.from_hash(link.conflation.after.to_h) if !link.conflation.after.nil?),
             changeset_ids: link.result.changeset_ids,
             created: link.result.created,
+            conflation: link.conflation,
             matches: link.validations,
             action: link.result.action,
             validator_uid: nil,
