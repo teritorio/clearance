@@ -323,10 +323,12 @@ module Validation
 
   class ValidationLog < T::InexactStruct
     const :locha_id, Integer
+    const :semantic_group, Integer
     const :before_objects, T.nilable(Osm::ObjectChangeId)
     const :after_objects, Osm::ObjectChangeId
     const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
+    const :conflation, OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties]
     const :matches, T::Array[ValidationLogMatch]
     const :action, T.nilable(ActionType)
     const :validator_uid, T.nilable(Integer)
@@ -361,7 +363,7 @@ module Validation
       VALUES
         (
           (SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i)),
-          $2, $3::json, $4, $5, $6, $7, $8, $9::json, $10::json
+          $2, $3::json, $4, $5, $6, $7, $8, $9::json, $10::json, $11, $12::json
         )
     ")
     i = 0
@@ -378,6 +380,8 @@ module Validation
         change.locha_id,
         change.before_objects&.to_json,
         change.after_objects.to_json,
+        change.semantic_group,
+        change.conflation.to_json,
       ])
     }
     puts "Logs #{i} changes"
