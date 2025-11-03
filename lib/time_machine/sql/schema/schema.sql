@@ -99,7 +99,9 @@ CREATE TABLE validations_log (
     -- version INTEGER NOT NULL,
     -- deleted BOOLEAN NOT NULL,
     before_object JSONB,
-    after_object JSONB
+    after_object JSONB,
+    semantic_group INTEGER NOT NULL,
+    conflation JSONB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS validations_log_idx_action ON validations_log(action);
 
