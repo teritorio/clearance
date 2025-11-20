@@ -7,7 +7,7 @@ class LochaSemanticGroup < ActiveRecord::Migration[7.0]
     result = ActiveRecord::Base.connection.execute(sql)
     result.collect{ |row| row['schema_name'] }.each { |schema_name|
       execute <<~SQL # rubocop:disable Rails/ReversibleMigration
-        SET search_path TO #{schema_name}, public;
+        SET search_path TO "#{schema_name}", public;
 
         ALTER TABLE validations_log
           ADD COLUMN semantic_group integer,
