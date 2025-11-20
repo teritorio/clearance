@@ -14,7 +14,7 @@ DO $$ BEGIN
     RAISE NOTICE 'schema_geom - osm_base_n';
 END; $$ LANGUAGE plpgsql;
 
-ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) STORED; -- Pass to VIRTUAL with Postgres 18
+ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) NOT NULL GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) STORED; -- Pass to VIRTUAL with Postgres 18
 VACUUM FULL ANALYZE osm_base_n;
 CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n USING gist(geom);
 
