@@ -223,6 +223,7 @@ module Db
 
       f.write('</osmChange>')
     }
+    puts "Export changes to #{osc_gz}"
 
     has_content
   end
