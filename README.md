@@ -1,6 +1,6 @@
 # Clearance backend
 
-"Clearance" is a tool that helps track changes in OSM on tematics, and keep replication extracts up to date, while still following quality rules. Instead of relying on timestamps or changesets, it focuses on partial and local data updates. If some data is rejected, it either needs to be fixed in OSM or approved manually, data edits are only done in OSM. Reviewing and fixing are done collaboratively.
+"Clearance" is a tool that helps track changes in OSM on thematics, and keep replication extracts up to date, while still following quality rules. Instead of relying on timestamps or changesets, it focuses on partial and local data updates. If some data is rejected, it either needs to be fixed in OSM or approved manually, data edits are only done in OSM. Reviewing and fixing are done collaboratively.
 
 ![](https://raw.githubusercontent.com/teritorio/clearance-frontend/master/public/Clearance-process.svg)
 
@@ -138,7 +138,9 @@ docker compose run --rm script bundle exec rake test:sql
 ### OSM Extracts
 Clearance starts by downloading an OSM extract from remote sources like [OSM-FR](https://download.openstreetmap.fr/) or [Geofabrik](https://download.geofabrik.de/) and loads the objects into a Postgres/PostGIS database in raw format (not as spatial objects). Each object is a row in a `osm_base_n`, `osm_base_w` or `osm_base_r` table.
 
-This `osm_base_*` tables ar _the truth_. The data is considered as qualified and with the goal to not deteriorate its quality.
+The idea is that your initial extract to `osm_base_*` tables is _the truth_. The data is considered as qualified and the goal is to not let its quality deteriorate.
+
+The idea is that for topics and areas that interest you, changes are only applied if you accept them. When your filters hit a change to an object in your area and field of interest, you will be asked to review - or fix in OSM.
 
 The `osm_base_*` can be queried with an Overpass API and the data is also available as an OSM extract with _diff_ updates.
 
