@@ -140,7 +140,7 @@ Clearance starts by downloading an OSM extract from remote sources like [OSM-FR]
 
 The idea is that your initial extract to `osm_base_*` tables is _the truth_. The data is considered as qualified and the goal is to not let its quality deteriorate.
 
-The idea is that for topics and areas that interest you, changes are only applied if you accept them. When your filters hit a change to an object in your area and field of interest, you will be asked to review - or fix in OSM.
+The idea is that for topics and areas that interest you, changes are only applied if you accept them. When your filters hit a change to an object in your area and field of interest, if it does not pass the quality check, you will be asked to review - or fix in OSM.
 
 The `osm_base_*` can be queried with an Overpass API and the data is also available as an OSM extract with _diff_ updates.
 
