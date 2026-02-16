@@ -24,6 +24,9 @@ class TestValidation < Test::Unit::TestCase
     'max_lon' => 0,
     'comments_count' => 0,
     'changes_count' => 1,
+    'created_count' => 1,
+    'modified_count' => 1,
+    'deleted_count' => 1,
     'tags' => {},
   }, Osm::Changeset)
 

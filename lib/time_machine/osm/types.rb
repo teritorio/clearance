@@ -21,6 +21,9 @@ module Osm
       'max_lon' => T.nilable(T.any(Float, Integer)),
       'comments_count' => Integer,
       'changes_count' => Integer,
+      'created_count' => Integer,
+      'modified_count' => Integer,
+      'deleted_count' => Integer,
       'tags' => T.nilable(T::Hash[String, String]),
     }
   }
