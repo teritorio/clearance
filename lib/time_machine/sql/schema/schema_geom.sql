@@ -292,55 +292,37 @@ GROUP BY
 ;
 
 
--- Init geom
+-- Init geom, row by row to avoid peak disk usage
 
-CREATE TEMP TABLE osm_base_geom_way AS
-SELECT
-  ways.id,
-  ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
-FROM
-  osm_base_w AS ways
-  JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-  JOIN osm_base_n AS nodes ON
-    nodes.id = way_nodes.node_id
-GROUP BY
-  ways.id
-;
 UPDATE
   osm_base_w
 SET
-  geom = osm_base_geom_way.geom
-FROM
-  osm_base_geom_way
-WHERE
-  osm_base_w.id = osm_base_geom_way.id
+  geom = (
+    SELECT
+      ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
+    FROM
+      unnest(osm_base_w.nodes) WITH ORDINALITY AS way_nodes(node_id, index)
+      JOIN osm_base_n AS nodes ON
+        nodes.id = way_nodes.node_id
+  )
 ;
-DROP TABLE osm_base_geom_way;
 
-WITH a AS (
-  SELECT
-    relations.id,
-    ST_LineMerge(ST_Collect(coalesce(nodes.geom, ways.geom))) AS geom
-  FROM
-    osm_base_r AS relations
-    JOIN LATERAL jsonb_to_recordset(members) AS relations_members(ref bigint, role text, type text) ON true
-    LEFT JOIN osm_base_n AS nodes ON
-      relations_members.type = 'n' AND
-      nodes.id = relations_members.ref
-    LEFT JOIN osm_base_w AS ways ON
-      relations_members.type = 'w' AND
-      ways.id = relations_members.ref
-  GROUP BY
-    relations.id
-)
+
 UPDATE
   osm_base_r
 SET
-  geom = a.geom
-FROM
-  a
-WHERE
-  osm_base_r.id = a.id
+  geom = (
+    SELECT
+      ST_LineMerge(ST_Collect(coalesce(nodes.geom, ways.geom))) AS geom
+    FROM
+      jsonb_to_recordset(osm_base_r.members) AS relations_members(ref bigint, role text, type text)
+      LEFT JOIN osm_base_n AS nodes ON
+        relations_members.type = 'n' AND
+        nodes.id = relations_members.ref
+      LEFT JOIN osm_base_w AS ways ON
+        relations_members.type = 'w' AND
+        ways.id = relations_members.ref
+  )
 ;
 
 CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n USING gist(geom);
