@@ -59,7 +59,7 @@ docker compose exec -u postgres postgres psql
 After code update, update the database schema:
 ```
 docker compose run --rm api bundle exec rails db:migrate
-docker compose run --rm script ./bin/update-schema.sh
+docker compose run --rm script ./bin/update-schema.sh [project]
 ```
 
 ## Projects
