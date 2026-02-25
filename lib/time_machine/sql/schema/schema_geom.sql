@@ -4,7 +4,17 @@ ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) GE
 ALTER TABLE osm_base_w ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
 ALTER TABLE osm_base_r ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
 
-CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes ON osm_base_w USING gin(nodes);
+CREATE OR REPLACE FUNCTION array_min(anyarray)
+RETURNS anyelement AS $$
+  SELECT min(v) FROM unnest($1) v;
+$$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
+CREATE OR REPLACE FUNCTION array_max(anyarray)
+RETURNS anyelement AS $$
+  SELECT max(v) FROM unnest($1) v;
+$$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
+
+CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes_gin ON osm_base_w USING gin(nodes);
+CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes_gist ON osm_base_w USING gist(int8range(array_min(nodes), array_max(nodes), '[]'));
 
 DROP FUNCTION IF EXISTS osm_base_idx_nodes_members();
 CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
@@ -118,19 +128,61 @@ EXECUTE PROCEDURE osm_base_r_log_update();
 CREATE OR REPLACE FUNCTION osm_base_update_geom() RETURNS trigger AS $$
 BEGIN
   -- Add transitive changes, from nodes to ways
+  CREATE TEMP TABLE osm_base_changes_ids_n AS
+  WITH
+  a AS (
+    SELECT
+      id,
+      ROW_NUMBER() OVER () AS row_number
+    FROM
+      osm_base_changes_ids
+    WHERE
+      objtype = 'n'
+    ORDER BY
+      id
+  )
+  SELECT
+    array_agg(id) AS ids,
+    int8range(min(a.id), max(a.id), '[]') AS range_ids
+  FROM
+    a
+  GROUP BY
+    (row_number / 10000)::int
+  ;
+
   INSERT INTO osm_base_changes_ids
   SELECT DISTINCT ON (ways.id)
     'w' AS objtype,
     ways.id
   FROM
-    osm_base_changes_ids
+    osm_base_changes_ids_n
     JOIN osm_base_w AS ways ON
-      ARRAY[osm_base_changes_ids.id] <@ ways.nodes
-  WHERE
-    osm_base_changes_ids.objtype = 'n'
+      range_ids && int8range(array_min(nodes), array_max(nodes), '[]') AND
+      osm_base_changes_ids_n.ids && ways.nodes
   ORDER BY
     ways.id
   ON CONFLICT (objtype, id) DO NOTHING
+  ;
+
+  CREATE TEMP TABLE osm_base_changes_ids_w AS
+  WITH
+  a AS (
+    SELECT
+      id,
+      ROW_NUMBER() OVER () AS row_number
+    FROM
+      osm_base_changes_ids
+    WHERE
+      objtype = 'w'
+    ORDER BY
+      id
+  )
+  SELECT
+    array_agg(id) AS ids
+  FROM
+    a
+  GROUP BY
+    (row_number / 10000)::int
   ;
 
   -- Add transitive changes, to relations
@@ -139,11 +191,9 @@ BEGIN
     'r' AS objtype,
     relations.id
   FROM
-    osm_base_changes_ids
+    osm_base_changes_ids_n
     JOIN osm_base_r AS relations ON
-      ARRAY[osm_base_changes_ids.id] @> (osm_base_idx_nodes_members(members, 'n'))
-  WHERE
-    osm_base_changes_ids.objtype = 'n'
+      osm_base_changes_ids_n.ids && (osm_base_idx_nodes_members(members, 'n'))
   ORDER BY
     relations.id
 
@@ -153,16 +203,16 @@ BEGIN
     'r' AS objtype,
     relations.id
   FROM
-    osm_base_changes_ids
+    osm_base_changes_ids_w
     JOIN osm_base_r AS relations ON
-      ARRAY[osm_base_changes_ids.id] @> (osm_base_idx_nodes_members(members, 'w'))
-  WHERE
-    osm_base_changes_ids.objtype = 'w'
+      osm_base_changes_ids_w.ids && (osm_base_idx_nodes_members(members, 'w'))
   ORDER BY
     relations.id
   )
   ON CONFLICT (objtype, id) DO NOTHING
   ;
+  DROP TABLE osm_base_changes_ids_n;
+  DROP TABLE osm_base_changes_ids_w;
 
   WITH
   ways AS (
