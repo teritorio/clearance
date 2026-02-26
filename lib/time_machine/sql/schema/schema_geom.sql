@@ -1,9 +1,5 @@
 SET search_path TO :schema,public;
 
-ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) STORED; -- Pass to VIRTUAL with Postgres 18
-ALTER TABLE osm_base_w ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
-ALTER TABLE osm_base_r ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
-
 CREATE OR REPLACE FUNCTION array_min(anyarray)
 RETURNS anyelement AS $$
   SELECT min(v) FROM unnest($1) v;
@@ -13,8 +9,65 @@ RETURNS anyelement AS $$
   SELECT max(v) FROM unnest($1) v;
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
+
+DO $$ BEGIN
+    RAISE NOTICE 'schema_geom - osm_base_n';
+END; $$ LANGUAGE plpgsql;
+
+ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) STORED; -- Pass to VIRTUAL with Postgres 18
+VACUUM FULL ANALYZE osm_base_n;
+CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n USING gist(geom);
+
+
+-- Init geom, row by row to avoid peak disk usage
+
+DO $$ BEGIN
+    RAISE NOTICE 'schema_geom - osm_base_w';
+END; $$ LANGUAGE plpgsql;
+
+ALTER TABLE osm_base_w ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+UPDATE
+  osm_base_w
+SET
+  geom = (
+    SELECT
+      ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
+    FROM
+      unnest(osm_base_w.nodes) WITH ORDINALITY AS way_nodes(node_id, index)
+      JOIN osm_base_n AS nodes ON
+        nodes.id = way_nodes.node_id
+  )
+;
+VACUUM FULL ANALYZE osm_base_w;
 CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes_gin ON osm_base_w USING gin(nodes);
 CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes_gist ON osm_base_w USING gist(int8range(array_min(nodes), array_max(nodes), '[]'));
+CREATE INDEX IF NOT EXISTS osm_base_w_idx_geom ON osm_base_w USING gist(geom);
+
+
+DO $$ BEGIN
+    RAISE NOTICE 'schema_geom - osm_base_r';
+END; $$ LANGUAGE plpgsql;
+
+ALTER TABLE osm_base_r ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+UPDATE
+  osm_base_r
+SET
+  geom = (
+    SELECT
+      ST_LineMerge(ST_Collect(coalesce(nodes.geom, ways.geom))) AS geom
+    FROM
+      jsonb_to_recordset(osm_base_r.members) AS relations_members(ref bigint, role text, type text)
+      LEFT JOIN osm_base_n AS nodes ON
+        relations_members.type = 'n' AND
+        nodes.id = relations_members.ref
+      LEFT JOIN osm_base_w AS ways ON
+        relations_members.type = 'w' AND
+        ways.id = relations_members.ref
+  )
+;
+VACUUM FULL ANALYZE osm_base_r;
+CREATE INDEX IF NOT EXISTS osm_base_r_idx_geom ON osm_base_r USING gist(geom);
+
 
 DROP FUNCTION IF EXISTS osm_base_idx_nodes_members();
 CREATE OR REPLACE FUNCTION osm_base_idx_nodes_members(
@@ -299,6 +352,7 @@ CREATE CONSTRAINT TRIGGER osm_base_changes_ids_trigger
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_update_geom();
 
+
 CREATE OR REPLACE VIEW osm_base_areas AS
 WITH
 parts AS (
@@ -341,43 +395,6 @@ GROUP BY
   tags
 ;
 
-
--- Init geom, row by row to avoid peak disk usage
-
-UPDATE
-  osm_base_w
-SET
-  geom = (
-    SELECT
-      ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
-    FROM
-      unnest(osm_base_w.nodes) WITH ORDINALITY AS way_nodes(node_id, index)
-      JOIN osm_base_n AS nodes ON
-        nodes.id = way_nodes.node_id
-  )
-;
-
-
-UPDATE
-  osm_base_r
-SET
-  geom = (
-    SELECT
-      ST_LineMerge(ST_Collect(coalesce(nodes.geom, ways.geom))) AS geom
-    FROM
-      jsonb_to_recordset(osm_base_r.members) AS relations_members(ref bigint, role text, type text)
-      LEFT JOIN osm_base_n AS nodes ON
-        relations_members.type = 'n' AND
-        nodes.id = relations_members.ref
-      LEFT JOIN osm_base_w AS ways ON
-        relations_members.type = 'w' AND
-        ways.id = relations_members.ref
-  )
-;
-
-CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n USING gist(geom);
-CREATE INDEX IF NOT EXISTS osm_base_w_idx_geom ON osm_base_w USING gist(geom);
-CREATE INDEX IF NOT EXISTS osm_base_r_idx_geom ON osm_base_r USING gist(geom);
 
 CREATE OR REPLACE VIEW osm_base AS (
 SELECT
@@ -435,7 +452,3 @@ SELECT
 FROM
     osm_base_r
 );
-
-VACUUM FULL ANALYZE osm_base_n;
-VACUUM FULL ANALYZE osm_base_w;
-VACUUM FULL ANALYZE osm_base_r;
