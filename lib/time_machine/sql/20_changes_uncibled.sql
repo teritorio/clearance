@@ -14,6 +14,7 @@ SELECT
     nodes,
     members,
     ST_Transform(ST_MakeValid(geom), :proj) AS geom,
+    ST_Subdivide(ST_Transform(ST_MakeValid(geom), :proj), 100) AS geom_part,
     cibled
 FROM osm_changes_geom;
 CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
@@ -135,7 +136,7 @@ WITH RECURSIVE a AS (
             SELECT * FROM a
         )
         (
-        SELECT
+        SELECT DISTINCT ON (ways.objtype, ways.id)
             ways.objtype,
             ways.id,
             ways.version,
@@ -154,13 +155,16 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom_ AS ways ON
                 ways.objtype = 'w' AND
-                ST_DWithin(cibled_changes.geom, ways.geom, :distance)
+                ST_DWithin(cibled_changes.geom, ways.geom_part, :distance)
         WHERE
             cibled_changes.objtype = 'n'
+        ORDER BY
+            ways.objtype,
+            ways.id
 
         ) UNION (
 
-        SELECT
+        SELECT DISTINCT ON (relations.objtype, relations.id)
             relations.objtype,
             relations.id,
             relations.version,
@@ -179,13 +183,16 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom_ AS relations ON
                 relations.objtype = 'r' AND
-                ST_DWithin(cibled_changes.geom, relations.geom, :distance)
+                ST_DWithin(cibled_changes.geom, relations.geom_part, :distance)
         WHERE
             cibled_changes.objtype = 'n'
+        ORDER BY
+            relations.objtype,
+            relations.id
 
         ) UNION (
 
-        SELECT
+        SELECT DISTINCT ON (relations.objtype, relations.id)
             relations.objtype,
             relations.id,
             relations.version,
@@ -204,9 +211,12 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom_ AS relations ON
                 relations.objtype = 'r' AND
-                ST_DWithin(cibled_changes.geom, relations.geom, :distance)
+                ST_DWithin(cibled_changes.geom, relations.geom_part, :distance)
         WHERE
             cibled_changes.objtype = 'w'
+        ORDER BY
+            relations.objtype,
+            relations.id
         )
     )
 )
