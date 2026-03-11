@@ -56,6 +56,7 @@ group :development do
   gem 'ruby-lsp', require: false
   gem 'sorbet', require: false
   # gem 'sorbet-rails', require: false # Doest nor work with tapioca 0.17.0
+  gem 'minitest', '< 6' # Not direct deps, block version for rails 8
   gem 'tapioca', require: false
   gem 'test-unit'
 
