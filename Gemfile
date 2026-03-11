@@ -31,6 +31,7 @@ gem 'bzip2-ffi'
 gem 'devise'
 gem 'http'
 gem 'json'
+gem 'json-schema', '~> 6.2'
 gem 'nokogiri'
 gem 'omniauth'
 gem 'omniauth-osm-oauth2'
@@ -57,6 +58,7 @@ group :development do
   gem 'ruby-lsp', require: false
   gem 'sorbet', require: false
   # gem 'sorbet-rails', require: false # Doest nor work with tapioca 0.17.0
+  gem 'minitest', '< 6' # Not direct deps, block version for rails 8
   gem 'tapioca', require: false
   gem 'test-unit'
 
