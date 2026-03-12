@@ -1,4 +1,4 @@
-SET search_path TO :schema,public;
+SET search_path TO :"schema", public;
 
 CREATE OR REPLACE FUNCTION array_min(anyarray)
 RETURNS anyelement AS $$

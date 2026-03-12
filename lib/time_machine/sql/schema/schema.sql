@@ -1,5 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS :schema;
-SET search_path TO :schema,public;
+CREATE SCHEMA IF NOT EXISTS :"schema";
+SET search_path TO :"schema", public;
 
 DROP TABLE IF EXISTS osm_base_n CASCADE;
 CREATE TABLE osm_base_n (

@@ -1,4 +1,4 @@
-SET search_path TO :schema,public;
+SET search_path TO :"schema", public;
 
 CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
   SELECT
