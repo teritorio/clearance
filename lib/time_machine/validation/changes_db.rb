@@ -296,7 +296,7 @@ module Validation
     const :locha_id, Integer
     const :semantic_group, Integer
     const :before_objects, T.nilable(Osm::ObjectChangeId)
-    const :after_objects, Osm::ObjectChangeId
+    const :after_objects, T.nilable(Osm::ObjectChangeId)
     const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :conflation, OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties]
