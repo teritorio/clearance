@@ -295,8 +295,11 @@ module Validation
     conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING')
     i = 0
     changes.each{ |change|
-      i += 1
-      conn.exec_prepared('changes_update_insert', [change.after_objects.objtype, change.after_objects.id, change.after_objects.version, change.after_objects.deleted])
+      after_objects = change.after_objects
+      if !after_objects.nil? # If after_objects is nil, it will be accepted or rejected by an other part of the same cluster
+        i += 1
+        conn.exec_prepared('changes_update_insert', [after_objects.objtype, after_objects.id, after_objects.version, after_objects.deleted])
+      end
     }
     puts "Apply on #{i} changes"
 
@@ -328,7 +331,7 @@ module Validation
     const :locha_id, Integer
     const :semantic_group, Integer
     const :before_objects, T.nilable(Osm::ObjectChangeId)
-    const :after_objects, Osm::ObjectChangeId
+    const :after_objects, T.nilable(Osm::ObjectChangeId)
     const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :conflation, OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties]
