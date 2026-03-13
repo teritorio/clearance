@@ -171,10 +171,12 @@ The goal is to retain suspect changes as not complying with quality criteria.
 The OSM tags properties, the metadata properties, the geometry and the changeset properties can be used to evaluate the quality.
 
 Currently implemented validators:
+- delayed: retain hot changes within a delay (retain disputed features or change-in-progress, or accept changes automatically after delay if nothing change.
 - deleted: flag deleted objects
-- geom: flag objects with change distance greater than a threshold
-- tags: flag objects based on tags key and value
-- user: flag objects based on contributor name
+- geom_changes: flag objects with change distance greater than a threshold
+- geom_new_object: flag new geom
+- tags_changes: flag objects based on tags key and value
+- user_list: flag objects based on contributor name, white or black list
 
 More advanced validators are planned.
 
