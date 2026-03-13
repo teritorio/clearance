@@ -101,7 +101,14 @@ validators:
   deleted:
     action_force: reject
 
-  # Accept all changes after a retention delay
-  after_delay:
-    retention_delay: 86400 # 1 day
+  # Hold hot changes
+  delay_hot:
+    instance: Validators::Delayed
+    before_delay: 86400 # 1 day
+    action: reject
+
+  # Let's accept cold changes
+  accept_after_delay:
+    instance: Validators::Delayed
+    after_delay: 86400 # 1O days
     action_force: accept
