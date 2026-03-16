@@ -65,13 +65,33 @@ module Validation
 
   sig {
     params(
+      before: T.nilable(OSMChangeProperties),
+      before_at_now: T.nilable(OSMChangeProperties),
+      after: T.nilable(OSMChangeProperties),
+    ).returns(ValidationResult)
+  }
+  def self.object_validation_accept(before, before_at_now, after)
+    throw 'Precondition fails' if before.nil? && after.nil?
+
+    ValidationResult.new(
+      action: 'accept',
+      changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
+      created: T.must(after || before_at_now).created,
+      diff: DiffActions.new(
+        attribs: {},
+        tags: {},
+      ),
+    )
+  end
+
+  sig {
+    params(
       config: Configuration::Config,
       locha_id: Integer,
       lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
-      accept_all_validators: T::Array[Validators::ValidatorBase],
     ).returns(LoCha)
   }
-  def self.time_machine_locha(config, locha_id, lo_cha, accept_all_validators)
+  def self.time_machine_locha(config, locha_id, lo_cha)
     befores = lo_cha.collect(&:first).compact
     afters = lo_cha.collect(&:last).compact
     conflation_clusters = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_cluster(befores, afters, 200.0)
@@ -103,7 +123,7 @@ module Validation
         if matching_group
           remeaning_conflations << [conflation, matches]
         else
-          validation = object_validation(accept_all_validators, conflation.before, conflation.before_at_now, conflation.after)
+          validation = object_validation_accept(conflation.before, conflation.before_at_now, conflation.after)
           links << Link.new(
             conflation: conflation,
             validations: matches,
@@ -178,10 +198,9 @@ module Validation
     ).returns(T::Enumerable[LoCha])
   }
   def self.time_machine(conn, config)
-    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |locha_id, lo_cha|
-        yielder << time_machine_locha(config, locha_id, lo_cha, accept_all_validators)
+        yielder << time_machine_locha(config, locha_id, lo_cha)
       }
     }
   end
