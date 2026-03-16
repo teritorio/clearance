@@ -37,55 +37,6 @@ module Validation
 
   sig {
     params(
-      validators: T::Array[Validators::ValidatorBase],
-      before: T.nilable(OSMChangeProperties),
-      before_at_now: T.nilable(OSMChangeProperties),
-      after: T.nilable(OSMChangeProperties),
-    ).returns(ValidationResult)
-  }
-  def self.object_validation(validators, before, before_at_now, after)
-    throw 'Precondition fails' if before.nil? && after.nil?
-
-    diff = diff_osm_object(before, after)
-    validators.each{ |validator|
-      validator.apply(before, after, diff)
-    }
-    if !diff.attribs['geom_distance'].nil?
-      diff.attribs['geom'] = (diff.attribs['geom'] || []) + T.must(diff.attribs['geom_distance'])
-      diff.attribs.delete('geom_distance')
-    end
-
-    ValidationResult.new(
-      action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
-      changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
-      created: T.must(after || before_at_now).created,
-      diff: diff,
-    )
-  end
-
-  sig {
-    params(
-      before: T.nilable(OSMChangeProperties),
-      before_at_now: T.nilable(OSMChangeProperties),
-      after: T.nilable(OSMChangeProperties),
-    ).returns(ValidationResult)
-  }
-  def self.object_validation_accept(before, before_at_now, after)
-    throw 'Precondition fails' if before.nil? && after.nil?
-
-    ValidationResult.new(
-      action: 'accept',
-      changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
-      created: T.must(after || before_at_now).created,
-      diff: DiffActions.new(
-        attribs: {},
-        tags: {},
-      ),
-    )
-  end
-
-  sig {
-    params(
       config: Configuration::Config,
       locha_id: Integer,
       lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
@@ -100,10 +51,12 @@ module Validation
     prevalidation_clusters = conflation_clusters.collect{ |conflations|
       remeaning_conflations = T.let([], T::Array[[
         OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties],
+        DiffActions,
         T::Array[ValidationLogMatch],
       ]])
       links = T.let([], T::Array[Link])
       conflations.each{ |conflation|
+        throw 'Precondition fails' if conflation.before.nil? && conflation.after.nil?
         matches = [conflation.before, conflation.after].compact.collect{ |object|
           config.osm_tags_matches.match(object.tags)
         }.flatten(1).uniq.collect{ |overpass, match|
@@ -121,13 +74,21 @@ module Validation
         }
 
         if matching_group
-          remeaning_conflations << [conflation, matches]
+          diff = diff_osm_object(conflation.before, conflation.after)
+          remeaning_conflations << [conflation, diff, matches]
         else
-          validation = object_validation_accept(conflation.before, conflation.before_at_now, conflation.after)
           links << Link.new(
             conflation: conflation,
             validations: matches,
-            result: validation,
+            result: ValidationResult.new(
+              action: 'accept',
+              changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
+              created: T.must(conflation.after || conflation.before_at_now).created,
+              diff: DiffActions.new(
+                attribs: {},
+                tags: {},
+              ),
+            )
           )
         end
       }
@@ -135,16 +96,32 @@ module Validation
     }
 
     validation_clusters = prevalidation_clusters.collect{ |links, conflations_matches|
-      validation_results = conflations_matches.collect{ |conflation, matches|
-        validation = object_validation(config.validators, conflation.before, conflation.before_at_now, conflation.after)
-        [conflation, matches, validation]
+      validation_results = conflations_matches.collect{ |conflation, diff, matches|
+        config.validators.each{ |validator|
+          validator.apply(conflation.before, conflation.after, diff)
+        }
+        [conflation, diff, matches]
       }
       [links, validation_results]
     }
 
     semantic_clusters = validation_clusters.collect{ |links, validation_clusters|
       cluster_action = T.let('accept', T.nilable(String))
-      validation_results = validation_clusters.collect{ |conflation, matches, validation|
+      validation_results = validation_clusters.collect{ |conflation, diff, matches|
+        if !diff.attribs['geom_distance'].nil?
+          diff.attribs['geom'] = (diff.attribs['geom'] || []) + T.must(diff.attribs['geom_distance'])
+          diff.attribs.delete('geom_distance')
+        end
+
+        before_at_now = conflation.before_at_now
+        after = conflation.after
+        validation = ValidationResult.new(
+          action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
+          changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
+          created: T.must(after || before_at_now).created,
+          diff: diff,
+        )
+
         if validation.action == 'reject'
           cluster_action = 'reject'
         elsif cluster_action != 'reject' && validation.action.nil?
