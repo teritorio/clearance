@@ -15,7 +15,7 @@ module Validation
     prop :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :diff, DiffActions
-    const :action, T.nilable(ActionType)
+    prop :action, T.nilable(ActionType)
   end
 
   class Link < T::Struct
@@ -49,11 +49,7 @@ module Validation
 
     locha_action = T.let('accept', T.nilable(String))
     prevalidation_clusters = conflation_clusters.collect{ |conflations|
-      remeaning_conflations = T.let([], T::Array[[
-        OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties],
-        DiffActions,
-        T::Array[ValidationLogMatch],
-      ]])
+      remeaning_conflations = T.let([], T::Array[Link])
       links = T.let([], T::Array[Link])
       conflations.each{ |conflation|
         throw 'Precondition fails' if conflation.before.nil? && conflation.after.nil?
@@ -74,8 +70,16 @@ module Validation
         }
 
         if matching_group
-          diff = diff_osm_object(conflation.before, conflation.after)
-          remeaning_conflations << [conflation, diff, matches]
+          remeaning_conflations << Link.new(
+            conflation: conflation,
+            validations: matches,
+            result: ValidationResult.new(
+              action: 'accept',
+              changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
+              created: T.must(conflation.after || conflation.before_at_now).created,
+              diff: diff_osm_object(conflation.before, conflation.after),
+            ),
+          )
         else
           links << Link.new(
             conflation: conflation,
@@ -95,43 +99,29 @@ module Validation
       [links, remeaning_conflations]
     }
 
-    validation_clusters = prevalidation_clusters.collect{ |links, conflations_matches|
-      validation_results = conflations_matches.collect{ |conflation, diff, matches|
+    prevalidation_clusters.each{ |links, conflations_matches|
+      conflations_matches.each{ |link|
         config.validators.each{ |validator|
-          validator.apply(conflation.before, conflation.after, diff)
+          validator.apply(link.conflation.before, link.conflation.after, link.result.diff)
         }
-        [conflation, diff, matches]
       }
-      [links, validation_results]
     }
 
-    semantic_clusters = validation_clusters.collect{ |links, validation_clusters|
+    semantic_clusters = prevalidation_clusters.collect{ |links, conflations_matches|
       cluster_action = T.let('accept', T.nilable(String))
-      validation_results = validation_clusters.collect{ |conflation, diff, matches|
-        if !diff.attribs['geom_distance'].nil?
-          diff.attribs['geom'] = (diff.attribs['geom'] || []) + T.must(diff.attribs['geom_distance'])
-          diff.attribs.delete('geom_distance')
+      validation_results = conflations_matches.collect{ |link|
+        if !link.result.diff.attribs['geom_distance'].nil?
+          link.result.diff.attribs['geom'] = (link.result.diff.attribs['geom'] || []) + T.must(link.result.diff.attribs['geom_distance'])
+          link.result.diff.attribs.delete('geom_distance')
         end
 
-        before_at_now = conflation.before_at_now
-        after = conflation.after
-        validation = ValidationResult.new(
-          action: diff.fully_accepted? ? 'accept' : diff.partialy_rejected? ? 'reject' : nil,
-          changeset_ids: T.must(after || before_at_now).changesets&.pluck('id'),
-          created: T.must(after || before_at_now).created,
-          diff: diff,
-        )
-
-        if validation.action == 'reject'
+        link.result.action = link.result.diff.fully_accepted? ? 'accept' : link.result.diff.partialy_rejected? ? 'reject' : nil
+        if link.result.action == 'reject'
           cluster_action = 'reject'
-        elsif cluster_action != 'reject' && validation.action.nil?
+        elsif cluster_action != 'reject' && link.result.action.nil?
           cluster_action = nil
         end
-        Link.new(
-          conflation: conflation,
-          validations: matches,
-          result: validation,
-        )
+        link
       }
 
       if cluster_action == 'reject'
