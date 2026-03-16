@@ -77,9 +77,13 @@ module Validation
     conflation_clusters = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_cluster(befores, afters, 200.0)
 
     locha_action = T.let('accept', T.nilable(String))
-    semantic_clusters = conflation_clusters.collect{ |conflations|
-      cluster_action = T.let('accept', T.nilable(String))
-      validation_results = conflations.collect{ |conflation|
+    prevalidation_clusters = conflation_clusters.collect{ |conflations|
+      remeaning_conflations = T.let([], T::Array[[
+        OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties],
+        T::Array[ValidationLogMatch],
+      ]])
+      links = T.let([], T::Array[Link])
+      conflations.each{ |conflation|
         matches = [conflation.before, conflation.after].compact.collect{ |object|
           config.osm_tags_matches.match(object.tags)
         }.flatten(1).uniq.collect{ |overpass, match|
@@ -95,8 +99,32 @@ module Validation
         matching_group = matches.any?{ |match|
           !match.user_groups&.empty?
         }
-        validators = matching_group ? config.validators : accept_all_validators
-        validation = object_validation(validators, conflation.before, conflation.before_at_now, conflation.after)
+
+        if matching_group
+          remeaning_conflations << [conflation, matches]
+        else
+          validation = object_validation(accept_all_validators, conflation.before, conflation.before_at_now, conflation.after)
+          links << Link.new(
+            conflation: conflation,
+            validations: matches,
+            result: validation,
+          )
+        end
+      }
+      [links, remeaning_conflations]
+    }
+
+    validation_clusters = prevalidation_clusters.collect{ |links, conflations_matches|
+      validation_results = conflations_matches.collect{ |conflation, matches|
+        validation = object_validation(config.validators, conflation.before, conflation.before_at_now, conflation.after)
+        [conflation, matches, validation]
+      }
+      [links, validation_results]
+    }
+
+    semantic_clusters = validation_clusters.collect{ |links, validation_clusters|
+      cluster_action = T.let('accept', T.nilable(String))
+      validation_results = validation_clusters.collect{ |conflation, matches, validation|
         if validation.action == 'reject'
           cluster_action = 'reject'
         elsif cluster_action != 'reject' && validation.action.nil?
@@ -110,7 +138,7 @@ module Validation
       }
 
       if cluster_action == 'reject'
-        validation_results = validation_results.collect{ |link|
+        validation_results = (links + validation_results).collect{ |link|
           next(link) if link.result.action == 'reject'
 
           validation = link.result.with(action: 'reject')
@@ -122,6 +150,7 @@ module Validation
             result: validation
           )
         }
+        links = [] # already merged above
       end
 
       if cluster_action == 'reject'
@@ -131,7 +160,7 @@ module Validation
       end
       SemanticCluster.new(
         action: cluster_action,
-        links: validation_results,
+        links: links + validation_results,
       )
     }
 
