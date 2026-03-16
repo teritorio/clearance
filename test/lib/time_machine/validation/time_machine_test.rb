@@ -79,8 +79,6 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_time_machine_deleted
-    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
-
     yaml = CONFIG_YAML_HEADER + <<~YAML
       validators:
         deleted:
@@ -108,7 +106,7 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).semantic_clusters.collect(&:links).flatten(1)
+    r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(1, r.size)
 
     link = T.must(r[0])
@@ -119,8 +117,6 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_time_machine_locha_propagate_rejection
-    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
-
     yaml = CONFIG_YAML_HEADER + <<~YAML
       validators:
         deleted:
@@ -145,15 +141,13 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).semantic_clusters.collect(&:links).flatten(1)
+    r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(3, r.size)
     assert_equal({ 'reject' => 3 }, r.group_by{ |link| link.result.action }.transform_values(&:size))
   end
 
   sig { void }
   def test_time_machine_relation_members
-    accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
-
     yaml = "#{CONFIG_YAML_HEADER}
 validators: {}"
     config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
@@ -172,7 +166,7 @@ validators: {}"
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha, accept_all_validators).semantic_clusters.collect(&:links).flatten(1)
+    r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(1, r.size)
     assert_equal('accept', r[0]&.result&.action)
   end
