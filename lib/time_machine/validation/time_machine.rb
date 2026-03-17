@@ -42,13 +42,16 @@ module Validation
     ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
   }
   def self.time_machine_validate(validators, prevalidation_clusters)
-    prevalidation_clusters.collect{ |accepted_links, conflations_matches|
+    prevalidation_clusters = prevalidation_clusters.collect{ |accepted_links, conflations_matches|
       conflations_matches.each{ |link|
         validators.each{ |validator|
           validator.apply(link.conflation.before, link.conflation.after, link.result.diff)
         }
       }
+      [accepted_links, conflations_matches]
+    }
 
+    prevalidation_clusters.collect{ |accepted_links, conflations_matches|
       conflations_matches.collect{ |link|
         if !link.result.diff.attribs['geom_distance'].nil?
           link.result.diff.attribs['geom'] = (link.result.diff.attribs['geom'] || []) + T.must(link.result.diff.attribs['geom_distance'])
