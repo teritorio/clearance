@@ -37,13 +37,14 @@ module Validation
 
   sig {
     params(
+      conn: T.nilable(PG::Connection),
       validators: T::Array[Validators::ValidatorBase],
       prevalidation_clusters: T::Array[[T::Array[Link], T::Array[Link]]],
     ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
   }
-  def self.time_machine_validate(validators, prevalidation_clusters)
+  def self.time_machine_validate(conn, validators, prevalidation_clusters)
     validators.each{ |validator|
-      validator.apply(prevalidation_clusters)
+      validator.apply(conn, prevalidation_clusters)
     }
 
     prevalidation_clusters.collect{ |accepted_links, conflations_matches|
@@ -110,12 +111,13 @@ module Validation
 
   sig {
     params(
+      conn: T.nilable(PG::Connection),
       config: Configuration::Config,
       locha_id: Integer,
       lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
     ).returns(LoCha)
   }
-  def self.time_machine_locha(config, locha_id, lo_cha)
+  def self.time_machine_locha(conn, config, locha_id, lo_cha)
     conflation_clusters = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_cluster(
       lo_cha.collect(&:first).compact,
       lo_cha.collect(&:last).compact,
@@ -162,7 +164,7 @@ module Validation
       [links, remeaning_conflations]
     }
 
-    prevalidation_clusters = time_machine_validate(config.validators, prevalidation_clusters)
+    prevalidation_clusters = time_machine_validate(conn, config.validators, prevalidation_clusters)
     locha_action, semantic_clusters = propagate_action(prevalidation_clusters)
 
     LoCha.new(
@@ -181,7 +183,7 @@ module Validation
   def self.time_machine(conn, config)
     Enumerator.new { |yielder|
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |locha_id, lo_cha|
-        yielder << time_machine_locha(config, locha_id, lo_cha)
+        yielder << time_machine_locha(conn, config, locha_id, lo_cha)
       }
     }
   end
