@@ -3,12 +3,12 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/osm/tags_matches'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
 
-  class TagsChanges < ValidatorDual
+  class TagsChanges < ValidatorLinkDual
     sig { returns(Osm::TagsMatches) }
     attr_reader :osm_tags_matches
 
@@ -20,7 +20,7 @@ module Validators
         _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(before, after, diff, _conflation_reason)
+    def apply_link(before, after, diff, _conflation_reason)
       matcheses = (
         (before && @osm_tags_matches.match_with_extra(before.tags) || []) +
         @osm_tags_matches.match_with_extra(after&.tags || {})
