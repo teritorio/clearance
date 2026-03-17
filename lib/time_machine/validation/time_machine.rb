@@ -64,6 +64,54 @@ module Validation
 
   sig {
     params(
+      prevalidation_clusters: T::Array[[T::Array[Link], T::Array[Link]]],
+    ).returns([T.nilable(ActionType), T::Array[SemanticCluster]])
+  }
+  def self.propagate_action(prevalidation_clusters)
+    locha_action = T.let('accept', T.nilable(String))
+    semantic_clusters = prevalidation_clusters.collect{ |links, validation_results|
+      cluster_action = T.let('accept', T.nilable(String))
+      validation_results.each{ |link|
+        if link.result.action == 'reject'
+          cluster_action = 'reject'
+          break
+        elsif link.result.action.nil?
+          cluster_action = nil
+        end
+      }
+
+      if cluster_action == 'reject'
+        validation_results = (links + validation_results).collect{ |link|
+          next(link) if link.result.action == 'reject'
+
+          validation = link.result.with(action: 'reject')
+          diff_action = Validation::Action.new(validator_id: 'semantic_rejection_propagation', action: 'reject')
+          validation.diff.attribs['id'] = (validation.diff.attribs['id'] || []) + [diff_action]
+          Link.new(
+            conflation: link.conflation,
+            validations: link.validations,
+            result: validation
+          )
+        }
+        links = [] # already merged above
+      end
+
+      if cluster_action == 'reject'
+        locha_action = 'reject'
+      elsif locha_action != 'reject' && cluster_action.nil?
+        locha_action = nil
+      end
+      SemanticCluster.new(
+        action: cluster_action,
+        links: links + validation_results,
+      )
+    }
+
+    [locha_action, semantic_clusters]
+  end
+
+  sig {
+    params(
       config: Configuration::Config,
       locha_id: Integer,
       lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
@@ -117,45 +165,7 @@ module Validation
     }
 
     prevalidation_clusters = time_machine_validate(config.validators, prevalidation_clusters)
-
-    locha_action = T.let('accept', T.nilable(String))
-    semantic_clusters = prevalidation_clusters.collect{ |links, validation_results|
-      cluster_action = T.let('accept', T.nilable(String))
-      validation_results.each{ |link|
-        if link.result.action == 'reject'
-          cluster_action = 'reject'
-          break
-        elsif link.result.action.nil?
-          cluster_action = nil
-        end
-      }
-
-      if cluster_action == 'reject'
-        validation_results = (links + validation_results).collect{ |link|
-          next(link) if link.result.action == 'reject'
-
-          validation = link.result.with(action: 'reject')
-          diff_action = Validation::Action.new(validator_id: 'semantic_rejection_propagation', action: 'reject')
-          validation.diff.attribs['id'] = (validation.diff.attribs['id'] || []) + [diff_action]
-          Link.new(
-            conflation: link.conflation,
-            validations: link.validations,
-            result: validation
-          )
-        }
-        links = [] # already merged above
-      end
-
-      if cluster_action == 'reject'
-        locha_action = 'reject'
-      elsif locha_action != 'reject' && cluster_action.nil?
-        locha_action = nil
-      end
-      SemanticCluster.new(
-        action: cluster_action,
-        links: links + validation_results,
-      )
-    }
+    locha_action, semantic_clusters = propagate_action(prevalidation_clusters)
 
     LoCha.new(
       locha_id: locha_id,
