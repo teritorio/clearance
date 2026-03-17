@@ -203,7 +203,6 @@ Engine
   * Support changes on objects larger than a cluster: admin relations, large landuses, rivers
 
 Configuration
-  * Add OSM extract URL in the config file to initialize the project from it
   * By feature type
     * LoCha / clustering distance
     * Evaluation of geometry change thresholds
