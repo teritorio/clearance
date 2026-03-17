@@ -27,10 +27,11 @@ module Validators
 
     sig {
       params(
+        conn: T.nilable(PG::Connection),
         prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
       ).void
     }
-    def apply(prevalidation_clusters); end
+    def apply(conn, prevalidation_clusters); end
 
     sig {
       returns(T::Hash[T.untyped, T.untyped])
