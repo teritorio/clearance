@@ -5,12 +5,12 @@ require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
 require 'active_support'
 require 'active_support/core_ext'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
 
-  class Deleted < Validator
+  class Deleted < ValidatorLink
     sig {
       override.params(
         _before: T.nilable(Validation::OSMChangeProperties),
@@ -18,7 +18,7 @@ module Validators
         diff: Validation::DiffActions,
       ).void
     }
-    def apply(_before, after, diff)
+    def apply_link(_before, after, diff)
       return if !after.nil? && !after.deleted
 
       diff.attribs.each_value { |action|

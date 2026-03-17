@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
@@ -11,7 +11,7 @@ module Validators
   # tout flagger en reject pendant un délai
   # Accept auto after delay
 
-  class Delayed < Validator
+  class Delayed < ValidatorLink
     sig {
       params(
         id: String,
@@ -41,7 +41,7 @@ module Validators
         diff: Validation::DiffActions,
       ).void
     }
-    def apply(_before, after, diff)
+    def apply_link(_before, after, diff)
       return if after.nil?
 
 
