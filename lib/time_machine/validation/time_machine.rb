@@ -70,11 +70,12 @@ module Validation
     ).returns(LoCha)
   }
   def self.time_machine_locha(config, locha_id, lo_cha)
-    befores = lo_cha.collect(&:first).compact
-    afters = lo_cha.collect(&:last).compact
-    conflation_clusters = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_cluster(befores, afters, 200.0)
+    conflation_clusters = OSMLogicalHistory::Conflation[OSMChangeProperties].new.conflate_cluster(
+      lo_cha.collect(&:first).compact,
+      lo_cha.collect(&:last).compact,
+      200.0
+    )
 
-    locha_action = T.let('accept', T.nilable(String))
     prevalidation_clusters = conflation_clusters.collect{ |conflations|
       remeaning_conflations = T.let([], T::Array[Link])
       links = T.let([], T::Array[Link])
@@ -96,31 +97,20 @@ module Validation
           !match.user_groups&.empty?
         }
 
+        link = Link.new(
+          conflation: conflation,
+          validations: matches,
+          result: ValidationResult.new(
+            action: 'accept',
+            changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
+            created: T.must(conflation.after || conflation.before_at_now).created,
+            diff: matching_group ? diff_osm_object(conflation.before, conflation.after) : DiffActions.new(attribs: {}, tags: {}),
+          ),
+        )
         if matching_group
-          remeaning_conflations << Link.new(
-            conflation: conflation,
-            validations: matches,
-            result: ValidationResult.new(
-              action: 'accept',
-              changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
-              created: T.must(conflation.after || conflation.before_at_now).created,
-              diff: diff_osm_object(conflation.before, conflation.after),
-            ),
-          )
+          remeaning_conflations << link
         else
-          links << Link.new(
-            conflation: conflation,
-            validations: matches,
-            result: ValidationResult.new(
-              action: 'accept',
-              changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
-              created: T.must(conflation.after || conflation.before_at_now).created,
-              diff: DiffActions.new(
-                attribs: {},
-                tags: {},
-              ),
-            )
-          )
+          links << link
         end
       }
       [links, remeaning_conflations]
@@ -128,12 +118,14 @@ module Validation
 
     prevalidation_clusters = time_machine_validate(config.validators, prevalidation_clusters)
 
+    locha_action = T.let('accept', T.nilable(String))
     semantic_clusters = prevalidation_clusters.collect{ |links, validation_results|
       cluster_action = T.let('accept', T.nilable(String))
       validation_results.each{ |link|
         if link.result.action == 'reject'
           cluster_action = 'reject'
-        elsif cluster_action != 'reject' && link.result.action.nil?
+          break
+        elsif link.result.action.nil?
           cluster_action = nil
         end
       }
