@@ -4,7 +4,7 @@
 require 'sorbet-runtime'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/validation/diff_actions'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 require './lib/time_machine/validation/types'
 
 
@@ -45,7 +45,7 @@ module Validation
     validators.each{ |validator|
       prevalidation_clusters.collect{ |_, conflations_matches|
         conflations_matches.each{ |link|
-          validator.apply(link.conflation.before, link.conflation.after, link.result.diff)
+          T.cast(validator, Validators::ValidatorLinkBase).apply_link(link.conflation.before, link.conflation.after, link.result.diff)
         }
       }
     }
