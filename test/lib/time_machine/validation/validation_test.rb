@@ -71,9 +71,47 @@ class TestValidation < Test::Unit::TestCase
     group_ids: nil,
   )
 
+  sig {
+    params(
+      before: T.nilable(Validation::OSMChangeProperties),
+      before_at_now: T.nilable(Validation::OSMChangeProperties),
+      after: T.nilable(Validation::OSMChangeProperties),
+    ).returns(T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]])
+  }
+  def build_clusters(before, before_at_now, after)
+    conflation = OSMLogicalHistory::Conflation::ConflationNilableOnly[Validation::OSMChangeProperties].new(
+      before: before,
+      before_at_now: before_at_now,
+      after: after,
+      conflation_reason: OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
+    )
+    T.let([[[], [Validation::Link.new(
+      conflation: conflation,
+      validations: [],
+      result: Validation::ValidationResult.new(
+        action: 'accept',
+        changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
+        created: T.must(conflation.after || conflation.before_at_now).created,
+        diff: Validation.diff_osm_object(conflation.before, conflation.after),
+      ),
+    )]]], T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]])
+  end
+
+  sig {
+    params(
+      validators: T::Array[Validators::ValidatorBase],
+      prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
+    ).returns(Validation::ValidationResult)
+  }
+  def validate(validators, prevalidation_clusters)
+    a = Validation.time_machine_validate(validators, prevalidation_clusters).first&.last
+    T.must(a&.first&.result)
+  end
+
   sig { void }
   def test_object_validation_before
-    validation = Validation.object_validation([], @@fixture_node_a, @@fixture_node_a, nil)
+    clusters = build_clusters(@@fixture_node_a, @@fixture_node_a, nil)
+    validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: nil,
       changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
@@ -91,7 +129,8 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation_after
-    validation = Validation.object_validation([], nil, nil, @@fixture_node_b)
+    clusters = build_clusters(nil, nil, @@fixture_node_b)
+    validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: nil,
       changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
@@ -107,7 +146,8 @@ class TestValidation < Test::Unit::TestCase
   sig { void }
   def test_object_validation_same
     b = @@fixture_node_a.with(is_change: true)
-    validation = Validation.object_validation([], @@fixture_node_a, b, b)
+    clusters = build_clusters(@@fixture_node_a, b, b)
+    validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
       changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
@@ -122,7 +162,8 @@ class TestValidation < Test::Unit::TestCase
 
   sig { void }
   def test_object_validation2
-    validation = Validation.object_validation([], @@fixture_node_a, @@fixture_node_a, @@fixture_node_b)
+    clusters = build_clusters(@@fixture_node_a, @@fixture_node_a, @@fixture_node_b)
+    validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: nil,
       changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
@@ -139,9 +180,10 @@ class TestValidation < Test::Unit::TestCase
   def test_object_validation_many
     id = 'all'
     ['accept', 'reject', nil].each{ |action|
-      validation = Validation.object_validation(
+      clusters = build_clusters(@@fixture_node_a, @@fixture_node_a, @@fixture_node_b)
+      validation = validate(
         [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)],
-        @@fixture_node_a, @@fixture_node_a, @@fixture_node_b,
+        clusters
       )
 
       validated = [Validation::Action.new(
