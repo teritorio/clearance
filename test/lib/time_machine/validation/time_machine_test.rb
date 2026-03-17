@@ -106,7 +106,7 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
+    r = Validation.time_machine_locha(nil, config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(1, r.size)
 
     link = T.must(r[0])
@@ -141,7 +141,7 @@ class TestValidation < Test::Unit::TestCase
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
+    r = Validation.time_machine_locha(nil, config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(3, r.size)
     assert_equal({ 'reject' => 3 }, r.group_by{ |link| link.result.action }.transform_values(&:size))
   end
@@ -166,7 +166,7 @@ validators: {}"
       }, config.local_srid)
     }
 
-    r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
+    r = Validation.time_machine_locha(nil, config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
     assert_equal(1, r.size)
     assert_equal('accept', r[0]&.result&.action)
   end

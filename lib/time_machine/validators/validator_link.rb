@@ -15,10 +15,11 @@ module Validators
 
     sig {
       params(
+        _conn: T.nilable(PG::Connection),
         prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
       ).returns(T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]])
     }
-    def apply(prevalidation_clusters)
+    def apply(_conn, prevalidation_clusters)
       prevalidation_clusters.collect{ |accepted_links, conflations_matches|
         conflations_matches.each{ |link|
           apply_link(link.conflation.before, link.conflation.after, link.result.diff)
