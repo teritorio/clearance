@@ -64,11 +64,7 @@ module Validation
   }
   def self.time_machine_validate(validators, prevalidation_clusters)
     validators.each{ |validator|
-      prevalidation_clusters.collect{ |_, conflations_matches|
-        conflations_matches.each{ |link|
-          T.cast(validator, Validators::ValidatorLinkBase).apply_link(link.conflation.before, link.conflation.after, link.result.diff, link.conflation.conflation_reason)
-        }
-      }
+      validator.apply(prevalidation_clusters)
     }
 
     prevalidation_clusters.collect{ |accepted_links, conflations_matches|

@@ -26,6 +26,13 @@ module Validators
     end
 
     sig {
+      params(
+        prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
+      ).void
+    }
+    def apply(prevalidation_clusters); end
+
+    sig {
       returns(T::Hash[T.untyped, T.untyped])
     }
     def to_h
