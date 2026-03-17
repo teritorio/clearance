@@ -63,13 +63,16 @@ module Validation
     ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
   }
   def self.time_machine_validate(validators, prevalidation_clusters)
-    prevalidation_clusters.collect{ |accepted_links, conflations_matches|
+    prevalidation_clusters = prevalidation_clusters.collect{ |accepted_links, conflations_matches|
       conflations_matches.each{ |link|
         validators.each{ |validator|
           validator.apply(link.conflation.before, link.conflation.after, link.result.diff, link.conflation.conflation_reason)
         }
       }
+      [accepted_links, conflations_matches]
+    }
 
+    prevalidation_clusters.collect{ |accepted_links, conflations_matches|
       conflations_matches.collect{ |link|
         link.result.action = link.result.diff.fully_accepted? ? 'accept' : link.result.diff.partialy_rejected? ? 'reject' : nil
       }
