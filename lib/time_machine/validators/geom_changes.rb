@@ -3,12 +3,12 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
 
-  class GeomChanges < ValidatorDual
+  class GeomChanges < ValidatorLinkDual
     sig {
       params(
         id: String,
@@ -31,7 +31,7 @@ module Validators
         diff: Validation::DiffActions,
       ).void
     }
-    def apply(before, after, diff)
+    def apply_link(before, after, diff)
       return if !before || !diff.attribs['geom_distance'] || diff.attribs['geom_distance'] == 0
 
       return if after.nil? || !after.geom_distance

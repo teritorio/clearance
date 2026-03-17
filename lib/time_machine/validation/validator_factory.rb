@@ -10,7 +10,7 @@ require './lib/time_machine/validators/geom_new_object'
 require './lib/time_machine/validators/geom_invalid'
 require './lib/time_machine/validators/tags_changes'
 require './lib/time_machine/validators/user_list'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validation
   extend T::Sig

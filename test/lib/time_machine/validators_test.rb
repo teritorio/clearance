@@ -3,7 +3,7 @@
 
 require 'sorbet-runtime'
 require 'test/unit'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 require './lib/time_machine/validators/delayed'
 require './lib/time_machine/validators/geom_changes'
 require './lib/time_machine/validators/geom_invalid'
@@ -21,7 +21,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::Validator.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)
+    validator = Validators::ValidatorLink.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -36,7 +36,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validators::Validator.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action_force: action)
+    validator = Validators::ValidatorLink.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action_force: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -89,7 +89,7 @@ class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFil
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },
@@ -99,7 +99,7 @@ class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFil
     )
 
     diff = Validation.diff_osm_object(after, after)
-    validator.apply(after, after, diff)
+    validator.apply_link(after, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: {},
@@ -159,7 +159,7 @@ class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom_distance' => [] },
@@ -170,7 +170,7 @@ class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
 
     # No change
     diff = Validation.diff_osm_object(after, after)
-    validator.apply(after, after, diff)
+    validator.apply_link(after, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: {},
@@ -223,7 +223,7 @@ class TestGeomNewObject < Test::Unit::TestCase # rubocop:disable Style/OneClassP
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom_distance' => validation_action_accept },
@@ -297,7 +297,7 @@ class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
 
     diff = Validation.diff_osm_object(before, after)
     diff.attribs['geom_distance'] = []
-    validator.apply(before, after, diff)
+    validator.apply_link(before, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'geom_distance' => validation_action_accept },
@@ -349,7 +349,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },
@@ -363,7 +363,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom_distance' => [] },
@@ -408,7 +408,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom_distance' => [] },
@@ -422,7 +422,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
     )
 
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply_link(nil, after, diff)
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },

@@ -3,12 +3,12 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
 
-  class UserList < Validator
+  class UserList < ValidatorLink
     sig {
       params(
         id: String,
@@ -31,7 +31,7 @@ module Validators
         diff: Validation::DiffActions,
       ).void
     }
-    def apply(_before, after, diff)
+    def apply_link(_before, after, diff)
       return if after.nil? || @list.exclude?(after.username)
 
       (diff.attribs.values + diff.tags.values).each{ |action|
