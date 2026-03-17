@@ -15,6 +15,20 @@ module Validators
 
     sig {
       params(
+        prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
+      ).returns(T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]])
+    }
+    def apply(prevalidation_clusters)
+      prevalidation_clusters.collect{ |accepted_links, conflations_matches|
+        conflations_matches.each{ |link|
+          apply_link(link.conflation.before, link.conflation.after, link.result.diff)
+        }
+        [accepted_links, conflations_matches]
+      }
+    end
+
+    sig {
+      params(
         _before: T.nilable(Validation::OSMChangeProperties),
         _after: T.nilable(Validation::OSMChangeProperties),
         _diff: Validation::DiffActions,
