@@ -3,37 +3,25 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
+require './lib/time_machine/validators/validator_base'
 require 'active_support'
 require 'active_support/core_ext'
 
 module Validators
   extend T::Sig
 
-  class ValidatorBase
+  class ValidatorLinkBase < ValidatorBase
     extend T::Sig
 
     sig {
       params(
-        id: String,
-        osm_tags_matches: Osm::TagsMatches,
-        description: T.nilable(String),
-      ).void
-    }
-    def initialize(id:, osm_tags_matches:, description: nil)
-      @id = id
-      @osm_tags_matches = osm_tags_matches
-      @description = description
-    end
-
-    sig {
-      overridable.params(
         _before: T.nilable(Validation::OSMChangeProperties),
         _after: T.nilable(Validation::OSMChangeProperties),
         _diff: Validation::DiffActions,
         _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(_before, _after, _diff, _conflation_reason); end
+    def apply_link(_before, _after, _diff, _conflation_reason); end
 
     sig {
       returns(T::Hash[T.untyped, T.untyped])
@@ -45,7 +33,7 @@ module Validators
     end
   end
 
-  class Validator < ValidatorBase
+  class ValidatorLink < ValidatorLinkBase
     extend T::Sig
 
     sig {
@@ -90,7 +78,7 @@ module Validators
     end
   end
 
-  class ValidatorDual < ValidatorBase
+  class ValidatorLinkDual < ValidatorLinkBase
     extend T::Sig
 
     sig {
@@ -154,7 +142,7 @@ module Validators
   end
 
   # Dummy Validator
-  class All < Validator
+  class All < ValidatorLink
     extend T::Sig
 
     sig {
@@ -185,7 +173,7 @@ module Validators
         _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(before, after, diff, _conflation_reason)
+    def apply_link(before, after, diff, _conflation_reason)
       if @block && !@block.call(before, after, diff)
         return
       end

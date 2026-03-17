@@ -3,12 +3,12 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
 
-  class GeomChanges < ValidatorDual
+  class GeomChanges < ValidatorLinkDual
     sig {
       params(
         id: String,
@@ -32,7 +32,7 @@ module Validators
         conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(_before, _after, diff, conflation_reason)
+    def apply_link(_before, _after, diff, conflation_reason)
       dist = T.cast(conflation_reason.geom&.dig(:max_distance), T.nilable(Float))
       return if !dist || dist == 0
 

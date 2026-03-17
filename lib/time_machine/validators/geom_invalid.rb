@@ -3,12 +3,12 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
-require './lib/time_machine/validators/validator'
+require './lib/time_machine/validators/validator_link'
 
 module Validators
   extend T::Sig
 
-  class GeomInvalid < Validator
+  class GeomInvalid < ValidatorLink
     sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),
@@ -17,7 +17,7 @@ module Validators
         _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(before, after, diff, _conflation_reason)
+    def apply_link(before, after, diff, _conflation_reason)
       return if after.nil?
 
       after_geos = T.unsafe(after.geos)
