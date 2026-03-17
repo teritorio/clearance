@@ -37,6 +37,33 @@ module Validation
 
   sig {
     params(
+      validators: T::Array[Validators::ValidatorBase],
+      prevalidation_clusters: T::Array[[T::Array[Link], T::Array[Link]]],
+    ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
+  }
+  def self.time_machine_validate(validators, prevalidation_clusters)
+    prevalidation_clusters.collect{ |accepted_links, conflations_matches|
+      conflations_matches.each{ |link|
+        validators.each{ |validator|
+          validator.apply(link.conflation.before, link.conflation.after, link.result.diff)
+        }
+      }
+
+      conflations_matches.collect{ |link|
+        if !link.result.diff.attribs['geom_distance'].nil?
+          link.result.diff.attribs['geom'] = (link.result.diff.attribs['geom'] || []) + T.must(link.result.diff.attribs['geom_distance'])
+          link.result.diff.attribs.delete('geom_distance')
+        end
+
+        link.result.action = link.result.diff.fully_accepted? ? 'accept' : link.result.diff.partialy_rejected? ? 'reject' : nil
+      }
+
+      [accepted_links, conflations_matches]
+    }
+  end
+
+  sig {
+    params(
       config: Configuration::Config,
       locha_id: Integer,
       lo_cha: T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]],
@@ -99,29 +126,16 @@ module Validation
       [links, remeaning_conflations]
     }
 
-    prevalidation_clusters.each{ |links, conflations_matches|
-      conflations_matches.each{ |link|
-        config.validators.each{ |validator|
-          validator.apply(link.conflation.before, link.conflation.after, link.result.diff)
-        }
-      }
-    }
+    prevalidation_clusters = time_machine_validate(config.validators, prevalidation_clusters)
 
-    semantic_clusters = prevalidation_clusters.collect{ |links, conflations_matches|
+    semantic_clusters = prevalidation_clusters.collect{ |links, validation_results|
       cluster_action = T.let('accept', T.nilable(String))
-      validation_results = conflations_matches.collect{ |link|
-        if !link.result.diff.attribs['geom_distance'].nil?
-          link.result.diff.attribs['geom'] = (link.result.diff.attribs['geom'] || []) + T.must(link.result.diff.attribs['geom_distance'])
-          link.result.diff.attribs.delete('geom_distance')
-        end
-
-        link.result.action = link.result.diff.fully_accepted? ? 'accept' : link.result.diff.partialy_rejected? ? 'reject' : nil
+      validation_results.each{ |link|
         if link.result.action == 'reject'
           cluster_action = 'reject'
         elsif cluster_action != 'reject' && link.result.action.nil?
           cluster_action = nil
         end
-        link
       }
 
       if cluster_action == 'reject'
