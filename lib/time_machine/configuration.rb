@@ -68,38 +68,31 @@ module Configuration
   sig {
     params(
       path: String,
-      config: MainConfig
-    ).returns([
-      T::Hash[String, UserGroupConfig],
-      Osm::TagsMatches
-    ])
+      osm_tagss: T::Hash[String, String]
+    ).returns(Osm::TagsMatches)
   }
-  def self.load_user_groups(path, config)
+  def self.load_osm_tags(path, osm_tagss)
     cache = WebCache.new(dir: '/cache/osm_tags/', life: '1h')
-    osm_tags = T.let([], T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
-    # .to_h.collect.to_h => Mak happy Rubocop and Sorbet at the same time
-    user_groups = config.user_groups.to_h.collect.to_h{ |group_id, v|
+    osm_tags = osm_tagss.collect { |group_id, osm_tags|
       content = (
-        if v['osm_tags'].starts_with?('http')
-          response = cache.get(T.cast(URI.parse(v['osm_tags']), URI::HTTP))
-          raise [v['osm_tags'], response].inspect if !response.success?
+        if osm_tags.starts_with?('http')
+          response = cache.get(T.cast(URI.parse(osm_tags), URI::HTTP))
+          raise [osm_tags, response].inspect if !response.success?
 
           response.content
         else
-          File.read(File.expand_path(v['osm_tags'], path))
+          File.read(File.expand_path(osm_tags, path))
         end
       )
 
       j = JSON.parse(content)
-      osm_tags += j.collect{ |rule|
+      T.cast(j.collect{ |rule|
         rule['group_id'] = group_id
         rule
-      }
+      }, T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
+    }.flatten(1)
 
-      [group_id, UserGroupConfig.from_hash(v.merge('path' => path))]
-    }
-
-    osm_tags_matches = Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
+    Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
       group0 = T.must(group[0]) # Just to keep sorbet happy
       Osm::TagsMatch.new(
         group0['select'],
@@ -110,8 +103,28 @@ module Configuration
         icon: group0['icon'],
       )
     })
+  end
 
-    [user_groups, osm_tags_matches]
+  sig {
+    params(
+      path: String,
+      config: MainConfig
+    ).returns([
+      T::Hash[String, UserGroupConfig],
+      Osm::TagsMatches
+    ])
+  }
+  def self.load_user_groups(path, config)
+    # .to_h.collect.to_h => Make happy Rubocop and Sorbet at the same time
+    user_groups = config.user_groups.to_h.collect.to_h{ |group_id, v|
+      [group_id, [v['osm_tags'], UserGroupConfig.from_hash(v.merge('path' => path))]]
+    }
+
+    osm_tags_matches = load_osm_tags(path, user_groups.transform_values { |v| v[0] })
+    [
+      user_groups.transform_values { |v| v[1] },
+      osm_tags_matches,
+    ]
   end
 
   sig {
@@ -124,7 +137,7 @@ module Configuration
     config = MainConfig.from_hash(config_yaml)
 
     user_groups, osm_tags_matches = load_user_groups(path, config)
-    validators = Validation.validators_factory(config.validators, osm_tags_matches)
+    validators = Validation.validators_factory(path, config.validators, osm_tags_matches)
 
     Config.new(
       title: config.title,
