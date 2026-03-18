@@ -117,6 +117,9 @@ module Osm
   class TagsMatches
     extend T::Sig
 
+    sig { returns(T::Array[TagsMatch]) }
+    attr_reader :matches
+
     sig {
       params(
         matches: T::Array[TagsMatch],
@@ -161,6 +164,15 @@ module Osm
       else
         @matches.collect{ |match| match.to_sql(sql_dialect, table, escape_literal) }.join(' OR ')
       end
+    end
+
+    sig {
+      params(
+        other: TagsMatches
+      ).returns(TagsMatches)
+    }
+    def +(other)
+      self.class.new(@matches + other.matches)
     end
   end
 end
