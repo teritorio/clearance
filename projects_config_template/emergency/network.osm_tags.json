@@ -1,0 +1,10 @@
+[
+  {
+    "select": [
+      "[highway][highway!=no]"
+    ],
+    "interest": {
+      "name": null
+    }
+  }
+]
