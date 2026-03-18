@@ -1,6 +1,14 @@
 [
   {
     "select": [
+      "[highway=motorway]"
+    ],
+    "interest": {
+      "name": null
+    }
+  },
+  {
+    "select": [
       "[amenity=hospital]"
     ],
     "interest": {
