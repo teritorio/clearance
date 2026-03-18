@@ -175,6 +175,7 @@ Currently implemented validators:
 - deleted: flag deleted objects
 - geom_changes: flag objects with change distance greater than a threshold
 - geom_new_object: flag new geom
+- network: flag objects that lost or gain connectivity to a network (like road, power grid...)
 - tags_changes: flag objects based on tags key and value
 - user_list: flag objects based on contributor name, white or black list
 
@@ -210,7 +211,6 @@ Configuration
     * Evaluation of geometry change thresholds
 
 Validators implementation
-  * Check for broken network continuity
   * Add detection of new duplicate or similar objects
   * Validate again OpenData set
   * Validate changes using external rule sets, like MapCSS from JOSM or Osmose-QA validation
