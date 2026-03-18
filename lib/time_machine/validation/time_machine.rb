@@ -5,6 +5,7 @@ require 'sorbet-runtime'
 require './lib/time_machine/validation/changes_db'
 require './lib/time_machine/validation/diff_actions'
 require './lib/time_machine/validators/validator_link'
+require './lib/time_machine/validators/validator_locha'
 require './lib/time_machine/validation/types'
 
 
