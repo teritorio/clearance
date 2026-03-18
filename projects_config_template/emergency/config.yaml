@@ -100,6 +100,11 @@ validators:
   deleted:
     action_force: reject
 
+  # Reject changes that break network connectivity
+  network:
+    description: Changes that break network connectivity
+    specific_osm_tags: network.osm_tags.json
+
   # Hold hot changes
   delay_hot:
     instance: Validators::Delayed
