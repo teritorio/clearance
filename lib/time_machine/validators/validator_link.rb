@@ -51,7 +51,7 @@ module Validators
       ).void
     }
     def initialize(id:, osm_tags_matches:, description: nil, action: nil, action_force: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches)
+      super(id: id, osm_tags_matches: osm_tags_matches, description: description)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = T.let(Validation::Action.new(
         validator_id: id,
@@ -96,7 +96,7 @@ module Validators
       ).void
     }
     def initialize(id:, osm_tags_matches:, accept:, reject:, description: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches)
+      super(id: id, osm_tags_matches: osm_tags_matches, description: description)
       @action_accept = T.let(Validation::Action.new(
         validator_id: accept,
         description: description,
