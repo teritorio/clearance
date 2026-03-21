@@ -92,6 +92,115 @@ ORDER BY
 )
 ;
 
+
+DROP VIEW IF EXISTS base_internal CASCADE;
+CREATE TEMP VIEW base_internal AS
+WITH RECURSIVE dbscan AS (
+  SELECT
+    id AS way_id,
+    nodes,
+    id AS cluster_id
+  FROM
+    base_connection
+
+  UNION
+
+  SELECT
+    base.id AS way_id,
+    base.nodes,
+    least(dbscan.cluster_id, base.id)
+  FROM
+    dbscan
+    JOIN base ON
+      base.nodes && dbscan.nodes AND
+      base.id != dbscan.way_id
+),
+final_clusters AS (
+  SELECT
+    way_id,
+    min(cluster_id) AS cluster_id
+  FROM
+    dbscan
+  GROUP BY
+    way_id
+)
+SELECT
+    base.id,
+    final_clusters.cluster_id
+FROM
+  base
+  LEFT JOIN final_clusters ON
+    final_clusters.way_id = base.id;
+;
+
+DROP VIEW IF EXISTS changes_internal CASCADE;
+CREATE TEMP VIEW changes_internal AS
+WITH RECURSIVE dbscan AS (
+  SELECT
+    id AS way_id,
+    nodes,
+    id AS cluster_id
+  FROM
+    changes_connection
+
+  UNION
+
+  SELECT
+    changes.id AS way_id,
+    changes.nodes,
+    least(dbscan.cluster_id, changes.id)
+  FROM
+    dbscan
+    JOIN changes ON
+      changes.nodes && dbscan.nodes AND
+      changes.id != dbscan.way_id
+),
+final_clusters AS (
+  SELECT
+    way_id,
+    min(cluster_id) AS cluster_id
+  FROM
+    dbscan
+  GROUP BY
+    way_id
+)
+SELECT
+    changes.id,
+    final_clusters.cluster_id
+FROM
+  changes
+  LEFT JOIN final_clusters ON
+    final_clusters.way_id = changes.id;
+;
+
+
+CREATE TEMP VIEW internal AS
+WITH inter AS (
+  ((SELECT * FROM base_internal) EXCEPT (SELECT * FROM changes_internal))
+  UNION ALL
+  ((SELECT * FROM changes_internal) EXCEPT (SELECT * FROM base_internal))
+)
+SELECT DISTINCT ON (id)
+  id,
+  NULL::boolean AS base,
+  NULL::boolean AS lost_connection,
+  NULL::bigint AS node_id
+FROM
+  inter
+ORDER BY
+  id
+;
+
+
 CREATE TEMP VIEW validator_network AS
-SELECT * FROM lost_connection
+SELECT DISTINCT ON (id)
+  *
+FROM (
+  SELECT * FROM lost_connection
+  UNION ALL
+  SELECT * FROM internal
+) AS t
+ORDER BY
+  id,
+  base
 ;
