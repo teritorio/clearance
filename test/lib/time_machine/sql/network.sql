@@ -82,9 +82,28 @@ TRUNCATE osm_changes;
 -- Test internal disconnect way
 BEGIN;
 INSERT INTO osm_changes VALUES
+  ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 2], NULL, true),
+  ('w', 12, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 4], NULL, true)
+;
+COMMIT;
+
+\set base_ways_ids ARRAY[11, 12]
+\set change_ways_ids ARRAY[11, 12]
+\i lib/time_machine/validators/network.sql
+
+do $$ BEGIN
+  ASSERT '{12}{NULL}{NULL}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
+    (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
+END; $$ LANGUAGE plpgsql;
+TRUNCATE osm_changes;
+
+
+-- Test internal deleted way
+BEGIN;
+INSERT INTO osm_changes VALUES
   ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true),
   ('w', 12, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true),
-  ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 5], NULL, true)
+  ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true)
 ;
 COMMIT;
 
@@ -93,7 +112,7 @@ COMMIT;
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{12,12}{t,t}{3,4}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
+  ASSERT '{12}{NULL}{NULL}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
     (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
