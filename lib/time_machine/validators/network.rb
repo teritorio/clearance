@@ -16,10 +16,11 @@ module Validators
     sig {
       params(
         conn: T.nilable(PG::Connection),
+        _proj: Integer,
         prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
       ).void
     }
-    def apply(conn, prevalidation_clusters)
+    def apply(conn, _proj, prevalidation_clusters)
       # Get all way id from prevalidation_clusters
       before_ids = T.let([], T::Array[Integer])
       after_ids = T.let([], T::Array[Integer])
