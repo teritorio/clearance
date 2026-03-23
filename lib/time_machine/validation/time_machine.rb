@@ -39,13 +39,14 @@ module Validation
   sig {
     params(
       conn: T.nilable(PG::Connection),
+      proj: Integer,
       validators: T::Array[Validators::ValidatorBase],
       prevalidation_clusters: T::Array[[T::Array[Link], T::Array[Link]]],
     ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
   }
-  def self.time_machine_validate(conn, validators, prevalidation_clusters)
+  def self.time_machine_validate(conn, proj, validators, prevalidation_clusters)
     validators.each{ |validator|
-      validator.apply(conn, prevalidation_clusters)
+      validator.apply(conn, proj, prevalidation_clusters)
     }
 
     prevalidation_clusters.collect{ |accepted_links, conflations_matches|
@@ -165,7 +166,7 @@ module Validation
       [links, remeaning_conflations]
     }
 
-    prevalidation_clusters = time_machine_validate(conn, config.validators, prevalidation_clusters)
+    prevalidation_clusters = time_machine_validate(conn, config.local_srid, config.validators, prevalidation_clusters)
     locha_action, semantic_clusters = propagate_action(prevalidation_clusters)
 
     LoCha.new(
