@@ -104,7 +104,7 @@ class TestValidation < Test::Unit::TestCase
     ).returns(Validation::ValidationResult)
   }
   def validate(validators, prevalidation_clusters)
-    a = Validation.time_machine_validate(nil, validators, prevalidation_clusters).first&.last
+    a = Validation.time_machine_validate(nil, @@srid, validators, prevalidation_clusters).first&.last
     T.must(a&.first&.result)
   end
 
