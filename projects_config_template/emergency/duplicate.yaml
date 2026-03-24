@@ -1,0 +1,19 @@
+amenity:
+  pharmacy: 100
+  post_office: 200
+  fire_station: 200
+  hospital: 100
+  place_of_worship: 200
+  fuel: 200
+  post_box: 100
+  clinic: 100
+  community_centre: 100
+  townhall: 200
+  police: 200
+  library: 200
+  marketplace: 200
+leisure:
+  stadium: 200
+shop:
+  mall: 100
+  supermarket: 100
