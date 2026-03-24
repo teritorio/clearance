@@ -11,17 +11,14 @@ module Validators
   class GeomChanges < ValidatorLinkDual
     sig {
       params(
-        id: String,
-        config: T.untyped,
-        osm_tags_matches: Osm::TagsMatches,
+        settings: ValidatorBase::Settings,
         accept: String,
         reject: String,
         dist: T.any(Float, Integer),
-        description: T.nilable(String),
       ).void
     }
-    def initialize(id:, config:, osm_tags_matches:, accept:, reject:, dist:, description: nil)
-      super(id: id, config: config, osm_tags_matches: osm_tags_matches, accept: accept, reject: reject, description: description)
+    def initialize(settings:, accept:, reject:, dist:)
+      super(settings: settings, accept: accept, reject: reject)
       @dist = dist
     end
 
