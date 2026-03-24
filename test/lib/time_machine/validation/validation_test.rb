@@ -182,7 +182,7 @@ class TestValidation < Test::Unit::TestCase
     ['accept', 'reject', nil].each{ |action|
       clusters = build_clusters(@@fixture_node_a, @@fixture_node_a, @@fixture_node_b)
       validation = validate(
-        [Validators::All.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)],
+        [Validators::All.new(id: id, config: nil, osm_tags_matches: Osm::TagsMatches.new([]), action: action)],
         clusters
       )
 
