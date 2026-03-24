@@ -15,6 +15,7 @@ module Validators
     sig {
       params(
         id: String,
+        config: T.untyped,
         osm_tags_matches: Osm::TagsMatches,
         before_delay: T.nilable(Integer),
         after_delay: T.nilable(Integer),
@@ -24,11 +25,11 @@ module Validators
         now: T.nilable(String),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, before_delay: nil, after_delay: nil, action: nil, action_force: nil, description: nil, now: nil)
+    def initialize(id:, config:, osm_tags_matches:, before_delay: nil, after_delay: nil, action: nil, action_force: nil, description: nil, now: nil)
       raise "At least one of 'before_delay' or 'after_delay' should be declared in #{id}" if before_delay.nil? && after_delay.nil?
       raise "At least one of 'action' or 'action_force' should be declared in #{id}" if action.nil? && action_force.nil?
 
-      super(id: id, osm_tags_matches: osm_tags_matches, description: description, action: action, action_force: action_force)
+      super(id: id, config: config, osm_tags_matches: osm_tags_matches, description: description, action: action, action_force: action_force)
       now_time = now.nil? ? Time.now.utc : Time.parse(now).utc
       @before_thresold = T.let(before_delay.nil? ? nil : (now_time - before_delay).iso8601, T.nilable(String))
       @after_thresold = T.let(after_delay.nil? ? nil : (now_time - after_delay).iso8601, T.nilable(String))
