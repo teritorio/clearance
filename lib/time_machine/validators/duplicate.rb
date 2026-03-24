@@ -49,14 +49,14 @@ module Validators
             ) ON COMMIT DROP;
           SQL
           conn.copy_data('COPY validator_duplicate_config (key, value, distance) FROM STDIN WITH (FORMAT binary)') do
-            @config.each { |key, values|
+            @settings.config.each { |key, values|
               values.each { |value, distance|
                 conn.put_copy_data([key.to_s, value.to_s, distance])
               }
             }
           end
 
-          sql_osm_filter_tags = @osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
+          sql_osm_filter_tags = @settings.osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
           conn.exec(File.new('/sql/duplicate.sql').read
             .gsub(':osm_filter_tags', sql_osm_filter_tags)
             .gsub(':proj', proj.to_s)
