@@ -36,12 +36,17 @@ module Validation
   def self.validators_factory(path, validators_config, osm_tags_matches)
     validators_config.collect{ |id, config|
       class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
+
+      validator_config = T.cast(config['config'], T.nilable(String))
+      validator_config_object = YAML.load_file("#{path}/#{validator_config}") if !validator_config.nil?
+
       specific_osm_tags = T.cast(config['specific_osm_tags'], T.nilable(String))
       if !specific_osm_tags.nil?
         osm_tags_matches += Configuration.load_osm_tags(path, { 'specific_osm_tags' => specific_osm_tags })
       end
+
       args = config.except('instance', 'specific_osm_tags').transform_keys(&:to_sym)
-      Object.const_get(class_name).new(id: id, osm_tags_matches: osm_tags_matches, **args)
+      Object.const_get(class_name).new(id: id, config: validator_config_object, osm_tags_matches: osm_tags_matches, **args)
     }
   end
 end
