@@ -44,20 +44,17 @@ module Validators
 
     sig {
       params(
-        id: String,
-        config: T.untyped,
-        osm_tags_matches: Osm::TagsMatches,
-        description: T.nilable(String),
+        settings: ValidatorBase::Settings,
         action: T.nilable(Validation::ActionType),
         action_force: T.nilable(Validation::ActionType),
       ).void
     }
-    def initialize(id:, config:, osm_tags_matches:, description: nil, action: nil, action_force: nil)
-      super(id: id, config: config, osm_tags_matches: osm_tags_matches, description: description)
+    def initialize(settings:, action: nil, action_force: nil)
+      super(settings: settings)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = T.let(Validation::Action.new(
-        validator_id: id,
-        description: description,
+        validator_id: settings.id,
+        description: settings.description,
         action: action || action_force || 'reject'
       ), Validation::Action)
     end
@@ -90,24 +87,21 @@ module Validators
 
     sig {
       params(
-        id: String,
-        config: T.untyped,
-        osm_tags_matches: Osm::TagsMatches,
+        settings: ValidatorBase::Settings,
         accept: String,
         reject: String,
-        description: T.nilable(String),
       ).void
     }
-    def initialize(id:, config:, osm_tags_matches:, accept:, reject:, description: nil)
-      super(id: id, config: config, osm_tags_matches: osm_tags_matches, description: description)
+    def initialize(settings:, accept:, reject:)
+      super(settings: settings)
       @action_accept = T.let(Validation::Action.new(
         validator_id: accept,
-        description: description,
+        description: settings.description,
         action: 'accept'
       ), Validation::Action)
       @action_reject = T.let(Validation::Action.new(
         validator_id: reject,
-        description: description,
+        description: settings.description,
         action: 'reject'
       ), Validation::Action)
     end
@@ -155,10 +149,7 @@ module Validators
 
     sig {
       params(
-        id: String,
-        config: T.untyped,
-        osm_tags_matches: Osm::TagsMatches,
-        description: T.nilable(String),
+        settings: ValidatorBase::Settings,
         action: T.nilable(Validation::ActionType),
         action_force: T.nilable(Validation::ActionType),
         block: T.nilable(T.proc.params(
@@ -168,8 +159,8 @@ module Validators
         ).returns(T::Boolean))
       ).void
     }
-    def initialize(id:, config:, osm_tags_matches:, description: nil, action: nil, action_force: nil, &block)
-      super
+    def initialize(settings:, action: nil, action_force: nil, &block)
+      super(settings: settings, action: action, action_force: action_force)
 
       @block = block
     end
