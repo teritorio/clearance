@@ -21,7 +21,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::ValidatorLink.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action: action)
+    validator = Validators::ValidatorLink.new(id: id, config: nil, osm_tags_matches: Osm::TagsMatches.new([]), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -36,7 +36,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'accept'
-    validator = Validators::ValidatorLink.new(id: id, osm_tags_matches: Osm::TagsMatches.new([]), action_force: action)
+    validator = Validators::ValidatorLink.new(id: id, config: nil, osm_tags_matches: Osm::TagsMatches.new([]), action_force: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -62,7 +62,7 @@ class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFil
     osm_tags_matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
-    validator = Validators::UserList.new(id: id, osm_tags_matches: osm_tags_matches, action: action, list: ['bob'])
+    validator = Validators::UserList.new(id: id, config: nil, osm_tags_matches: osm_tags_matches, action: action, list: ['bob'])
     validation_action = [Validation::Action.new(
       validator_id: id,
       description: nil,
@@ -125,7 +125,7 @@ class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::TagsChanges.new(id: id, osm_tags_matches: osm_tags_matches, accept: 'action_accept', reject: 'action_reject')
+    validator = Validators::TagsChanges.new(id: id, config: nil, osm_tags_matches: osm_tags_matches, accept: 'action_accept', reject: 'action_reject')
     validation_action_accept = [Validation::Action.new(
       validator_id: 'action_accept',
       description: nil,
@@ -196,7 +196,7 @@ class TestGeomNewObject < Test::Unit::TestCase # rubocop:disable Style/OneClassP
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomNewObject.new(id: id, osm_tags_matches: osm_tags_matches, action: 'accept')
+    validator = Validators::GeomNewObject.new(id: id, config: nil, osm_tags_matches: osm_tags_matches, action: 'accept')
     validation_action_accept = [Validation::Action.new(
       validator_id: id,
       description: nil,
@@ -249,7 +249,7 @@ class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomChanges.new(id: id, osm_tags_matches: osm_tags_matches, dist: 100, reject: 'geom_changes_significant', accept: 'geom_changes_insignificant')
+    validator = Validators::GeomChanges.new(id: id, config: nil, osm_tags_matches: osm_tags_matches, dist: 100, reject: 'geom_changes_significant', accept: 'geom_changes_insignificant')
     validation_action_accept = [Validation::Action.new(
       validator_id: 'geom_changes_insignificant',
       description: nil,
@@ -322,7 +322,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
     now = '2000-01-01T00:00:30Z'
-    validator = Validators::Delayed.new(id: id, osm_tags_matches: osm_tags_matches, before_delay: 10, action: action, now: now)
+    validator = Validators::Delayed.new(id: id, config: nil, osm_tags_matches: osm_tags_matches, before_delay: 10, action: action, now: now)
     validation_action = [Validation::Action.new(
       validator_id: id,
       description: nil,
@@ -381,7 +381,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
     now = '2000-01-01T00:00:30Z'
-    validator = Validators::Delayed.new(id: id, osm_tags_matches: osm_tags_matches, after_delay: 10, action_force: action, now: now)
+    validator = Validators::Delayed.new(id: id, config: nil, osm_tags_matches: osm_tags_matches, after_delay: 10, action_force: action, now: now)
     validation_action = [Validation::Action.new(
       validator_id: id,
       description: nil,
