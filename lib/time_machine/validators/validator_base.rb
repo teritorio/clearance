@@ -15,12 +15,14 @@ module Validators
     sig {
       params(
         id: String,
+        config: T.untyped,
         osm_tags_matches: Osm::TagsMatches,
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, description: nil)
+    def initialize(id:, config:, osm_tags_matches:, description: nil)
       @id = id
+      @config = config
       @osm_tags_matches = osm_tags_matches
       @description = description
     end
