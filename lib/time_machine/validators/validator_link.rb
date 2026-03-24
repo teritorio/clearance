@@ -45,14 +45,15 @@ module Validators
     sig {
       params(
         id: String,
+        config: T.untyped,
         osm_tags_matches: Osm::TagsMatches,
         description: T.nilable(String),
         action: T.nilable(Validation::ActionType),
         action_force: T.nilable(Validation::ActionType),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, description: nil, action: nil, action_force: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches, description: description)
+    def initialize(id:, config:, osm_tags_matches:, description: nil, action: nil, action_force: nil)
+      super(id: id, config: config, osm_tags_matches: osm_tags_matches, description: description)
       @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = T.let(Validation::Action.new(
         validator_id: id,
@@ -90,14 +91,15 @@ module Validators
     sig {
       params(
         id: String,
+        config: T.untyped,
         osm_tags_matches: Osm::TagsMatches,
         accept: String,
         reject: String,
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, accept:, reject:, description: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches, description: description)
+    def initialize(id:, config:, osm_tags_matches:, accept:, reject:, description: nil)
+      super(id: id, config: config, osm_tags_matches: osm_tags_matches, description: description)
       @action_accept = T.let(Validation::Action.new(
         validator_id: accept,
         description: description,
@@ -154,6 +156,7 @@ module Validators
     sig {
       params(
         id: String,
+        config: T.untyped,
         osm_tags_matches: Osm::TagsMatches,
         description: T.nilable(String),
         action: T.nilable(Validation::ActionType),
@@ -165,7 +168,7 @@ module Validators
         ).returns(T::Boolean))
       ).void
     }
-    def initialize(id:, osm_tags_matches:, description: nil, action: nil, action_force: nil, &block)
+    def initialize(id:, config:, osm_tags_matches:, description: nil, action: nil, action_force: nil, &block)
       super
 
       @block = block

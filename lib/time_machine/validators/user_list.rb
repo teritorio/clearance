@@ -12,6 +12,7 @@ module Validators
     sig {
       params(
         id: String,
+        config: T.untyped,
         osm_tags_matches: Osm::TagsMatches,
         list: T::Array[String],
         action: T.nilable(Validation::ActionType),
@@ -19,8 +20,8 @@ module Validators
         description: T.nilable(String),
       ).void
     }
-    def initialize(id:, osm_tags_matches:, list:, action: nil, action_force: nil, description: nil)
-      super(id: id, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
+    def initialize(id:, config:, osm_tags_matches:, list:, action: nil, action_force: nil, description: nil)
+      super(id: id, config: config, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
       @list = list
     end
 
