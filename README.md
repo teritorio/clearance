@@ -173,6 +173,7 @@ The OSM tags properties, the metadata properties, the geometry and the changeset
 Currently implemented validators:
 - delayed: retain hot changes within a delay (retain disputed features or change-in-progress, or accept changes automatically after delay if nothing change.
 - deleted: flag deleted objects
+- duplicate : flag new duplicate or similar objects
 - geom_changes: flag objects with change distance greater than a threshold
 - geom_new_object: flag new geom
 - network: flag objects that lost or gain connectivity to a network (like road, power grid...)
@@ -211,7 +212,6 @@ Configuration
     * Evaluation of geometry change thresholds
 
 Validators implementation
-  * Add detection of new duplicate or similar objects
   * Validate again OpenData set
   * Validate changes using external rule sets, like MapCSS from JOSM or Osmose-QA validation
 
