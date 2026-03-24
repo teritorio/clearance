@@ -105,6 +105,10 @@ validators:
     description: Changes that break network connectivity
     specific_osm_tags: network.osm_tags.json
 
+  duplicate:
+    description: Changes that create duplicates
+    config: duplicate.yaml
+
   # Hold hot changes
   delay_hot:
     instance: Validators::Delayed
