@@ -46,8 +46,15 @@ module Validation
         osm_tags_matches += Configuration.load_osm_tags(path, { 'specific_osm_tags' => specific_osm_tags })
       end
 
-      args = config.except('instance', 'specific_osm_tags').transform_keys(&:to_sym)
-      Object.const_get(class_name).new(id: id, config: validator_config_object, osm_tags_matches: osm_tags_matches, **args)
+      args = config.except('instance', 'specific_osm_tags', 'config', 'description').transform_keys(&:to_sym)
+      settings = Validators::ValidatorBase::Settings.new(
+        id: id,
+        config: validator_config_object,
+        osm_tags_matches: osm_tags_matches,
+        description: T.cast(config['description'], T.nilable(String)),
+      )
+
+      Object.const_get(class_name).new(settings: settings, **args)
     }
   end
 end
