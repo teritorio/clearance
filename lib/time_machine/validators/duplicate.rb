@@ -48,10 +48,11 @@ module Validators
               distance INTEGER NOT NULL
             ) ON COMMIT DROP;
           SQL
-          conn.copy_data('COPY validator_duplicate_config (key, value, distance) FROM STDIN WITH (FORMAT binary)') do
+          encoder = PG::BinaryEncoder::CopyRow.new
+          conn.copy_data('COPY validator_duplicate_config (key, value, distance) FROM STDIN WITH (FORMAT binary)', encoder) do
             @settings.config.each { |key, values|
               values.each { |value, distance|
-                conn.put_copy_data([key.to_s, value.to_s, distance])
+                conn.put_copy_data([key, value, distance])
               }
             }
           end
