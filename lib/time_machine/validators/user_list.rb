@@ -11,17 +11,14 @@ module Validators
   class UserList < ValidatorLink
     sig {
       params(
-        id: String,
-        config: T.untyped,
-        osm_tags_matches: Osm::TagsMatches,
+        settings: ValidatorBase::Settings,
         list: T::Array[String],
         action: T.nilable(Validation::ActionType),
         action_force: T.nilable(Validation::ActionType),
-        description: T.nilable(String),
       ).void
     }
-    def initialize(id:, config:, osm_tags_matches:, list:, action: nil, action_force: nil, description: nil)
-      super(id: id, config: config, osm_tags_matches: osm_tags_matches, action: action, action_force: action_force, description: description)
+    def initialize(settings:, list:, action: nil, action_force: nil)
+      super(settings: settings, action: action, action_force: action_force)
       @list = list
     end
 

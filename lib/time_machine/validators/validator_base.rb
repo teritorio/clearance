@@ -3,6 +3,7 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
+require './lib/time_machine/osm/tags_matches'
 require 'active_support'
 require 'active_support/core_ext'
 
@@ -12,19 +13,21 @@ module Validators
   class ValidatorBase
     extend T::Sig
 
+    class Settings < T::Struct
+      const :id, String
+      const :config, T.untyped
+      const :osm_tags_matches, Osm::TagsMatches
+      const :description, T.nilable(String)
+    end
+
+    sig { returns(Settings) }
+    attr_reader :settings
+
     sig {
-      params(
-        id: String,
-        config: T.untyped,
-        osm_tags_matches: Osm::TagsMatches,
-        description: T.nilable(String),
-      ).void
+      params(settings: Settings).void
     }
-    def initialize(id:, config:, osm_tags_matches:, description: nil)
-      @id = id
-      @config = config
-      @osm_tags_matches = osm_tags_matches
-      @description = description
+    def initialize(settings:)
+      @settings = T.let(settings, Settings)
     end
 
     sig {
