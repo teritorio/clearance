@@ -3,14 +3,14 @@
 
 require 'sorbet-runtime'
 require './lib/time_machine/validation/types'
-require './lib/time_machine/validators/validator_locha'
+require './lib/time_machine/validators/validator_locha_sql'
 require 'active_support'
 require 'active_support/core_ext'
 
 module Validators
   extend T::Sig
 
-  class Network < ValidatorLocha
+  class Network < ValidatorLochaSql
     extend T::Sig
 
     sig {
