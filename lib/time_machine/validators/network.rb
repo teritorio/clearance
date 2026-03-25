@@ -39,7 +39,8 @@ module Validators
       node_ids = T.let([], T::Array[T::Hash[String, T.untyped]])
       begin
         T.must(conn).transaction { |conn|
-          sql_osm_filter_tags = osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
+          specific_osm_tags_matches = T.must(@settings.specific_osm_tags_matches)
+          sql_osm_filter_tags = specific_osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
           conn.exec(File.new(File.join(File.dirname(__FILE__), 'network.sql')).read
             .gsub(':osm_filter_tags', sql_osm_filter_tags)
             .gsub(':base_ways_ids', "ARRAY[#{before_ids.join(',')}]")
