@@ -20,6 +20,24 @@ INSERT INTO osm_base_n VALUES
 COMMIT;
 
 
+-- Test same no duplicate node
+BEGIN;
+INSERT INTO osm_changes VALUES
+  -- no change
+  ('n', 1, 1, false, 1, NULL, NULL, NULL, '{"a":"b"}'::jsonb, 1, 0)
+;
+COMMIT;
+
+\set change_node_ids ARRAY[1]
+\i lib/time_machine/validators/duplicate.sql
+
+do $$ BEGIN
+  ASSERT (SELECT array_agg(id)::text FROM validator_duplicate) IS NULL,
+    (SELECT array_agg(id)::text FROM validator_duplicate);
+END; $$ LANGUAGE plpgsql;
+TRUNCATE osm_changes;
+
+
 -- Test add no duplicate node
 BEGIN;
 INSERT INTO osm_changes VALUES
