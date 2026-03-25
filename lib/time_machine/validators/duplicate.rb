@@ -41,25 +41,24 @@ module Validators
       node_ids = T.let([], T::Array[T::Hash[String, T.untyped]])
       begin
         T.must(conn).transaction { |conn|
-          conn.exec(<<~SQL)
-            CREATE TEMP TABLE validator_duplicate_config (
-              key TEXT NOT NULL,
-              value TEXT NOT NULL,
-              distance INTEGER NOT NULL
-            ) ON COMMIT DROP;
-          SQL
-          encoder = PG::BinaryEncoder::CopyRow.new
-          conn.copy_data('COPY validator_duplicate_config (key, value, distance) FROM STDIN WITH (FORMAT binary)', encoder) do
-            @settings.config.each { |key, values|
-              values.each { |value, distance|
-                conn.put_copy_data([key, value, distance])
-              }
-            }
-          end
+          specific_osm_tags_matches = T.must(@specific_osm_tags_matches)
+          map_select = specific_osm_tags_matches.matches.each_with_index.to_h { |match, index|
+            [index, [match.to_sql, match.duplicate_distance]]
+          }
 
-          sql_osm_filter_tags = @settings.osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
+          map_select_index = map_select.collect{ |index, (sql, duplicate_distance)|
+            "WHEN (#{sql}) THEN #{index}"
+          }
+          sql_map_select_index = "CASE #{sql_map_select_index} END"
+          map_select_distance = map_select.collect{ |index, (sql, duplicate_distance)|
+            "WHEN (#{sql}) THEN #{duplicate_distance}"
+          }
+          sql_osm_filter_tags = specific_osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
+          sql_map_select_distance = "CASE #{sql_map_select_distance} END"
           conn.exec(File.new('/sql/duplicate.sql').read
             .gsub(':osm_filter_tags', sql_osm_filter_tags)
+            .gsub(':map_select_index', sql_map_select_index)
+            .gsub(':map_select_distance', sql_map_select_distance)
             .gsub(':proj', proj.to_s)
             .gsub(':change_nodes_ids', "ARRAY[#{after_node_ids.join(',')}]")
             .gsub(':change_ways_ids', "ARRAY[#{after_way_ids.join(',')}]"))

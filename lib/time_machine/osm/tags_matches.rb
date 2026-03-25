@@ -30,6 +30,9 @@ module Osm
     sig { returns(T.nilable(String)) }
     attr_accessor :icon
 
+    sig { returns(T.nilable(Integer)) }
+    attr_accessor :duplicate_distance
+
     sig {
       params(
         selectors: T::Array[T.any(String, OverpassParserRuby::Selectors)],
@@ -38,9 +41,10 @@ module Osm
         user_groups: T::Array[String],
         name: T.nilable(T::Hash[String, String]),
         icon: T.nilable(String),
+        duplicate_distance: T.nilable(Integer),
       ).void
     }
-    def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [], name: nil, icon: nil)
+    def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [], name: nil, icon: nil, duplicate_distance: nil)
       @selector_matches = T.let(selectors.collect{ |selector|
         if selector.is_a?(String)
           raise 'Tags selector format' if selector.size <= 2
@@ -58,6 +62,7 @@ module Osm
       @selector_extra = selector_extra
       @name = name
       @icon = icon
+      @duplicate_distance = duplicate_distance
 
       # Ensure key from selectors are in selector_extra
       selectors_keys = @selector_matches.collect(&:keys).flatten.uniq.filter{ |key| @selector_extra.nil? || !@selector_extra.key?(key) }
