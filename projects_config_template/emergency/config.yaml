@@ -108,7 +108,7 @@ validators:
 
   duplicate:
     description: Changes that create duplicates
-    config: duplicate.yaml
+    specific_osm_tags: duplicate.osm_tags.json
 
   # Hold hot changes
   delay_hot:

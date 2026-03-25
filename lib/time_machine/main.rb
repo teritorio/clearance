@@ -88,7 +88,7 @@ class MainMain
 
       if options[:apply_unclibled_changes]
         config ||= Configuration.load("#{Project.projects_config_path}/#{options[:project]}/config.yaml")
-        osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).settings.osm_tags_matches
+        osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
         polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
         Db::DbConnWrite.conn(project){ |conn|
           Validation.apply_unclibled_changes(conn, osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) }), config.local_srid, config.locha_cluster_distance, polygons)
