@@ -62,7 +62,7 @@ FROM
   LEFT JOIN base AS b ON
     b.index = a.index AND
     b.level IS NOT DISTINCT FROM a.level AND
-    (b.type != a.type OR b.id != a.id) AND
+    NOT (b.type = a.type AND b.id = a.id) AND
     ST_Distance(a.point, b.point) < a.distance
 GROUP BY
   a.index, a.type, a.id
@@ -77,10 +77,10 @@ SELECT
   base.*
 FROM
   base
+  -- Exclude changes objects from base
   LEFT JOIN osm_changes_geom ON
     osm_changes_geom.id = base.id AND
-    osm_changes_geom.objtype = base.type AND
-    osm_changes_geom.deleted = true
+    osm_changes_geom.objtype = base.type
 WHERE
   osm_changes_geom IS NULL
 
@@ -122,7 +122,7 @@ FROM
   JOIN changes AS b ON
     b.index = a.index AND
     b.level IS NOT DISTINCT FROM a.level AND
-    (b.type != a.type OR b.id != a.id) AND
+    NOT (b.type = a.type AND b.id = a.id) AND
     ST_Distance(a.point, b.point) < a.distance
 GROUP BY
   a.index, a.type, a.id
