@@ -18,7 +18,8 @@ WHERE
   (:osm_filter_tags)
 GROUP BY
   :map_select_index,
-  level
+  :map_select_distance,
+  tags->>'level'
 ;
 
 -- Base
@@ -135,7 +136,8 @@ CREATE TEMP VIEW validator_duplicate AS
 SELECT
   changes_duplicates.index,
   changes_duplicates.type,
-  changes_duplicates.id
+  changes_duplicates.id,
+  array_agg(base_duplicates.type || base_duplicates.id) AS duplicates
 FROM
   changes_duplicates
   LEFT JOIN base_duplicates USING (index, type, id)
@@ -149,4 +151,8 @@ WHERE
     ) AND
     changes_duplicates.count > base_duplicates.count
   )
+GROUP BY
+  changes_duplicates.index,
+  changes_duplicates.type,
+  changes_duplicates.id
 ;

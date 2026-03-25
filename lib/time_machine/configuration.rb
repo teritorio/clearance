@@ -102,6 +102,7 @@ module Configuration
         user_groups: group.pluck('group_id').flatten,
         name: group0['name'],
         icon: group0['icon'],
+        duplicate_distance: group0['duplicate_distance'],
       )
     })
   end
