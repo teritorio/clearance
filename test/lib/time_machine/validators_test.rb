@@ -21,8 +21,7 @@ class TestValidator < Test::Unit::TestCase
   def build_settings(id, osm_tags_matches, description: nil)
     Validators::ValidatorBase::Settings.new(
       id: id,
-      config: nil,
-      osm_tags_matches: osm_tags_matches,
+      global_osm_tags_matches: osm_tags_matches,
       description: description,
     )
   end
@@ -69,8 +68,7 @@ class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFil
   def build_settings(id, osm_tags_matches, description: nil)
     Validators::ValidatorBase::Settings.new(
       id: id,
-      config: nil,
-      osm_tags_matches: osm_tags_matches,
+      global_osm_tags_matches: osm_tags_matches,
       description: description,
     )
   end
@@ -140,8 +138,7 @@ class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
   def build_settings(id, osm_tags_matches, description: nil)
     Validators::ValidatorBase::Settings.new(
       id: id,
-      config: nil,
-      osm_tags_matches: osm_tags_matches,
+      global_osm_tags_matches: osm_tags_matches,
       description: description,
     )
   end
@@ -221,8 +218,7 @@ class TestGeomNewObject < Test::Unit::TestCase # rubocop:disable Style/OneClassP
   def build_settings(id, osm_tags_matches, description: nil)
     Validators::ValidatorBase::Settings.new(
       id: id,
-      config: nil,
-      osm_tags_matches: osm_tags_matches,
+      global_osm_tags_matches: osm_tags_matches,
       description: description,
     )
   end
@@ -284,8 +280,7 @@ class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
   def build_settings(id, osm_tags_matches, description: nil)
     Validators::ValidatorBase::Settings.new(
       id: id,
-      config: nil,
-      osm_tags_matches: osm_tags_matches,
+      global_osm_tags_matches: osm_tags_matches,
       description: description,
     )
   end
@@ -368,8 +363,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
   def build_settings(id, osm_tags_matches, description: nil)
     Validators::ValidatorBase::Settings.new(
       id: id,
-      config: nil,
-      osm_tags_matches: osm_tags_matches,
+      global_osm_tags_matches: osm_tags_matches,
       description: description,
     )
   end

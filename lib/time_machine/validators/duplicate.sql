@@ -1,17 +1,15 @@
 DROP TABLE IF EXISTS buffer CASCADE;
 CREATE TEMP TABLE buffer AS
 SELECT
-  config.key,
-  config.value,
+  :map_select_index AS index,
   tags->>'level' AS level,
+  :map_select_distance AS distance,
   ST_Union(ST_Buffer(
     ST_Centroid(ST_Transform(geom, :proj)),
-    config.distance
+    :map_select_distance
   )) AS buffer
 FROM
   osm_changes_geom AS _
-  JOIN validator_duplicate_config AS config ON
-    _.tags?(config.key) AND _.tags->>(config.key) = config.value
 WHERE
   (
     (objtype = 'n' AND id = ANY((:change_node_ids)::bigint[])) OR
@@ -19,9 +17,7 @@ WHERE
   ) AND
   (:osm_filter_tags)
 GROUP BY
-  config.key,
-  config.value,
-  config.distance,
+  :map_select_index,
   level
 ;
 
@@ -40,16 +36,13 @@ SELECT
   _.type,
   ST_Centroid(ST_Transform(_.geom, :proj)) AS point,
   _.tags->>'level' AS level,
-  config.key,
-  config.value
+  buffer.index AS index,
+  buffer.distance AS distance
 FROM
   _
-  JOIN validator_duplicate_config AS config ON
-    _.tags?(config.key) AND _.tags->>(config.key) = config.value
   JOIN buffer ON
     ST_Intersects(buffer.buffer, ST_Centroid(ST_Transform(_.geom, :proj))) AND
-    buffer.key = config.key AND
-    buffer.value = config.value AND
+    buffer.index = :map_select_index AND
     buffer.level IS NOT DISTINCT FROM (tags->>'level')
 WHERE
   (:osm_filter_tags)
@@ -59,24 +52,19 @@ CREATE INDEX ON base USING GIST (point);
 DROP TABLE IF EXISTS base_duplicates CASCADE;
 CREATE TEMP TABLE base_duplicates AS
 SELECT
-  a.key,
-  a.value,
+  a.index,
   a.type,
   a.id,
   count(*) AS count
 FROM
   base AS a
-  JOIN validator_duplicate_config AS config ON
-    config.key = a.key AND
-    config.value = a.value
   LEFT JOIN base AS b ON
-    b.key = a.key AND
-    b.value = a.value AND
+    b.index = a.index AND
     b.level IS NOT DISTINCT FROM a.level AND
     (b.type != a.type OR b.id != a.id) AND
-    ST_Distance(a.point, b.point) < config.distance
+    ST_Distance(a.point, b.point) < a.distance
 GROUP BY
-  a.key, a.value, a.type, a.id
+  a.index, a.type, a.id
 ;
 
 
@@ -102,16 +90,13 @@ SELECT
   objtype AS type,
   ST_Centroid(ST_Transform(geom, :proj)) AS point,
   tags->>'level' AS level,
-  config.key,
-  config.value
+  :map_select_index AS index,
+  :map_select_distance AS distance
 FROM
   osm_changes_geom AS _
-  JOIN validator_duplicate_config AS config ON
-    _.tags?(config.key) AND _.tags->>(config.key) = config.value
   JOIN buffer ON
     ST_Intersects(buffer.buffer, ST_Centroid(ST_Transform(_.geom, :proj))) AND
-    buffer.key = config.key AND
-    buffer.value = config.value AND
+    buffer.index = :map_select_index AND
     buffer.level IS NOT DISTINCT FROM (tags->>'level')
 WHERE
   _.deleted = false AND
@@ -127,24 +112,19 @@ CREATE INDEX ON changes USING GIST (point);
 DROP TABLE IF EXISTS changes_duplicates CASCADE;
 CREATE TEMP TABLE changes_duplicates AS
 SELECT
-  a.key,
-  a.value,
+  a.index,
   a.type,
   a.id,
   count(*) AS count
 FROM
   changes AS a
-  JOIN validator_duplicate_config AS config ON
-    config.key = a.key AND
-    config.value = a.value
   JOIN changes AS b ON
-    b.key = a.key AND
-    b.value = a.value AND
+    b.index = a.index AND
     b.level IS NOT DISTINCT FROM a.level AND
     (b.type != a.type OR b.id != a.id) AND
-    ST_Distance(a.point, b.point) < config.distance
+    ST_Distance(a.point, b.point) < a.distance
 GROUP BY
-  a.key, a.value, a.type, a.id
+  a.index, a.type, a.id
 ;
 
 
@@ -153,13 +133,12 @@ GROUP BY
 DROP TABLE IF EXISTS validator_duplicate CASCADE;
 CREATE TEMP VIEW validator_duplicate AS
 SELECT
-  changes_duplicates.key,
-  changes_duplicates.value,
+  changes_duplicates.index,
   changes_duplicates.type,
   changes_duplicates.id
 FROM
   changes_duplicates
-  LEFT JOIN base_duplicates USING (key, value, type, id)
+  LEFT JOIN base_duplicates USING (index, type, id)
 WHERE
   base_duplicates.id IS NULL
   OR
