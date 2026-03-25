@@ -17,6 +17,48 @@ module Validators
       params(
         conn: T.nilable(PG::Connection),
         proj: Integer,
+        after_node_ids: T::Array[Integer],
+        after_way_ids: T::Array[Integer],
+      ).returns(T::Array[T::Hash[String, T.untyped]])
+    }
+    def sql(conn, proj, after_node_ids, after_way_ids)
+      duplicate_ids = T.let([], T::Array[T::Hash[String, T.untyped]])
+      T.must(conn).transaction { |conn|
+        escape_literal = proc { |s| conn.escape_literal(s) }
+        specific_osm_tags_matches = T.must(@settings.specific_osm_tags_matches)
+        map_select = specific_osm_tags_matches.matches.each_with_index.to_h { |match, index|
+          [index, [match.to_sql('postgres', '_', escape_literal), match.duplicate_distance]]
+        }
+
+        map_select_index = map_select.collect{ |index, (sql, _duplicate_distance)|
+          "WHEN (#{sql}) THEN #{index}"
+        }.join(" \n")
+        sql_map_select_index = "CASE \n#{map_select_index} END"
+        map_select_distance = map_select.collect{ |_index, (sql, duplicate_distance)|
+          "WHEN (#{sql}) THEN #{duplicate_distance}"
+        }.join(" \n")
+        sql_map_select_distance = "CASE \n#{map_select_distance} END"
+        sql_osm_filter_tags = specific_osm_tags_matches.to_sql('postgres', '_', escape_literal)
+        conn.exec(File.new(File.join(File.dirname(__FILE__), 'duplicate.sql')).read
+          .gsub(':osm_filter_tags', sql_osm_filter_tags)
+          .gsub(':map_select_index', sql_map_select_index)
+          .gsub(':map_select_distance', sql_map_select_distance)
+          .gsub(':proj', proj.to_s)
+          .gsub(':change_node_ids', "ARRAY[#{after_node_ids.join(',')}]")
+          .gsub(':change_way_ids', "ARRAY[#{after_way_ids.join(',')}]"))
+        duplicate_ids = T.cast(conn.exec('SELECT * FROM validator_duplicate').to_a, T::Array[T::Hash[String, T.untyped]])
+        raise 'rollback'
+      }
+    rescue StandardError => e
+      raise unless e.message == 'rollback'
+
+      duplicate_ids
+    end
+
+    sig {
+      params(
+        conn: T.nilable(PG::Connection),
+        proj: Integer,
         prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
       ).void
     }
@@ -38,39 +80,9 @@ module Validators
         }
       }
 
-      duplicate_ids = T.let([], T::Array[T::Hash[String, T.untyped]])
-      begin
-        T.must(conn).transaction { |conn|
-          escape_literal = proc { |s| conn.escape_literal(s) }
-          specific_osm_tags_matches = T.must(@settings.specific_osm_tags_matches)
-          map_select = specific_osm_tags_matches.matches.each_with_index.to_h { |match, index|
-            [index, [match.to_sql('postgres', '_', escape_literal), match.duplicate_distance]]
-          }
+      duplicate_ids = sql(conn, proj, after_node_ids.uniq, after_way_ids.uniq)
 
-          map_select_index = map_select.collect{ |index, (sql, _duplicate_distance)|
-            "WHEN (#{sql}) THEN #{index}"
-          }.join(" \n")
-          sql_map_select_index = "CASE \n#{map_select_index} END"
-          map_select_distance = map_select.collect{ |_index, (sql, duplicate_distance)|
-            "WHEN (#{sql}) THEN #{duplicate_distance}"
-          }.join(" \n")
-          sql_map_select_distance = "CASE \n#{map_select_distance} END"
-          sql_osm_filter_tags = specific_osm_tags_matches.to_sql('postgres', '_', escape_literal)
-          conn.exec(File.new(File.join(File.dirname(__FILE__), 'duplicate.sql')).read
-            .gsub(':osm_filter_tags', sql_osm_filter_tags)
-            .gsub(':map_select_index', sql_map_select_index)
-            .gsub(':map_select_distance', sql_map_select_distance)
-            .gsub(':proj', proj.to_s)
-            .gsub(':change_node_ids', "ARRAY[#{after_node_ids.join(',')}]")
-            .gsub(':change_way_ids', "ARRAY[#{after_way_ids.join(',')}]"))
-          duplicate_ids = T.cast(conn.exec('SELECT * FROM validator_duplicate').to_a, T::Array[T::Hash[String, T.untyped]])
-          raise 'rollback'
-        }
-      rescue StandardError => e
-        raise unless e.message == 'rollback'
-      end
-
-      # Flag corresponding way that are disconnected or connected from the neighbor
+      # Flag corresponding objects
       duplicate_keys = duplicate_ids.to_h{ |duplicate_id| [[duplicate_id['type'], duplicate_id['id']], duplicate_id['duplicates']] }
       prevalidation_clusters.collect{ |_accepted_links, conflations_matches|
         conflations_matches.collect{ |link|
