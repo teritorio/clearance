@@ -11,7 +11,7 @@ SELECT
 FROM
   osm_base_w AS _
 WHERE
-  id = ANY(:base_ways_ids) AND
+  id = ANY((:base_ways_ids)::bigint[]) AND
   (:osm_filter_tags)
 ;
 
@@ -22,7 +22,7 @@ FROM
   osm_changes AS _
 WHERE
   objtype = 'w' AND
-  id = ANY(:change_ways_ids) AND
+  id = ANY((:change_ways_ids)::bigint[]) AND
   (:osm_filter_tags)
 ;
 
@@ -35,11 +35,11 @@ SELECT
 FROM
   base AS way
   JOIN osm_base_w AS _ ON
-    NOT _.id = ANY(:base_ways_ids) AND
+    NOT _.id = ANY((:base_ways_ids)::bigint[]) AND
     way.nodes && _.nodes AND
     (:osm_filter_tags)
 WHERE
-  way.id = ANY(:base_ways_ids)
+  way.id = ANY((:base_ways_ids)::bigint[])
 ;
 CREATE INDEX ON base_connection USING btree(node_id);
 
@@ -52,7 +52,7 @@ SELECT
 FROM
   changes AS way
   JOIN osm_base_w AS _ ON
-    NOT _.id = ANY(:change_ways_ids) AND
+    NOT _.id = ANY((:change_ways_ids)::bigint[]) AND
     way.nodes && _.nodes AND
     (:osm_filter_tags)
 ;

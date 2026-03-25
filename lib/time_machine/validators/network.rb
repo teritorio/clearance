@@ -40,7 +40,7 @@ module Validators
       begin
         T.must(conn).transaction { |conn|
           sql_osm_filter_tags = osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
-          conn.exec(File.new('/sql/network.sql').read
+          conn.exec(File.new(File.join(File.dirname(__FILE__), 'network.sql')).read
             .gsub(':osm_filter_tags', sql_osm_filter_tags)
             .gsub(':base_ways_ids', "ARRAY[#{before_ids.join(',')}]")
             .gsub(':change_ways_ids', "ARRAY[#{after_ids.join(',')}]"))
@@ -56,16 +56,16 @@ module Validators
         conflations_matches.collect{ |link|
           next if link.conflation.before&.objtype != 'w'
 
-          node_ids.collect{ |node_id|
+          node_ids.select{ |node_id|
             node_id['id'] == link.conflation.before&.id
           }.each{ |node_id|
-            actions = link.result.diff.attribs['nodes'] || []
+            actions = link.result.diff.attribs['geom'] || []
             actions << Validation::Action.new(
               validator_id: node_id['lost_connection'] ? 'lost_connection' : 'new_connection',
               action: 'reject',
               options: { 'node_id' => node_id['node_id'] },
             )
-            link.result.diff.attribs['nodes'] = actions
+            link.result.diff.attribs['geom'] = actions
           }
         }
       }
