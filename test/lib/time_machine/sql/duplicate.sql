@@ -6,17 +6,9 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 \set proj 4326
 \set osm_filter_tags true
+\set map_select_index 'CASE WHEN _.tags->>''a'' = ''b'' THEN 1 END'
+\set map_select_distance 2
 \set change_way_ids ARRAY[]
-
-DROP VIEW IF EXISTS base CASCADE;
-CREATE TEMP TABLE validator_duplicate_config (
-  key TEXT NOT NULL,
-  value TEXT NOT NULL,
-  distance INTEGER NOT NULL
-);
-INSERT INTO validator_duplicate_config (key, value, distance) VALUES
-  ('a', 'b', 2)
-;
 
 
 -- Test osm_base_n update

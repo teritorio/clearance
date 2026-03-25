@@ -38,19 +38,14 @@ module Validation
     validators_config.collect{ |id, config|
       class_name = T.cast(config['instance'], T.nilable(String)) || "Validators::#{camelize(id)}"
 
-      validator_config = T.cast(config['config'], T.nilable(String))
-      validator_config_object = YAML.load_file("#{path}/#{validator_config}") if !validator_config.nil?
-
       specific_osm_tags = T.cast(config['specific_osm_tags'], T.nilable(String))
-      if !specific_osm_tags.nil?
-        osm_tags_matches += Configuration.load_osm_tags(path, { 'specific_osm_tags' => specific_osm_tags })
-      end
+      specific_osm_tags_matches = specific_osm_tags.nil? ? nil : Configuration.load_osm_tags(path, { 'specific_osm_tags' => specific_osm_tags })
 
-      args = config.except('instance', 'specific_osm_tags', 'config', 'description').transform_keys(&:to_sym)
+      args = config.except('instance', 'specific_osm_tags', 'description').transform_keys(&:to_sym)
       settings = Validators::ValidatorBase::Settings.new(
         id: id,
-        config: validator_config_object,
-        osm_tags_matches: osm_tags_matches,
+        global_osm_tags_matches: osm_tags_matches,
+        specific_osm_tags_matches: specific_osm_tags_matches,
         description: T.cast(config['description'], T.nilable(String)),
       )
 

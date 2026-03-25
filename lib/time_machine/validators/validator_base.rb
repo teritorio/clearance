@@ -15,13 +15,23 @@ module Validators
 
     class Settings < T::Struct
       const :id, String
-      const :config, T.untyped
-      const :osm_tags_matches, Osm::TagsMatches
+      const :global_osm_tags_matches, Osm::TagsMatches
+      const :specific_osm_tags_matches, T.nilable(Osm::TagsMatches)
       const :description, T.nilable(String)
     end
 
     sig { returns(Settings) }
     attr_reader :settings
+
+    sig { returns(Osm::TagsMatches) }
+    def osm_tags_matches
+      specific_osm_tags_matches = @settings.specific_osm_tags_matches
+      if specific_osm_tags_matches.nil?
+        @settings.global_osm_tags_matches
+      else
+        @settings.global_osm_tags_matches + specific_osm_tags_matches
+      end
+    end
 
     sig {
       params(settings: Settings).void

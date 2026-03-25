@@ -1,0 +1,177 @@
+[
+  {
+    "select": [
+      "[amenity=hospital]"
+    ],
+    "interest": {
+      "name": null,
+      "emergency": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[amenity=fire_station]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[emergency=ambulance_station]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=police]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=pharmacy]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[amenity=post_office]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=place_of_worship]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=fuel]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=post_box]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[amenity=clinic]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[amenity=community_centre]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[amenity=townhall]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=library]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[amenity=marketplace]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[leisure=stadium]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[shop=mall]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[shop=supermarket]"
+    ],
+    "interest": {
+      "name": null
+    },
+    "duplicate_distance": 100
+  },
+  {
+    "select": [
+      "[aeroway=helipad]"
+    ],
+    "duplicate_distance": 200
+  },
+  {
+    "select": [
+      "[emergency=access_point]"
+    ],
+    "duplicate_distance": 10
+  },
+  {
+    "select": [
+      "[emergency=fire_hydrant]"
+    ],
+    "interest": {
+      "ref": null
+    },
+    "duplicate_distance": 50
+  }
+]
