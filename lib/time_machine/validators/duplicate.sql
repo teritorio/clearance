@@ -56,115 +56,27 @@ WHERE
 ;
 CREATE INDEX ON base USING GIST (point);
 
-DROP TABLE IF EXISTS base_edges CASCADE;
-CREATE TEMP TABLE base_edges AS
-WITH
-count AS (
-  SELECT
-    key,
-    value,
-    level,
-    count(*) AS count
-  FROM
-    base
-  GROUP BY
-    key, value, level
-),
-delaunay_edges AS (
-  SELECT
-    base.key,
-    base.value,
-    base.level,
-    distance,
-    (ST_Dump(ST_DelaunayTriangles(ST_Collect(point), 0, 1))).geom AS edge
-  FROM
-    base
-    JOIN validator_duplicate_config AS config USING (key, value)
-    JOIN count ON
-      count.key = base.key AND
-      count.value = base.value AND
-      count.level IS NOT DISTINCT FROM (base.level) AND
-      count.count >= 3
-  GROUP BY
-    base.key,
-    base.value,
-    base.level,
-    distance
-
-  UNION ALL
-
-  SELECT
-    base.key,
-    base.value,
-    base.level,
-    distance,
-    ST_MakeLine(point) AS edge
-  FROM
-    base
-    JOIN validator_duplicate_config AS config USING (key, value)
-    JOIN count ON
-      count.key = base.key AND
-      count.value = base.value AND
-      count.level IS NOT DISTINCT FROM (base.level) AND
-      count.count = 2
-  GROUP BY
-    base.key,
-    base.value,
-    base.level,
-    distance
-),
-short_edge_vertex AS (
-  SELECT
-    key,
-    value,
-    level,
-    unnest(ARRAY[ST_StartPoint(edge), ST_EndPoint(edge)]) AS point
-  FROM
-    delaunay_edges
-  WHERE
-    ST_Length(edge) < distance
-)
-SELECT
-  base.key,
-  base.value,
-  type,
-  id
-FROM
-  short_edge_vertex AS vertex
-  JOIN base ON
-    base.key = vertex.key AND
-    base.value = vertex.value AND
-    base.point && vertex.point
-
-UNION ALL
-
-SELECT
-  base.key,
-  base.value,
-  type,
-  id
-FROM
-  base
-  JOIN validator_duplicate_config AS config USING (key, value)
-  JOIN count ON
-    count.key = base.key AND
-    count.value = base.value AND
-    count.level IS NOT DISTINCT FROM (base.level) AND
-    count.count = 1
-;
-
 DROP TABLE IF EXISTS base_duplicates CASCADE;
 CREATE TEMP TABLE base_duplicates AS
 SELECT
-  key,
-  value,
-  type,
-  id,
+  a.key,
+  a.value,
+  a.type,
+  a.id,
   count(*) AS count
 FROM
-  base_edges
+  base AS a
+  JOIN validator_duplicate_config AS config ON
+    config.key = a.key AND
+    config.value = a.value
+  LEFT JOIN base AS b ON
+    b.key = a.key AND
+    b.value = a.value AND
+    b.level IS NOT DISTINCT FROM a.level AND
+    (b.type != a.type OR b.id != a.id) AND
+    ST_Distance(a.point, b.point) < config.distance
 GROUP BY
-  key, value, type, id
+  a.key, a.value, a.type, a.id
 ;
 
 
@@ -212,100 +124,27 @@ WHERE
 CREATE INDEX ON changes USING GIST (point);
 
 
-DROP TABLE IF EXISTS changes_edges CASCADE;
-CREATE TEMP TABLE changes_edges AS
-WITH
-count AS (
-  SELECT
-    key,
-    value,
-    level,
-    count(*) AS count
-  FROM
-    changes
-  GROUP BY
-    key, value, level
-),
-delaunay_edges AS (
-  SELECT
-    changes.key,
-    changes.value,
-    changes.level,
-    distance,
-    (ST_Dump(ST_DelaunayTriangles(ST_Collect(point), 0, 1))).geom AS edge
-  FROM
-    changes
-    JOIN validator_duplicate_config AS config USING (key, value)
-    JOIN count ON
-      count.key = changes.key AND
-      count.value = changes.value AND
-      count.level IS NOT DISTINCT FROM (changes.level) AND
-      count.count >= 3
-  GROUP BY
-    changes.key,
-    changes.value,
-    changes.level,
-    distance
-
-  UNION ALL
-
-  SELECT
-    changes.key,
-    changes.value,
-    changes.level,
-    distance,
-    ST_MakeLine(point) AS edge
-  FROM
-    changes
-    JOIN validator_duplicate_config AS config USING (key, value)
-    JOIN count ON
-      count.key = changes.key AND
-      count.value = changes.value AND
-      count.level IS NOT DISTINCT FROM (changes.level) AND
-      count.count = 2
-  GROUP BY
-    changes.key,
-    changes.value,
-    changes.level,
-    distance
-),
-short_edge_vertex AS (
-  SELECT
-    key,
-    value,
-    level,
-    unnest(ARRAY[ST_StartPoint(edge), ST_EndPoint(edge)]) AS point
-  FROM
-    delaunay_edges
-  WHERE
-    ST_Length(edge) < distance
-)
-SELECT
-  changes.key,
-  changes.value,
-  type,
-  id
-FROM
-  short_edge_vertex AS vertex
-  JOIN changes ON
-    changes.key = vertex.key AND
-    changes.value = vertex.value AND
-    changes.point && vertex.point
-;
-
-
 DROP TABLE IF EXISTS changes_duplicates CASCADE;
 CREATE TEMP TABLE changes_duplicates AS
 SELECT
-  key,
-  value,
-  type,
-  id,
+  a.key,
+  a.value,
+  a.type,
+  a.id,
   count(*) AS count
 FROM
-  changes_edges
+  changes AS a
+  JOIN validator_duplicate_config AS config ON
+    config.key = a.key AND
+    config.value = a.value
+  JOIN changes AS b ON
+    b.key = a.key AND
+    b.value = a.value AND
+    b.level IS NOT DISTINCT FROM a.level AND
+    (b.type != a.type OR b.id != a.id) AND
+    ST_Distance(a.point, b.point) < config.distance
 GROUP BY
-  key, value, type, id
+  a.key, a.value, a.type, a.id
 ;
 
 
