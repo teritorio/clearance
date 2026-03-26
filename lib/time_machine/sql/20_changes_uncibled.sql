@@ -1,4 +1,4 @@
-CREATE TEMP TABLE osm_changes_geom_ AS
+CREATE TEMP TABLE osm_changes_geom_proj AS
 SELECT
     objtype,
     id,
@@ -14,11 +14,42 @@ SELECT
     nodes,
     members,
     ST_Transform(ST_MakeValid(geom), :proj) AS geom,
-    ST_Subdivide(ST_Transform(ST_MakeValid(geom), :proj), 100) AS geom_part,
     cibled
 FROM osm_changes_geom;
-CREATE INDEX osm_changes_geom_idx_geom ON osm_changes_geom_ USING GIST (geom);
+CREATE INDEX osm_changes_geom_proj_idx_objtype_id ON osm_changes_geom_proj (objtype, id);
 
+CREATE TEMP TABLE osm_changes_geom_part AS
+SELECT
+    objtype,
+    id,
+    ST_Subdivide(geom, 1000) AS geom_part
+FROM
+    osm_changes_geom_proj
+;
+CREATE INDEX osm_changes_geom_part_idx_geom ON osm_changes_geom_part USING GIST (geom_part);
+
+CREATE TEMP VIEW osm_changes_geom_ AS
+SELECT
+    objtype,
+    id,
+    version,
+    deleted,
+    changeset_id,
+    created,
+    uid,
+    username,
+    tags,
+    lon,
+    lat,
+    nodes,
+    members,
+    geom,
+    geom_part,
+    cibled
+FROM
+    osm_changes_geom_proj
+    JOIN osm_changes_geom_part USING (objtype, id)
+;
 
 DROP TABLE IF EXISTS cibled_changes;
 CREATE TEMP TABLE cibled_changes AS
@@ -230,7 +261,8 @@ ORDER BY
 ON CONFLICT DO NOTHING
 ;
 
-DROP TABLE osm_changes_geom_;
+DROP TABLE osm_changes_geom_proj CASCADE;
+DROP TABLE osm_changes_geom_part CASCADE;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - cibled_changes & transitive: %', (SELECT COUNT(*) FROM cibled_changes);
