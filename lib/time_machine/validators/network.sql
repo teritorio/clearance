@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION validator_network_nodes_intersection(n1_ids BIGINT[],
   SELECT unnest(n1_ids) AS node_id
   INTERSECT
   SELECT unnest(n2_ids) AS node_id
-$$ LANGUAGE SQL PARALLEL SAFE;
+$$ LANGUAGE SQL;
 
 CREATE OR REPLACE TEMP VIEW base AS
 SELECT
