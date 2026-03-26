@@ -123,7 +123,7 @@ class ChangesLogsController < ApplicationController
         }
       end
 
-      date = objects.collect{ |c| c.dig('change', 'created') }.max
+      date = objects.collect{ |c| c.dig('change', 'created') }.compact.max
       xml.updated("#{date}Z") if date.present?
 
       matches.collect{ |m| [m['sources'], m['user_groups']] }.flatten.uniq.each{ |category|
