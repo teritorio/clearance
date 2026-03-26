@@ -88,13 +88,6 @@ jobs:
       id-token: write
 
     steps:
-      - name: Docker Build and Push Script
-        uses: cartoway/docker-compose-build-push-action@main
-        with:
-          registry_password: ${{ secrets.GITHUB_TOKEN }}
-          project: teritorio/clearance-script
-          service: script
-
       - name: Docker Build and Push API
         uses: cartoway/docker-compose-build-push-action@main
         with:
