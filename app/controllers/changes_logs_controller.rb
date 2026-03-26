@@ -63,12 +63,17 @@ class ChangesLogsController < ApplicationController
 
   private
 
+  sig { params(object: T::Hash[String, String], locale: T.untyped).returns(T.untyped) }
+  def atom_i18n(object, locale)
+    object[locale.to_s] || object['en'] || object.first&.last
+  end
+
   def atom(project, project_object, contents, public_url)
     xml = Builder::XmlMarkup.new
     xml.instruct!(:xml, version: '1.0')
     xml.feed(xmlns: 'http://www.w3.org/2005/Atom', 'xmlns:georss': 'http://www.georss.org/georss') {
-      xml.title(project_object.title[I18n.locale.to_s] || project_object.title['en'] || project_object.first.value)
-      xml.subtitle(project_object.description[I18n.locale.to_s] || project_object.description['en'] || project_object.first.value)
+      xml.title(atom_i18n(project_object.title, I18n.locale))
+      xml.subtitle(atom_i18n(project_object.description, I18n.locale))
       xml.link(href: "#{public_url}/#{project}/changes_logs")
       xml.link(href: "#{public_url}/#{project}/changes_logs.atom", rel: 'self')
       xml.id("#{public_url}/#{project}/changes_logs")
@@ -108,9 +113,7 @@ class ChangesLogsController < ApplicationController
       names = dd.collect(&:last).compact_blank.uniq
       names = (names.size <= 2 ? names : names[0..2] + ['etc']).join(', ')
 
-      title = matches.collect{ |m| m['name'] }.compact.collect{ |n|
-        n[I18n.locale.to_s] || n['en'] || n.first.value
-      }.uniq.join('/')
+      title = matches.collect{ |m| m['name'] }.compact.collect{ |n| atom_i18n(n, I18n.locale) }.uniq.join('/')
       xml.title([title, names, ids].compact_blank.join(' '))
 
       authors = objects.collect{ |c| [c.dig('base', 'username'), c.dig('change', 'username')] }.flatten.compact
