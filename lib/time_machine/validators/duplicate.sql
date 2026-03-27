@@ -116,7 +116,8 @@ SELECT
   a.index,
   a.type,
   a.id,
-  count(*) AS count
+  count(*) AS count,
+  array_agg(b.type || b.id ORDER BY b.type, b.id) AS duplicates
 FROM
   changes AS a
   JOIN changes AS b ON
@@ -137,12 +138,18 @@ SELECT
   changes_duplicates.index,
   changes_duplicates.type,
   changes_duplicates.id,
-  array_agg(base_duplicates.type || base_duplicates.id) AS duplicates
+  coalesce(
+    nullif(array_agg(base_duplicates.type || base_duplicates.id), ARRAY[NULL]::text[]),
+    changes_duplicates.duplicates
+  ) AS duplicates
 FROM
   changes_duplicates
   LEFT JOIN base_duplicates USING (index, type, id)
 WHERE
-  base_duplicates.id IS NULL
+  (
+    base_duplicates.id IS NULL
+    -- AND changes_duplicates.count >= 1 -- implicit
+  )
   OR
   (
     (
@@ -154,5 +161,7 @@ WHERE
 GROUP BY
   changes_duplicates.index,
   changes_duplicates.type,
-  changes_duplicates.id
+  changes_duplicates.id,
+  changes_duplicates.count,
+  changes_duplicates.duplicates
 ;
