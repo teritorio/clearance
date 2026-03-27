@@ -4,10 +4,13 @@ SELECT
   :map_select_index AS index,
   tags->>'level' AS level,
   :map_select_distance AS distance,
-  ST_Union(ST_Buffer(
-    ST_Centroid(ST_Transform(geom, :proj)),
-    :map_select_distance
-  )) AS buffer
+  ST_Transform(
+    (ST_Dump(ST_Union(ST_Buffer(
+      ST_Centroid(ST_Transform(geom, :proj)),
+      :map_select_distance
+    )))).geom,
+    4326
+   ) AS buffer
 FROM
   osm_changes_geom AS _
 WHERE
@@ -32,17 +35,18 @@ _ AS (
   UNION ALL
   SELECT tags, geom, id, 'w' AS type FROM osm_base_w
 )
-SELECT
+SELECT DISTINCT ON (_.type, _.id, index)
   _.id,
   _.type,
-  ST_Centroid(ST_Transform(_.geom, :proj)) AS point,
-  _.tags->>'level' AS level,
   buffer.index AS index,
-  buffer.distance AS distance
+  ST_Centroid(_.geom) AS point,
+  ST_Transform(ST_Buffer(ST_Transform(_.geom, :proj), buffer.distance), 4326) AS buffer,
+  _.tags->>'level' AS level
 FROM
   _
   JOIN buffer ON
-    ST_Intersects(buffer.buffer, ST_Centroid(ST_Transform(_.geom, :proj))) AND
+    buffer.buffer && _.geom AND
+    ST_Intersects(buffer.buffer, ST_Centroid(_.geom)) AND
     buffer.index = :map_select_index AND
     buffer.level IS NOT DISTINCT FROM (tags->>'level')
 WHERE
@@ -63,7 +67,7 @@ FROM
     b.index = a.index AND
     b.level IS NOT DISTINCT FROM a.level AND
     NOT (b.type = a.type AND b.id = a.id) AND
-    ST_Distance(a.point, b.point) < a.distance
+    ST_Intersects(a.buffer, b.point)
 GROUP BY
   a.index, a.type, a.id
 ;
@@ -86,17 +90,18 @@ WHERE
 
 UNION ALL
 
-SELECT
+SELECT DISTINCT ON (type, id, index)
   id,
   objtype AS type,
-  ST_Centroid(ST_Transform(geom, :proj)) AS point,
-  tags->>'level' AS level,
-  :map_select_index AS index,
-  :map_select_distance AS distance
+  buffer.index AS index,
+  ST_Centroid(geom) AS point,
+  ST_Transform(ST_Buffer(ST_Transform(_.geom, :proj), buffer.distance), 4326) AS buffer,
+  tags->>'level' AS level
 FROM
   osm_changes_geom AS _
   JOIN buffer ON
-    ST_Intersects(buffer.buffer, ST_Centroid(ST_Transform(_.geom, :proj))) AND
+    buffer.buffer && _.geom AND
+    ST_Intersects(buffer.buffer, ST_Centroid(_.geom)) AND
     buffer.index = :map_select_index AND
     buffer.level IS NOT DISTINCT FROM (tags->>'level')
 WHERE
@@ -106,6 +111,8 @@ WHERE
     (objtype = 'w' AND id = ANY((:change_way_ids)::bigint[]))
   ) AND
   (:osm_filter_tags)
+ORDER BY
+  type, id, index
 ;
 CREATE INDEX ON changes USING GIST (point);
 
@@ -124,7 +131,7 @@ FROM
     b.index = a.index AND
     b.level IS NOT DISTINCT FROM a.level AND
     NOT (b.type = a.type AND b.id = a.id) AND
-    ST_Distance(a.point, b.point) < a.distance
+    ST_Intersects(a.buffer, b.point)
 GROUP BY
   a.index, a.type, a.id
 ;
