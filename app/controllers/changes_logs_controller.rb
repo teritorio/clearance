@@ -21,7 +21,7 @@ class ChangesLogsController < ApplicationController
         contents = conn.exec(sql)
         respond_to { |format|
           format.json {
-            render(json: contents)
+            render(json: contents.collect{ |c| c['objects'] })
           }
           format.atom {
             public_url = ENV.fetch('PUBLIC_URL', nil)
