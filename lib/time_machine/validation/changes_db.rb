@@ -330,7 +330,7 @@ module Validation
     const :before_objects, T.nilable(Osm::ObjectChangeId)
     const :after_objects, T.nilable(Osm::ObjectChangeId)
     const :created, String
-    const :conflation, OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties]
+    const :conflation_reason, OSMLogicalHistory::Conflation::ConflationReason
     const :matches, T::Array[ValidationLogMatch]
     const :action, T.nilable(ActionType)
     const :validator_uid, T.nilable(Integer)
@@ -379,7 +379,7 @@ module Validation
         change.before_objects&.to_json,
         change.after_objects.to_json,
         change.semantic_group,
-        change.conflation.to_json,
+        change.conflation_reason.to_json,
       ])
     }
     puts "Logs #{i} changes"
