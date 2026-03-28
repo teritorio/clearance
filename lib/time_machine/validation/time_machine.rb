@@ -13,7 +13,6 @@ module Validation
   extend T::Sig
 
   class ValidationResult < T::Struct
-    prop :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :diff, DiffActions
     prop :action, T.nilable(ActionType)
@@ -152,7 +151,6 @@ module Validation
           validations: matches,
           result: ValidationResult.new(
             action: 'accept',
-            changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
             created: T.must(conflation.after || conflation.before_at_now).created,
             diff: matching_group ? diff_osm_object(conflation.before, conflation.after) : DiffActions.new(attribs: {}, tags: {}),
           ),
@@ -215,7 +213,6 @@ module Validation
             semantic_group: ((locha.locha_id + semantic_group_index) + 2**31) % 2**32 - 2**31,
             before_objects: (Osm::ObjectChangeId.from_hash(link.conflation.before.to_h) if !link.conflation.before.nil?),
             after_objects: (Osm::ObjectChangeId.from_hash(link.conflation.after.to_h) if !link.conflation.after.nil?),
-            changeset_ids: link.result.changeset_ids,
             created: link.result.created,
             conflation: link.conflation,
             matches: link.validations,
