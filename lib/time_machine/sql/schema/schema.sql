@@ -84,7 +84,6 @@ ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype); -- %PK:osm_changes%
 
 DROP TABLE IF EXISTS validations_log CASCADE;
 CREATE TABLE validations_log (
-    changeset_ids INTEGER[],
     created TIMESTAMP (0) WITHOUT TIME ZONE,
     matches JSONB NOT NULL,
     action TEXT,
