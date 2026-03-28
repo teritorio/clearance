@@ -90,7 +90,6 @@ class TestValidation < Test::Unit::TestCase
       validations: [],
       result: Validation::ValidationResult.new(
         action: 'accept',
-        changeset_ids: T.must(conflation.after || conflation.before_at_now).changesets&.pluck('id'),
         created: T.must(conflation.after || conflation.before_at_now).created,
         diff: Validation.diff_osm_object(conflation.before, conflation.after),
       ),
@@ -114,7 +113,6 @@ class TestValidation < Test::Unit::TestCase
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: nil,
-      changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
       created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
         attribs: {
@@ -133,7 +131,6 @@ class TestValidation < Test::Unit::TestCase
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: nil,
-      changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
         attribs: { 'deleted' => [], 'geom' => [] },
@@ -150,7 +147,6 @@ class TestValidation < Test::Unit::TestCase
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: 'accept',
-      changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
       created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
         attribs: {},
@@ -166,7 +162,6 @@ class TestValidation < Test::Unit::TestCase
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
       action: nil,
-      changeset_ids: @@fixture_node_a.changesets&.pluck('id'),
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
         attribs: { 'geom' => [] },
@@ -192,7 +187,6 @@ class TestValidation < Test::Unit::TestCase
       )]
       validation_result = Validation::ValidationResult.new(
         action: action || 'reject',
-        changeset_ids: @@fixture_node_b.changesets&.pluck('id'),
         created: @@fixture_node_b.created,
         diff: Validation::DiffActions.new(
           attribs: { 'geom' => validated },
