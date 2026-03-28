@@ -214,7 +214,7 @@ module Validation
             before_objects: (Osm::ObjectChangeId.from_hash(link.conflation.before.to_h) if !link.conflation.before.nil?),
             after_objects: (Osm::ObjectChangeId.from_hash(link.conflation.after.to_h) if !link.conflation.after.nil?),
             created: link.result.created,
-            conflation: link.conflation,
+            conflation_reason: link.conflation.conflation_reason,
             matches: link.validations,
             action: link.result.action,
             validator_uid: nil,
