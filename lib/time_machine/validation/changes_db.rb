@@ -332,7 +332,6 @@ module Validation
     const :semantic_group, Integer
     const :before_objects, T.nilable(Osm::ObjectChangeId)
     const :after_objects, T.nilable(Osm::ObjectChangeId)
-    const :changeset_ids, T.nilable(T::Array[Integer])
     const :created, String
     const :conflation, OSMLogicalHistory::Conflation::ConflationNilableOnly[OSMChangeProperties]
     const :matches, T::Array[ValidationLogMatch]
@@ -367,16 +366,12 @@ module Validation
       INSERT INTO
         validations_log
       VALUES
-        (
-          (SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i)),
-          $2, $3::json, $4, $5, $6, $7, $8, $9::json, $10::json, $11, $12::json
-        )
+        ($1, $2::json, $3, $4, $5, $6, $7, $8::json, $9::json, $10, $11::json)
     ")
     i = 0
     changes.each{ |change|
       i += 1
       conn.exec_prepared('validations_log_insert', [
-        change.changeset_ids&.to_json,
         change.created,
         change.matches.to_json,
         change.action,
