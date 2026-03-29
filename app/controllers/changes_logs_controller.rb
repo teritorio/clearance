@@ -18,14 +18,14 @@ class ChangesLogsController < ApplicationController
     sql = 'SELECT * FROM changes_logs()'
     Db::DbConnRead.conn(project) { |conn|
       begin
-        contents = conn.exec(sql)
+        lochas = conn.exec(sql).collect{ |c| c['objects'] }
         respond_to { |format|
           format.json {
-            render(json: contents.collect{ |c| c['objects'] })
+            render(json: lochas)
           }
           format.atom {
             public_url = ENV.fetch('PUBLIC_URL', nil)
-            render plain: atom(project, Project.find(params['project']), contents, public_url)
+            render plain: atom(project, Project.find(params['project']), lochas, public_url)
           }
         }
       rescue PG::UndefinedFunction
@@ -68,7 +68,7 @@ class ChangesLogsController < ApplicationController
     object[locale.to_s] || object['en'] || object.first&.last
   end
 
-  def atom(project, project_object, contents, public_url)
+  def atom(project, project_object, lochas, public_url)
     xml = T.let(Builder::XmlMarkup.new, T.untyped) # Avoid typing error on builder
     xml.instruct!(:xml, version: '1.0')
     xml.feed(xmlns: 'http://www.w3.org/2005/Atom', 'xmlns:georss': 'http://www.georss.org/georss') {
@@ -78,37 +78,46 @@ class ChangesLogsController < ApplicationController
       xml.link(href: "#{public_url}/#{project}/changes_logs.atom", rel: 'self')
       xml.id("#{public_url}/#{project}/changes_logs")
       xml.updated(Time.now.utc.iso8601)
-      contents.each { |content| atom_entry(xml, project, content, public_url) }
+      href = "#{public_url}/#{project}/changes_logs"
+
+      lochas.each { |locha|
+        locha_id = locha['metadata']['locha_id']
+        features = locha['features'].index_by { |f| f['id'] }
+        links = locha['metadata']['links']
+
+        objects = links.collect{ |link| (link.pluck('before') + link.pluck('after')).compact.uniq.collect{ |id| features[id] } }.flatten(1)
+        matches = links.collect{ |link| link.pluck('matches').flatten(1) }.flatten(1)
+        bbox = locha['bbox']
+        point = "#{(bbox[0] + bbox[2]) / 2} #{(bbox[1] + bbox[3]) / 2}"
+        atom_entry(xml, locha_id, objects, matches, point, href)
+      }
     }
     xml.target!
   end
 
-  def atom_entry(xml, project, content, public_url)
-    objects = content['objects']
-    matches = objects.pluck('matches').flatten(1)
+  def atom_entry(xml, locha_id, objects, matches, point, href)
     xml.entry {
-      xml.id("urn:lex:zz:#{content['id']}")
-      xml.link(href: "#{public_url}/#{project}/changes_logs")
+      xml.id("urn:lex:zz:#{locha_id}")
+      xml.link(href: href)
 
-      dd = objects.collect{ |c|
-        %w[base change].select{ |o| !c[o].nil? }.collect { |o|
-          type = c.dig(o, 'objtype')
-          id = c.dig(o, 'id')
-          [
-            "#{type}#{id}#{c.dig(o, 'deletes') ? ' (deleted)' : ''}",
-            c.dig('change', 'tags', 'name'),
-          ]
-        }
-      }.flatten(1)
+      dd = objects.collect{ |o|
+        type = o['objtype']
+        id = o['id']
+        deleted = o.dig('properties', 'deleted') ? ' (deleted)' : ''
+        [
+          "#{type}#{id}#{deleted}",
+          o.dig('properties', 'tags', 'name'),
+        ]
+      }
       xml.content(type: 'xhtml') {
         xml.tag!('div', xmlns: 'http://www.w3.org/1999/xhtml') {
           xml.ul {
-            dd.collect{ |a| a.compact.join(' - ') }.each { |line| xml.li(line) }
+            dd.collect{ |a| a.compact_blank.join(' - ') }.each { |line| xml.li(line) }
           }
         }
       }
 
-      ids = dd.collect(&:first).compact_blank.uniq
+      ids = dd.collect(&:first).compact_blank.collect{ |id| id[1..] }.uniq
       ids = (ids.size <= 2 ? ids : ids[0..2] + ['etc']).join(', ')
       names = dd.collect(&:last).compact_blank.uniq
       names = (names.size <= 2 ? names : names[0..2] + ['etc']).join(', ')
@@ -134,7 +143,7 @@ class ChangesLogsController < ApplicationController
       }
 
       xml.tag!('georss:point') { # Lat/Lon
-        xml.text!("#{content['point_y']} #{content['point_x']}")
+        xml.text!(point)
       }
     }
   end
