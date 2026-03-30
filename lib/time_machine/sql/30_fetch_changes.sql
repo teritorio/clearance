@@ -22,13 +22,9 @@ CREATE OR REPLACE FUNCTION fetch_changes(
     SELECT
         _changes.objtype,
         _changes.id,
-        json_agg(row_to_json(osm_changesets) ORDER BY osm_changesets.id) AS changesets
+        json_agg(_changes.changeset_id ORDER BY _changes.changeset_id) AS changeset_ids
     FROM
         _changes
-        LEFT JOIN osm_changesets ON
-            osm_changesets.id = _changes.changeset_id
-    WHERE
-        osm_changesets.id IS NOT NULL
     GROUP BY
         _changes.objtype,
         _changes.id
@@ -37,83 +33,85 @@ CREATE OR REPLACE FUNCTION fetch_changes(
 
     RETURN QUERY
     WITH
-        polygons AS (
-            SELECT
-                row_json->>0 AS group_id,
-                ST_GeomFromGeoJSON(row_json->>1) AS geom
-            FROM
-                jsonb_array_elements(group_id_polys) AS t(row_json)
-        ),
-        base_i AS (
-            SELECT
-                base.objtype,
-                base.id,
-                base.version,
-                false AS deleted,
-                base.created,
-                base.uid,
-                base.username,
-                base.tags,
-                base.lon,
-                base.lat,
-                base.nodes,
-                base.members,
-                base.geom,
-                NULL::json AS changesets,
-                false AS is_change
-            FROM
-                osm_base AS base
-                JOIN _changes ON
-                    _changes.objtype = base.objtype AND
-                    _changes.id = base.id
-        ),
-        changes_with_changesets AS (
-            SELECT
-                _changes.objtype,
-                _changes.id,
-                _changes.version,
-                _changes.deleted,
-                _changes.created,
-                _changes.uid,
-                _changes.username,
-                _changes.tags,
-                _changes.lon,
-                _changes.lat,
-                _changes.nodes,
-                _changes.members,
-                _changes.geom,
-                changesets,
-                true AS is_change
-            FROM
-                _changes
-                LEFT JOIN _changesets ON
-                    _changes.objtype = _changesets.objtype AND
-                    _changes.id = _changesets.id
-        ),
-        state AS (
-            SELECT
-                t.objtype,
-                t.id,
-                t.version,
-                t.deleted,
-                t.created,
-                t.username,
-                t.tags,
-                t.members,
-                t.geom AS geojson_geometry,
-                t.changesets,
-                t.is_change,
-                (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(t.geom, polygons.geom)) AS group_ids
-            FROM (
-                SELECT * FROM base_i
-                UNION ALL
-                SELECT * FROM changes_with_changesets
-            ) AS t
-            ORDER BY
-                t.objtype,
-                t.id,
-                t.is_change -- alows to replay histroy and keep changes after base
-        )
+    polygons AS (
+        SELECT
+            row_json->>0 AS group_id,
+            ST_GeomFromGeoJSON(row_json->>1) AS geom
+        FROM
+            jsonb_array_elements(group_id_polys) AS t(row_json)
+    ),
+    base_i AS (
+        SELECT
+            base.objtype,
+            base.id,
+            base.version,
+            false AS deleted,
+            base.created,
+            base.uid,
+            base.username,
+            base.tags,
+            base.lon,
+            base.lat,
+            base.nodes,
+            base.members,
+            base.geom,
+            NULL::json AS changesets,
+            false AS is_change
+        FROM
+            osm_base AS base
+            JOIN _changes ON
+                _changes.objtype = base.objtype AND
+                _changes.id = base.id
+    ),
+    changes_with_changesets AS (
+        SELECT DISTINCT ON (objtype, id)
+            objtype,
+            id,
+            (array_agg(version ORDER BY objtype, id, version, deleted))[1] AS version,
+            (array_agg(deleted ORDER BY objtype, id, version, deleted))[1] AS deleted,
+            (array_agg(created ORDER BY objtype, id, version, deleted))[1] AS created,
+            (array_agg(uid ORDER BY objtype, id, version, deleted))[1] AS uid,
+            (array_agg(username ORDER BY objtype, id, version, deleted))[1] AS username,
+            (array_agg(tags ORDER BY objtype, id, version, deleted))[1] AS tags,
+            (array_agg(lon ORDER BY objtype, id, version, deleted))[1] AS lon,
+            (array_agg(lat ORDER BY objtype, id, version, deleted))[1] AS lat,
+            (array_agg(nodes ORDER BY objtype, id, version, deleted))[1] AS nodes,
+            (array_agg(members ORDER BY objtype, id, version, deleted))[1] AS members,
+            (array_agg(geom ORDER BY objtype, id, version, deleted))[1] AS geom,
+            array_agg(changeset_id ORDER BY changeset_id) AS changeset_ids,
+            true AS is_change
+        FROM
+            _changes
+        GROUP BY
+            objtype,
+            id,
+            version,
+            deleted
+    ),
+    state AS (
+        SELECT
+            objtype,
+            id,
+            version,
+            deleted,
+            created,
+            username,
+            tags,
+            members,
+            geom AS geojson_geometry,
+            changesets,
+            is_change,
+            (SELECT array_agg(group_id) FROM polygons WHERE ST_Intersects(geom, polygons.geom)) AS group_ids
+        FROM (
+            SELECT * FROM base_i
+            UNION ALL
+            SELECT * FROM changes_with_changesets
+        ) AS t
+        ORDER BY
+            objtype,
+            id,
+            is_change -- alows to replay histroy and keep changes after base
+    )
     SELECT
         state.objtype,
         state.id,
