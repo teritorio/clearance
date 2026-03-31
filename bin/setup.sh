@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 source $(dirname $0)/_lib.sh
 

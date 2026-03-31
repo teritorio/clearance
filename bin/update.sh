@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 source $(dirname $0)/_lib.sh
 
@@ -27,7 +27,7 @@ function project() {
         geofabrik_cookie $(cat ${EXTRACT_PATH}/replication/sequence.url) # Fills variables WGET_OPS and PYOSMIUM_OPS
 
         EXTRACT_NAME=$(basename "$EXTRACT_PATH")
-        pyosmium-get-changes ${PYOSMIUM_OPS} \
+        pyosmium-get-changes ${PYOSMIUM_OPS:-} \
             -v \
             --server $(cat ${EXTRACT_PATH}/replication/sequence.url) \
             --sequence-file ${EXTRACT_PATH}/replication/sequence.txt \
@@ -48,7 +48,7 @@ function project() {
         SEQUENCE_NUMBER=$(cat ${EXTRACT_PATH}/replication/sequence.txt)
         SEQUENCE_PATH=$(ruby -e "puts '$SEQUENCE_NUMBER'.rjust(9, '0').gsub(/(...)(...)(...)/, '\1/\2/\3')")
         STATE_URL=$(cat ${EXTRACT_PATH}/replication/sequence.url)/${SEQUENCE_PATH}.state.txt
-        wget ${WGET_OPS} --quiet "$STATE_URL" -O ${EXTRACT_PATH}/replication/state.txt
+        wget ${WGET_OPS:-} --quiet "$STATE_URL" -O ${EXTRACT_PATH}/replication/state.txt
     done
 
     check_sequenceNumber ${PROJECT} "${EXTRACT_PATHS}"
