@@ -26,6 +26,7 @@ services:
     build:
       context: .
     environment:
+      - PUBLIC_URL=${PUBLIC_URL}
       - DATABASE_URL=postgresql://postgres@postgres:5432/postgres
       - SENTRY_DSN_TOOLS=${SENTRY_DSN_TOOLS:-}
       - OSM_GEOFABRIK_PASSWORD=${OSM_GEOFABRIK_PASSWORD:-}
