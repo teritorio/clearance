@@ -14,7 +14,8 @@ SELECT
     nodes,
     members,
     ST_Transform(ST_MakeValid(geom), :proj) AS geom,
-    cibled
+    cibled,
+    locha_id
 FROM osm_changes_geom;
 ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
 
@@ -45,7 +46,8 @@ SELECT
     members,
     geom,
     geom_part,
-    cibled
+    cibled,
+    locha_id
 FROM
     osm_changes_geom_proj
     JOIN osm_changes_geom_part USING (objtype, id)

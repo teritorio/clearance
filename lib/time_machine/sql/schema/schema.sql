@@ -77,7 +77,8 @@ CREATE TABLE osm_changes (
     lat REAL, -- %COL:osm_changes:lat%
     nodes BIGINT[], -- %COL:osm_changes:nodes%
     members JSONB, -- %COL:osm_changes:members%
-    cibled BOOLEAN NOT NULL DEFAULT FALSE
+    cibled BOOLEAN NOT NULL DEFAULT FALSE,
+    locha_id BIGINT
 );
 ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype); -- %PK:osm_changes%
 

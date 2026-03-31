@@ -16,7 +16,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
     nodes,
     members,
     ST_SetSRID(ST_MakePoint(lon, lat), 4326) AS geom,
-    cibled
+    cibled,
+    locha_id
   FROM
     osm_changes
   WHERE
@@ -48,7 +49,8 @@ t AS (
     way_nodes.index,
     coalesce(nodes_change.lon, nodes.lon) AS lon,
     coalesce(nodes_change.lat, nodes.lat) AS lat,
-    osm_changes.nodes[1] = osm_changes.nodes[array_length(osm_changes.nodes, 1)] AS is_closed
+    osm_changes.nodes[1] = osm_changes.nodes[array_length(osm_changes.nodes, 1)] AS is_closed,
+    osm_changes.locha_id
   FROM
     osm_changes
     LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
@@ -87,7 +89,8 @@ with_geom AS (
       ST_MakePoint(lon, lat) ORDER BY index
     ), 4326) AS geom,
     cibled,
-    is_closed
+    is_closed,
+    locha_id
   FROM
     t
   WHERE
@@ -106,7 +109,8 @@ with_geom AS (
     nodes,
     members,
     cibled,
-    is_closed
+    is_closed,
+    locha_id
 )
 SELECT
   objtype,
@@ -129,7 +133,8 @@ SELECT
     ELSE
       geom
   END AS geom,
-  cibled
+  cibled,
+  locha_id
 FROM
   with_geom
 ;
@@ -155,7 +160,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
             ways.geom
         )
     )) AS geom,
-    osm_changes.cibled
+    osm_changes.cibled,
+    osm_changes.locha_id
   FROM
     (
       SELECT
@@ -191,7 +197,8 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
     osm_changes.lat,
     osm_changes.nodes,
     osm_changes.members,
-    osm_changes.cibled
+    osm_changes.cibled,
+    osm_changes.locha_id
 ;
 
 CREATE OR REPLACE VIEW osm_changes_geom AS

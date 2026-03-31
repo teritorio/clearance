@@ -65,12 +65,14 @@ module Validation
   }
   def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
-    conn.exec(File.new('/sql/30_fetch_changes.sql').read)
+    conn.exec(File.new('/sql/30_set_locha_id.sql').read
+      .gsub(':proj', local_srid.to_s)
+      .gsub(':distance', locha_cluster_distance.to_s))
+    conn.exec(File.new('/sql/31_fetch_changes.sql').read)
     results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
     last_locha_id = T.let(nil, T.nilable(T::Boolean))
     conn.exec_params(
-      'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb, $1, $2)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
-      [local_srid, locha_cluster_distance],
+      'SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb)'.gsub(':group_id_polys', conn.escape_literal(user_groups_json)),
     ) { |result|
       result.each{ |osm_change_object|
         locha_id = Integer(osm_change_object['locha_id'])
