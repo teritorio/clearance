@@ -4,12 +4,14 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/schema/schema_geom.sql
 \i lib/time_machine/sql/schema/schema_changes_geom.sql
 
+\set proj 4326
+\set distance 100
 \set group_id_polys '\'[["pop", { "type": "Polygon", "coordinates": [ [ [ -180 , -90 ], [ -180, 90 ], [ 180, 90 ], [ 180, -90 ], [ -180 , -90 ] ] ] }]]\''
 
-\i lib/time_machine/sql/30_fetch_changes.sql
+\i lib/time_machine/sql/31_fetch_changes.sql
 
 CREATE TEMP VIEW a AS
-SELECT * FROM fetch_changes(:group_id_polys::jsonb);
+SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb);
 
 -- No changes
 BEGIN;
@@ -23,6 +25,8 @@ INSERT INTO osm_base_w VALUES
 ;
 COMMIT;
 
+\i lib/time_machine/sql/30_set_locha_id.sql
+
 do $$ BEGIN
   ASSERT 0 = (SELECT count(*) FROM a),
     (SELECT * FROM a);
@@ -35,6 +39,8 @@ INSERT INTO osm_changes VALUES
   ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 COMMIT;
+
+\i lib/time_machine/sql/30_set_locha_id.sql
 
 do $$ BEGIN
   ASSERT 1 = (SELECT count(*) FROM a),
@@ -56,8 +62,7 @@ do $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 
-
--- Get all changesets
+-- Get the changeset
 BEGIN;
 INSERT INTO osm_changesets VALUES
   (1, '1999-01-08 04:05:06', NULL, false, 'bob', 1, NULL, NULL, NULL, NULL, 0, 0, '{}'::jsonb),
@@ -67,11 +72,12 @@ INSERT INTO osm_changesets VALUES
 ;
 COMMIT;
 
-do $$ BEGIN
-  ASSERT 1 = (SELECT jsonb_array_length(p->1->'changesets') FROM a),
-    (SELECT jsonb_array_length(p->1->'changesets') FROM a);
-END; $$ LANGUAGE plpgsql;
+\i lib/time_machine/sql/30_set_locha_id.sql
 
+do $$ BEGIN
+  ASSERT (SELECT p->1->>'changeset' FROM a) IS NOT NULL,
+    (SELECT p->1->>'changeset' FROM a);
+END; $$ LANGUAGE plpgsql;
 
 
 -- Change way nodes
@@ -81,6 +87,8 @@ INSERT INTO osm_changes VALUES
   ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL, true)
 ;
 COMMIT;
+
+\i lib/time_machine/sql/30_set_locha_id.sql
 
 do $$ BEGIN
   ASSERT 1 = (SELECT count(*) FROM a),

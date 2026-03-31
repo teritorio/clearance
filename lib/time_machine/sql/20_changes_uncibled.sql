@@ -14,7 +14,8 @@ SELECT
     nodes,
     members,
     ST_Transform(ST_MakeValid(geom), :proj) AS geom,
-    cibled
+    cibled,
+    locha_id
 FROM osm_changes_geom;
 CREATE INDEX osm_changes_geom_proj_idx_objtype_id ON osm_changes_geom_proj (objtype, id);
 
@@ -45,7 +46,8 @@ SELECT
     members,
     geom,
     geom_part,
-    cibled
+    cibled,
+    locha_id
 FROM
     osm_changes_geom_proj
     JOIN osm_changes_geom_part USING (objtype, id)
@@ -103,7 +105,21 @@ cibled_changes AS (
         )
 )
 SELECT DISTINCT ON (changes.objtype, changes.id)
-    *
+    objtype,
+    id,
+    version,
+    deleted,
+    changeset_id,
+    created,
+    uid,
+    username,
+    tags,
+    lon,
+    lat,
+    nodes,
+    members,
+    geom,
+    locha_id
 FROM (
     SELECT
         cibled_changes_from_base.*
@@ -157,7 +173,8 @@ WITH RECURSIVE a AS (
         lat,
         nodes,
         members,
-        ST_Transform(ST_MakeValid(geom), :proj) AS geom
+        ST_Transform(ST_MakeValid(geom), :proj) AS geom,
+        locha_id
     FROM
         cibled_changes
     UNION
@@ -181,7 +198,8 @@ WITH RECURSIVE a AS (
             ways.lat,
             ways.nodes,
             ways.members,
-            ways.geom
+            ways.geom,
+            ways.locha_id
         FROM
             b AS cibled_changes
             JOIN osm_changes_geom_ AS ways ON
@@ -209,7 +227,8 @@ WITH RECURSIVE a AS (
             relations.lat,
             relations.nodes,
             relations.members,
-            relations.geom
+            relations.geom,
+            relations.locha_id
         FROM
             b AS cibled_changes
             JOIN osm_changes_geom_ AS relations ON
@@ -237,7 +256,8 @@ WITH RECURSIVE a AS (
             relations.lat,
             relations.nodes,
             relations.members,
-            relations.geom
+            relations.geom,
+            relations.locha_id
         FROM
             b AS cibled_changes
             JOIN osm_changes_geom_ AS relations ON
