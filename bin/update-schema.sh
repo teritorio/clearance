@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 PROJECTS_CONFIG_PATH=${PROJECTS_CONFIG_PATH:-projects_config}
 PROJECTS_DATA_PATH=${PROJECTS_DATA_PATH:-projects_data}
