@@ -15,24 +15,24 @@ class TestValidation < Test::Unit::TestCase
   @@srid = T.let(4326, Integer) # No projection
   @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
-  @@fixture_changeset1 = T.let({
-    'id' => 1,
-    'created_at' => 'now',
-    'closed_at' => 'now',
-    'open' => false,
-    'user' => 'bob',
-    'uid' => 1,
-    'min_lat' => 0,
-    'min_lon' => 0,
-    'max_lat' => 0,
-    'max_lon' => 0,
-    'comments_count' => 0,
-    'changes_count' => 1,
-    'created_count' => 1,
-    'modified_count' => 1,
-    'deleted_count' => 1,
-    'tags' => {},
-  }, Osm::Changeset)
+  @@fixture_changeset1 = T.let(Osm::Changeset.new(
+    id: 1,
+    created_at: 'now',
+    closed_at: 'now',
+    open: false,
+    user: 'bob',
+    uid: 1,
+    min_lat: 0,
+    min_lon: 0,
+    max_lat: 0,
+    max_lon: 0,
+    comments_count: 0,
+    changes_count: 1,
+    created_count: 1,
+    modified_count: 1,
+    deleted_count: 1,
+    tags: {},
+  ), Osm::Changeset)
 
   @@fixture_node_a = T.let(Validation::OSMChangeProperties.new(
     objtype: 'n',
