@@ -20,8 +20,8 @@ module Validation
     sig { returns(T.nilable(T.any(Float, Integer))) }
     attr_accessor :geom_distance
 
-    sig { returns(T.nilable(T::Array[Osm::Changeset])) }
-    attr_reader :changesets
+    sig { returns(T.nilable(Osm::Changeset)) }
+    attr_reader :changeset
 
     sig { returns(T::Boolean) }
     attr_reader :is_change
@@ -41,13 +41,13 @@ module Validation
         username: T.nilable(String),
         created: String,
         tags: T::Hash[String, String],
-        changesets: T.nilable(T::Array[Osm::Changeset]),
+        changeset: T.nilable(Osm::Changeset),
         is_change: T::Boolean,
         group_ids: T.nilable(T::Array[String]),
         geom_distance: T.nilable(T.any(Float, Integer)),
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changesets:, is_change:, group_ids:, geom_distance: nil) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changeset:, is_change:, group_ids:, geom_distance: nil) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -61,7 +61,7 @@ module Validation
         tags: tags,
       )
       @geom_distance = geom_distance
-      @changesets = changesets
+      @changeset = changeset
       @is_change = is_change
       @group_ids = group_ids
     end
@@ -83,7 +83,7 @@ module Validation
         username: hash['username'],
         created: hash['created'],
         tags: hash['tags'],
-        changesets: hash['changesets'],
+        changeset: hash['changeset'],
         is_change: hash['is_change'],
         group_ids: hash['group_ids'],
         geom_distance: hash['geom_distance'],
@@ -104,7 +104,7 @@ module Validation
         'username' => username,
         'created' => created,
         'tags' => tags,
-        'changesets' => changesets,
+        'changeset' => changeset,
         'is_change' => is_change,
         'group_ids' => group_ids,
         'geom_distance' => geom_distance,
@@ -128,7 +128,7 @@ module Validation
         username: kwargs.fetch(:username, username),
         created: kwargs.fetch(:created, created),
         tags: kwargs.fetch(:tags, tags),
-        changesets: kwargs.fetch(:changesets, changesets),
+        changeset: kwargs.fetch(:changeset, changeset),
         is_change: kwargs.fetch(:is_change, is_change),
         group_ids: kwargs.fetch(:group_ids, group_ids),
         geom_distance: kwargs.fetch(:geom_distance, geom_distance),

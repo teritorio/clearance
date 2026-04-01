@@ -78,7 +78,7 @@ class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFil
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: 'today',
       tags: {
@@ -146,7 +146,7 @@ class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: 'today',
       tags: {
@@ -212,7 +212,7 @@ class TestGeomNewObject < Test::Unit::TestCase # rubocop:disable Style/OneClassP
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: 'today',
       tags: {
@@ -266,7 +266,7 @@ class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: 'today',
       tags: {
@@ -285,7 +285,7 @@ class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: 'today',
       tags: {
@@ -338,7 +338,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
@@ -397,7 +397,7 @@ class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
       deleted: false,
       members: nil,
       version: 1,
-      changesets: nil,
+      changeset: nil,
       username: 'bob',
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
