@@ -49,19 +49,19 @@ module Db
       Osm.fetch_changeset_by_id(row['id'])
     }.compact.collect{ |changeset|
       conn.exec_prepared('changeset_insert', [
-          changeset['id'],
-          changeset['created_at'],
-          changeset['closed_at'],
-          changeset['open'],
-          changeset['user'],
-          changeset['uid'],
-          changeset['min_lat'],
-          changeset['min_lon'],
-          changeset['max_lat'],
-          changeset['max_lon'],
-          changeset['comments_count'],
-          changeset['changes_count'],
-          changeset['tags'].to_json,
+          changeset.id,
+          changeset.created_at,
+          changeset.closed_at,
+          changeset.open,
+          changeset.user,
+          changeset.uid,
+          changeset.min_lat,
+          changeset.min_lon,
+          changeset.max_lat,
+          changeset.max_lon,
+          changeset.comments_count,
+          changeset.changes_count,
+          changeset.tags.to_json,
       ])
     }.size
     puts "Fetch #{i} changesets"

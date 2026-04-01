@@ -83,7 +83,7 @@ module Validation
         username: hash['username'],
         created: hash['created'],
         tags: hash['tags'],
-        changeset: hash['changeset'],
+        changeset: hash['changeset'].nil? ? nil : Osm::Changeset.from_hash(hash['changeset']),
         is_change: hash['is_change'],
         group_ids: hash['group_ids'],
         geom_distance: hash['geom_distance'],
