@@ -36,7 +36,7 @@ class TestValidation < Test::Unit::TestCase
         deleted: deleted,
         members: nil,
         version: version,
-        changesets: nil,
+        changeset: nil,
         username: 'bob',
         created: 'today',
         tags: tags,
