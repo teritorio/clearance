@@ -7,26 +7,24 @@ module Osm
   OsmKey = T.type_alias { String }
   OsmTags = T.type_alias { T::Hash[OsmKey, String] }
 
-  Changeset = T.type_alias {
-    {
-      'id' => Integer,
-      'created_at' => String,
-      'closed_at' => T.nilable(String),
-      'open' => T::Boolean,
-      'user' => String,
-      'uid' => Integer,
-      'min_lat' => T.nilable(T.any(Float, Integer)),
-      'min_lon' => T.nilable(T.any(Float, Integer)),
-      'max_lat' => T.nilable(T.any(Float, Integer)),
-      'max_lon' => T.nilable(T.any(Float, Integer)),
-      'comments_count' => Integer,
-      'changes_count' => Integer,
-      'created_count' => Integer,
-      'modified_count' => Integer,
-      'deleted_count' => Integer,
-      'tags' => T.nilable(T::Hash[String, String]),
-    }
-  }
+  class Changeset < T::InexactStruct
+    const :id, Integer
+    const :created_at, String
+    const :closed_at, T.nilable(String)
+    const :open, T::Boolean
+    const :user, String
+    const :uid, Integer
+    const :min_lat, T.nilable(T.any(Float, Integer))
+    const :min_lon, T.nilable(T.any(Float, Integer))
+    const :max_lat, T.nilable(T.any(Float, Integer))
+    const :max_lon, T.nilable(T.any(Float, Integer))
+    const :comments_count, Integer
+    const :changes_count, Integer
+    const :created_count, T.nilable(Integer)
+    const :modified_count, T.nilable(Integer)
+    const :deleted_count, T.nilable(Integer)
+    const :tags, T.nilable(T::Hash[String, String])
+  end
 
   class OSMRelationMember < T::InexactStruct
     const :ref, Integer
