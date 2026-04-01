@@ -42,7 +42,7 @@ class TestValidation < Test::Unit::TestCase
     deleted: false,
     members: nil,
     version: 1,
-    changesets: [@@fixture_changeset1],
+    changeset: @@fixture_changeset1,
     username: 'bob',
     created: 'today',
     tags: T.let({
@@ -61,7 +61,7 @@ class TestValidation < Test::Unit::TestCase
     deleted: false,
     members: nil,
     version: 2,
-    changesets: [@@fixture_changeset1],
+    changeset: @@fixture_changeset1,
     username: 'bob',
     created: 'today',
     tags: {
