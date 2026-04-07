@@ -132,6 +132,10 @@ bundle exec rubocop --parallel -c .rubocop.yml --autocorrect
 docker compose run --rm script bundle exec rake test
 docker compose run --rm script bundle exec rake test:sql
 ```
+Validation API again OpenAPI schema
+```
+bundle exec rake api01:validate -- http://localhost:8000/
+```
 
 ## What Clearance Does and How It Works
 
