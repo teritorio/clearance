@@ -34,7 +34,31 @@ class ChangesLogsController < ApplicationController
     }
   end
 
-  def sets
+  def accept_locha
+    project = params['project'].to_s
+    locha_id = params['locha_id'].to_i
+    links_index = Integer(params['links_index'], exception: false)
+
+    config = ::Configuration.load("/#{Project.projects_config_path}/#{project}/config.yaml")
+    if config.nil?
+      render(status: :not_found)
+      return
+    end
+
+    user_in_project = config.main_contacts.include?(current_user_osm_name) || config.user_groups.any?{ |_key, user_group|
+      user_group.users.include?(current_user_osm_name)
+    }
+    if !user_in_project
+      render(status: :unauthorized)
+      return
+    end
+
+    Db::DbConnWrite.conn(project) { |conn|
+      Validation.accept_locha(conn, locha_id, links_index, current_user_osm_id.to_i)
+    }
+  end
+
+  def accept_lochas
     project = params['project'].to_s
 
     config = ::Configuration.load("/#{Project.projects_config_path}/#{project}/config.yaml")
@@ -57,7 +81,7 @@ class ChangesLogsController < ApplicationController
     end
 
     Db::DbConnWrite.conn(project) { |conn|
-      Validation.accept_changes(conn, locha_ids, current_user_osm_id.to_i)
+      Validation.accept_lochas(conn, locha_ids, current_user_osm_id.to_i)
     }
   end
 
