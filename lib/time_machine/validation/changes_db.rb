@@ -224,9 +224,12 @@ module Validation
     params(
       conn: PG::Connection,
       locha_ids: T::Array[Integer],
+      links_index: T.nilable(Integer),
     ).void
   }
-  def self.apply_lochas_ids(conn, locha_ids)
+  def self.apply_lochas_ids(conn, locha_ids, links_index)
+    raise 'Invalid locha id paramter' if !links_index.nil? && locha_ids.size > 1
+
     sql_create_table = "
       CREATE TEMP TABLE changes_update (
         objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
@@ -268,7 +271,7 @@ module Validation
   }
   def self.apply_changes(conn, changes)
     locha_ids = changes.collect(&:locha_id).uniq
-    apply_lochas_ids(conn, locha_ids)
+    apply_lochas_ids(conn, locha_ids, nil)
   end
 
   sig {
@@ -360,8 +363,8 @@ module Validation
       validator_uid: T.nilable(Integer),
     ).void
   }
-  def self.accept_changes(conn, locha_ids, validator_uid = nil)
-    apply_lochas_ids(conn, locha_ids)
+  def self.accept_lochas(conn, locha_ids, validator_uid = nil)
+    apply_lochas_ids(conn, locha_ids, nil)
 
     conn.exec("
       UPDATE
@@ -373,6 +376,33 @@ module Validation
         locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[])
     ", [
       locha_ids.to_json,
+      validator_uid,
+    ])
+  end
+
+  sig {
+    params(
+      conn: PG::Connection,
+      locha_id: Integer,
+      links_index: T.nilable(Integer),
+      validator_uid: T.nilable(Integer),
+    ).void
+  }
+  def self.accept_locha(conn, locha_id, links_index, validator_uid = nil)
+    apply_lochas_ids(conn, [locha_id], links_index)
+
+    conn.exec("
+      UPDATE
+        validations_log
+      SET
+        action = 'accept',
+        validator_uid = $3
+      WHERE
+        locha_id = $1 AND
+        ($2 IS NULL OR semantic_group = $2)
+    ", [
+      locha_id,
+      links_index,
       validator_uid,
     ])
   end
