@@ -1,0 +1,470 @@
+openapi: 3.1.0
+info:
+  title: Clearance API
+  version: "0.1"
+
+paths:
+  /api/0.1/users/me:
+    get:
+      tags: [users]
+      summary: Current user profile
+      description: Returns the authenticated user plus allowed project ids.
+      responses:
+        '200':
+          description: Current authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '404':
+          description: No authenticated user.
+
+  /api/0.1/projects/:
+    get:
+      tags: [projects]
+      summary: List projects
+      responses:
+        '200':
+          description: List of projects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+
+  /api/0.1/projects/{project}:
+    parameters:
+      - $ref: '#/components/parameters/project'
+    get:
+      tags: [projects]
+      summary: Get a project
+      responses:
+        '200':
+          description: Project details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found.
+
+  /api/0.1/projects/{project}/changes_logs:
+    parameters:
+      - $ref: '#/components/parameters/project'
+    get:
+      tags: [changes_logs]
+      summary: List LoCha changes
+      description: Returns JSON by default. Atom feed is returned for atom format requests.
+      responses:
+        '200':
+          description: Changes log in JSON or Atom.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logs'
+            application/atom+xml:
+              schema:
+                type: string
+        '503':
+          description: Not configured for this project.
+
+  /api/0.1/projects/{project}/changes_logs/{locha_id}/accept:
+    parameters:
+      - $ref: '#/components/parameters/project'
+      - $ref: '#/components/parameters/locha_id'
+    put:
+      tags: [changes_logs]
+      summary: Accept one LoCha
+      description: Accepts all links for one LoCha.
+      responses:
+        '200':
+          description: Accepted.
+        '401':
+          description: User is not authorized for this project.
+        '404':
+          description: Project configuration not found.
+
+  /api/0.1/projects/{project}/changes_logs/{locha_id}/{links_index}/accept:
+    parameters:
+      - $ref: '#/components/parameters/project'
+      - $ref: '#/components/parameters/locha_id'
+      - $ref: '#/components/parameters/links_index'
+    put:
+      tags: [changes_logs]
+      summary: Accept one LoCha links group
+      description: Accepts a specific links group index for a LoCha.
+      responses:
+        '200':
+          description: Accepted.
+        '401':
+          description: User is not authorized for this project.
+        '404':
+          description: Project configuration not found.
+
+  /api/0.1/projects/{project}/changes_logs/accept:
+    parameters:
+      - $ref: '#/components/parameters/project'
+    post:
+      tags: [changes_logs]
+      summary: Accept multiple LoChas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+            example: [101, 102, 103]
+      responses:
+        '200':
+          description: Accepted.
+        '400':
+          description: Invalid request payload.
+        '401':
+          description: User is not authorized for this project.
+        '404':
+          description: Project configuration not found.
+
+  /api/0.1/projects/{project}/validators/:
+    parameters:
+      - $ref: '#/components/parameters/project'
+    get:
+      tags: [validators]
+      summary: List validators configuration
+      responses:
+        '200':
+          description: Validators config.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorsMap'
+
+  /api/0.1/projects/{project}/overpasslike:
+    parameters:
+      - $ref: '#/components/parameters/project'
+    get:
+      tags: [overpasslike]
+      summary: Overpass-like interpreter endpoint
+      responses:
+        '200':
+          description: Query result.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/0.1/projects/{project}/overpasslike/interpreter:
+    parameters:
+      - $ref: '#/components/parameters/project'
+    get:
+      tags: [overpasslike]
+      summary: Overpass-like interpreter endpoint
+      responses:
+        '200':
+          description: Query result.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    post:
+      tags: [overpasslike]
+      summary: Overpass-like interpreter endpoint
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: true
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Query result.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+components:
+  parameters:
+    project:
+      name: project
+      in: path
+      required: true
+      schema:
+        type: string
+    locha_id:
+      name: locha_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    links_index:
+      name: links_index
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  schemas:
+    CurrentUser:
+      type: object
+      required: [id, uid, email, osm_id, osm_name, projects]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        osm_id:
+          type: string
+        osm_name:
+          type: string
+        osm_image_url:
+          type: [string, 'null']
+        provider:
+          type: string
+        uid:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        projects:
+          type: array
+          items:
+            type: string
+
+    ProjectUserGroup:
+      type: object
+      required: [users, polygon, osm_tags]
+      properties:
+        users:
+          type: array
+          items:
+            type: string
+        polygon:
+          type: [string, 'null']
+        osm_tags:
+          type: string
+
+    Project:
+      type: object
+      required: [id, title, description, date_last_update, to_be_validated, main_contacts, user_groups, project_tags]
+      properties:
+        id:
+          type: string
+        title:
+          type: object
+          additionalProperties:
+            type: string
+        description:
+          type: object
+          additionalProperties:
+            type: string
+        date_last_update:
+          type: [string, 'null']
+        to_be_validated:
+          type: [integer, 'null']
+        main_contacts:
+          type: array
+          items:
+            type: string
+        user_groups:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ProjectUserGroup'
+        project_tags:
+          type: array
+          items:
+            type: string
+
+    Diff:
+      type: array
+      items:
+        type: array
+        items:
+          - type: string
+          - type: string
+            enum: [accept, reject]
+          - type: [object, 'null']
+            additionalProperties:
+              type: string
+
+    LoCha:
+      type: object
+      required: [bbox, type, features, metadata]
+      properties:
+        bbox:
+          type: array
+          items:
+            type: number
+        type:
+          type: string
+        features:
+          type: array
+          items:
+            type: object
+            required: [id, type, geometry, properties]
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              geometry:
+                type: object
+                required: [type, coordinates]
+                properties:
+                  type:
+                    type: string
+                  coordinates:
+                    type: array
+              properties:
+                type: object
+                required: [objtype, id, version, deleted, tags, changeset_id, links]
+                properties:
+                  objtype:
+                    type: string
+                  id:
+                    type: number
+                  version:
+                    type: number
+                  deleted:
+                    type: boolean
+                  uid:
+                    type: number
+                  tags:
+                    type: object
+                    additionalProperties:
+                      type: string
+                  created:
+                    type: string
+                  username:
+                    type: string
+                  changeset_id:
+                    type: number
+                  links:
+                    type: number
+        metadata:
+          type: object
+          required: [links, locha_id, changesets]
+          properties:
+            links:
+              type: array
+              items:
+                type: array
+                items:
+                  type: object
+                  required: [action, matches, conflation_reason]
+                  properties:
+                    after:
+                      type: string
+                    action:
+                      type: string
+                    before:
+                      type: string
+                    matches:
+                      type: array
+                      items:
+                        type: object
+                        required: [sources, selectors, user_groups]
+                        properties:
+                          sources:
+                            type: array
+                            items:
+                              type: string
+                          selectors:
+                            type: array
+                            items:
+                              type: string
+                          user_groups:
+                            type: array
+                            items:
+                              type: string
+                    diff_attribs:
+                      type: object
+                      properties:
+                        deleted:
+                          $ref: '#/components/schemas/Diff'
+                        id:
+                          $ref: '#/components/schemas/Diff'
+                    conflation_reason:
+                      type: object
+                      required: [conflate]
+                      properties:
+                        conflate:
+                          type: string
+                        geom:
+                          type: object
+                          required: [score, reason]
+                          properties:
+                            score:
+                              type: number
+                            reason:
+                              type: string
+                        tags:
+                          type: object
+                          required: [score, reason]
+                          properties:
+                            score:
+                              type: number
+                            reason:
+                              type: string
+                    diff_tags:
+                      type: object
+                      additionalProperties:
+                        $ref: '#/components/schemas/Diff'
+            locha_id:
+              type: number
+            changesets:
+              type: array
+              items:
+                type: object
+                required: [id, uid, open, tags, user, maxlat, maxlon, minlat, minlon, closed_at, created_at, changes_count, comments_count]
+                properties:
+                  id:
+                    type: number
+                  uid:
+                    type: number
+                  open:
+                    type: boolean
+                  tags:
+                    type: object
+                    additionalProperties:
+                      type: string
+                  user:
+                    type: string
+                  maxlat:
+                    type: number
+                  maxlon:
+                    type: number
+                  minlat:
+                    type: number
+                  minlon:
+                    type: number
+                  closed_at:
+                    type: string
+                  created_at:
+                    type: string
+                  changes_count:
+                    type: number
+                  comments_count:
+                    type: number
+                additionalProperties: true
+
+    Logs:
+      type: array
+      items:
+        $ref: '#/components/schemas/LoCha'
+
+    ValidatorsMap:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties: true
