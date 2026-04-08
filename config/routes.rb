@@ -6,7 +6,7 @@ Rails.application.routes.draw do
 
   devise_for :users, controllers: { omniauth_callbacks: 'users/omniauth_callbacks' }
 
-  scope path: '/api/0.1' do
+  scope path: '/api/0.1', defaults: { format: :json } do
     # API
     get 'users/me', controller: 'users', action: 'me'
 
