@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             validations_log.created,
             ST_Envelope(osm_base.geom) AS bbox,
             osm_base.changeset_id AS changeset_id,
-            CASE WHEN osm_base.id is NOT NULL THEN jsonb_build_object(
+            CASE WHEN osm_base.id IS NOT NULL THEN jsonb_build_object(
                 'type', 'Feature',
                 'id', 'b' || osm_base.objtype || osm_base.id,
                 'properties', jsonb_strip_nulls(jsonb_build_object(
@@ -52,7 +52,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             validations_log.created,
             ST_Envelope(osm_changes.geom) AS bbox,
             osm_changes.changeset_id AS changeset_id,
-            jsonb_build_object(
+            CASE WHEN osm_changes.id IS NOT NULL THEN jsonb_build_object(
                 'type', 'Feature',
                 'id', 'a' || osm_changes.objtype || osm_changes.id,
                 'properties', jsonb_strip_nulls(jsonb_build_object(
@@ -69,7 +69,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                     'links', dense_rank() OVER (PARTITION BY validations_log.locha_id ORDER BY validations_log.semantic_group) - 1
                 )),
                 'geometry', ST_AsGeoJSON(osm_changes.geom)::jsonb
-            ) AS feature
+            ) END AS feature
         FROM
             validations_log
             LEFT JOIN osm_changes_geom AS osm_changes ON
