@@ -30,6 +30,7 @@ module Configuration
     const :title, MultilingualString
     const :polygon, T.nilable(String)
     const :users, T::Array[String]
+    const :osm_tags, String
 
     sig {
       returns(T.nilable(T::Hash[String, T.untyped]))
