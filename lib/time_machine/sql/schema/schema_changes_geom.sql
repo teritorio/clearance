@@ -127,8 +127,11 @@ SELECT
   nodes,
   members,
   CASE
-    -- Force initialy closed ways to be closed
+    WHEN ST_NPoints(geom) = 1 THEN
+      -- Force ways with only one node to be a point
+      ST_PointN(geom, 1)
     WHEN is_closed AND NOT ST_IsClosed(geom) THEN
+      -- Force initialy closed ways to be closed
       ST_AddPoint(geom, ST_PointN(geom, 1))
     ELSE
       geom
