@@ -4,6 +4,9 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/schema/schema_geom.sql
 \i lib/time_machine/sql/schema/schema_changes_geom.sql
 
+-- add default to 1 at locha_id to avoid null issues
+ALTER TABLE osm_changes ALTER COLUMN locha_id SET DEFAULT 1;
+
 \set proj 4326
 \set osm_filter_tags true
 \set map_select_index 'CASE WHEN _.tags->>''a'' = ''b'' THEN 1 END'
@@ -28,7 +31,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[1]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -45,7 +47,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -62,7 +63,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -80,7 +80,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3, 4]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -97,7 +96,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -114,7 +112,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -132,7 +129,6 @@ TRUNCATE osm_changes;
 -- ;
 -- COMMIT;
 
--- \set change_node_ids ARRAY[3]
 -- \i lib/time_machine/validators/duplicate.sql
 
 -- do $$ BEGIN
@@ -149,7 +145,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[1]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -167,7 +162,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[1]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -186,7 +180,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[1]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -204,8 +197,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3]
-\set change_way_ids ARRAY[]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN
@@ -222,8 +213,6 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set change_node_ids ARRAY[3]
-\set change_way_ids ARRAY[]
 \i lib/time_machine/validators/duplicate.sql
 
 do $$ BEGIN

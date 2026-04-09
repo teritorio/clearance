@@ -51,25 +51,8 @@ module Validators
         prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
       ).void
     }
-    def apply(conn, proj, prevalidation_clusters)
-      # Get all way id from prevalidation_clusters
-      # before_ids = T.let([], T::Array[Integer])
-      after_node_ids = T.let([], T::Array[Integer])
-      after_way_ids = T.let([], T::Array[Integer])
-      prevalidation_clusters.collect{ |_accepted_links, conflations_matches|
-        conflations_matches.collect{ |link|
-          after = link.conflation.after
-          if !after.nil?
-            if after.objtype == 'n'
-              after_node_ids << after.id
-            elsif after.objtype == 'w'
-              after_way_ids << after.id
-            end
-          end
-        }
-      }
-
-      duplicate_ids = T.cast(conn.exec('SELECT * FROM validator_duplicate WHERE locha_id = $1', locha_id.to_s).to_a, T::Array[T::Hash[String, T.untyped]])
+    def apply(conn, locha_id, prevalidation_clusters)
+      duplicate_ids = T.cast(conn.exec('SELECT * FROM validator_duplicate WHERE locha_id = $1', T.unsafe([locha_id])).to_a, T::Array[T::Hash[String, T.untyped]])
 
       # Flag corresponding objects
       duplicate_keys = duplicate_ids.to_h{ |duplicate_id| [[duplicate_id['type'], duplicate_id['id']], duplicate_id['duplicates']] }
