@@ -1,206 +1,77 @@
-DROP FUNCTION IF EXISTS validator_network_nodes_intersection CASCADE;
-CREATE OR REPLACE FUNCTION validator_network_nodes_intersection(n1_ids BIGINT[], n2_ids BIGINT[]) RETURNS TABLE (node_id BIGINT) AS $$
-  SELECT unnest(n1_ids) AS node_id
-  INTERSECT
-  SELECT unnest(n2_ids) AS node_id
-$$ LANGUAGE SQL;
-
-CREATE OR REPLACE TEMP VIEW base AS
-SELECT
-  *
-FROM
-  osm_base_w AS _
-WHERE
-  id = ANY((:base_ways_ids)::bigint[]) AND
-  (:osm_filter_tags)
-;
-
-CREATE OR REPLACE TEMP VIEW changes AS
-SELECT
-  *
-FROM
-  osm_changes AS _
-WHERE
-  objtype = 'w' AND
-  id = ANY((:change_ways_ids)::bigint[]) AND
-  (:osm_filter_tags)
-;
-
-DROP TABLE IF EXISTS base_connection CASCADE;
-CREATE TEMP TABLE base_connection AS
-SELECT
-  way.id,
-  way.nodes,
-  validator_network_nodes_intersection(way.nodes, _.nodes) AS node_id
-FROM
-  base AS way
-  JOIN osm_base_w AS _ ON
-    NOT _.id = ANY((:base_ways_ids)::bigint[]) AND
-    way.nodes && _.nodes AND
-    (:osm_filter_tags)
-WHERE
-  way.id = ANY((:base_ways_ids)::bigint[])
-;
-CREATE INDEX ON base_connection USING btree(node_id);
-
-DROP TABLE IF EXISTS changes_connection CASCADE;
-CREATE TEMP TABLE changes_connection AS
-SELECT
-  way.id,
-  way.nodes,
-  validator_network_nodes_intersection(way.nodes, _.nodes) AS node_id
-FROM
-  changes AS way
-  JOIN osm_base_w AS _ ON
-    NOT _.id = ANY((:change_ways_ids)::bigint[]) AND
-    way.nodes && _.nodes AND
-    (:osm_filter_tags)
-;
-CREATE INDEX ON changes_connection USING btree(node_id);
-
-CREATE TEMP VIEW lost_connection AS
+DROP TABLE IF EXISTS validator_network CASCADE;
+CREATE TEMP TABLE validator_network AS
 WITH
-nodes_ids AS (
-  (SELECT true AS lost_connection, node_id FROM ((SELECT DISTINCT node_id FROM base_connection) EXCEPT (SELECT DISTINCT node_id FROM changes_connection)) AS t)
-  UNION ALL
-  (SELECT false AS lost_connection, node_id FROM ((SELECT DISTINCT node_id FROM changes_connection) EXCEPT (SELECT DISTINCT node_id FROM base_connection)) AS t)
-)
-(
-SELECT DISTINCT ON (base_connection.id, nodes_ids.node_id)
-  base_connection.id,
-  true AS base,
-  nodes_ids.lost_connection,
-  nodes_ids.node_id
-FROM
-  base_connection
-  JOIN nodes_ids USING (node_id)
-ORDER BY
-  base_connection.id,
-  nodes_ids.node_id
-) UNION ALL (
-SELECT DISTINCT ON (changes_connection.id, nodes_ids.node_id)
-  changes_connection.id,
-  false AS base,
-  nodes_ids.lost_connection,
-  nodes_ids.node_id
-FROM
-  changes_connection
-  JOIN nodes_ids USING (node_id)
-ORDER BY
-  changes_connection.id,
-  nodes_ids.node_id
-)
-;
-
-
-DROP VIEW IF EXISTS base_internal CASCADE;
-CREATE TEMP VIEW base_internal AS
-WITH RECURSIVE dbscan AS (
+osm_base_w AS (
   SELECT
-    id AS way_id,
-    nodes,
-    id AS cluster_id
+    id,
+    nodes
   FROM
-    base_connection
-
-  UNION
-
-  SELECT
-    base.id AS way_id,
-    base.nodes,
-    least(dbscan.cluster_id, base.id)
-  FROM
-    dbscan
-    JOIN base ON
-      base.nodes && dbscan.nodes AND
-      base.id != dbscan.way_id
+    osm_base_w AS _
+  WHERE
+    (:osm_filter_tags)
 ),
-final_clusters AS (
+osm_changes AS (
   SELECT
-    way_id,
-    min(cluster_id) AS cluster_id
+    *
   FROM
-    dbscan
+    osm_changes AS _
+  WHERE
+    objtype = 'w' AND
+    (:osm_filter_tags)
+),
+base_neighbors AS (
+  SELECT
+    way.locha_id,
+    way.id,
+    array_agg(_.id) AS neighbors_ways
+  FROM
+    osm_changes AS way
+    JOIN osm_base_w ON
+      osm_base_w.id = way.id
+    JOIN osm_base_w AS _ ON
+      _.nodes && osm_base_w.nodes AND
+      _.id != osm_base_w.id
   GROUP BY
-    way_id
+    way.locha_id,
+    way.id
+),
+osm_last AS (
+  SELECT
+    osm_base_w.id,
+    coalesce(osm_changes.nodes, osm_base_w.nodes) AS nodes,
+    coalesce(osm_changes.deleted, false) AS deleted
+  FROM
+    osm_base_w
+    LEFT JOIN osm_changes ON
+      osm_changes.objtype = 'w' AND
+      osm_changes.id = osm_base_w.id
+),
+changes_neighbors AS (
+  SELECT
+    way.locha_id,
+    way.id,
+    array_agg(c.id) AS neighbors_ways
+  FROM
+    osm_changes AS way
+    JOIN osm_last AS c ON
+      c.nodes && way.nodes AND
+      c.id != way.id AND
+      c.deleted = false
+  WHERE
+    way.deleted = false
+  GROUP BY
+    way.locha_id,
+    way.id
 )
 SELECT
-    base.id,
-    final_clusters.cluster_id
-FROM
-  base
-  LEFT JOIN final_clusters ON
-    final_clusters.way_id = base.id;
-;
-
-DROP VIEW IF EXISTS changes_internal CASCADE;
-CREATE TEMP VIEW changes_internal AS
-WITH RECURSIVE dbscan AS (
-  SELECT
-    id AS way_id,
-    nodes,
-    id AS cluster_id
-  FROM
-    changes_connection
-
-  UNION
-
-  SELECT
-    changes.id AS way_id,
-    changes.nodes,
-    least(dbscan.cluster_id, changes.id)
-  FROM
-    dbscan
-    JOIN changes ON
-      changes.nodes && dbscan.nodes AND
-      changes.id != dbscan.way_id
-),
-final_clusters AS (
-  SELECT
-    way_id,
-    min(cluster_id) AS cluster_id
-  FROM
-    dbscan
-  GROUP BY
-    way_id
-)
-SELECT
-    changes.id,
-    final_clusters.cluster_id
-FROM
-  changes
-  LEFT JOIN final_clusters ON
-    final_clusters.way_id = changes.id;
-;
-
-
-CREATE TEMP VIEW internal AS
-WITH inter AS (
-  ((SELECT * FROM base_internal) EXCEPT (SELECT * FROM changes_internal))
-  UNION ALL
-  ((SELECT * FROM changes_internal) EXCEPT (SELECT * FROM base_internal))
-)
-SELECT DISTINCT ON (id)
+  locha_id,
   id,
-  NULL::boolean AS base,
-  NULL::boolean AS lost_connection,
-  NULL::bigint AS node_id
+  base_neighbors.neighbors_ways AS base_neighbors_ways,
+  changes_neighbors.neighbors_ways AS change_neighbors_ways
 FROM
-  inter
-ORDER BY
-  id
+  base_neighbors
+  FULL JOIN changes_neighbors USING (locha_id, id)
+WHERE
+  base_neighbors.neighbors_ways IS DISTINCT FROM changes_neighbors.neighbors_ways
 ;
-
-
-CREATE TEMP VIEW validator_network AS
-SELECT DISTINCT ON (id)
-  *
-FROM (
-  SELECT * FROM lost_connection
-  UNION ALL
-  SELECT * FROM internal
-) AS t
-ORDER BY
-  id,
-  base
-;
+CREATE INDEX ON validator_network (locha_id);
