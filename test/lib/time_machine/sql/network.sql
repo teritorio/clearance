@@ -4,7 +4,23 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/schema/schema_geom.sql
 \i lib/time_machine/sql/schema/schema_changes_geom.sql
 
+-- add default to 1 at locha_id to avoid null issues
+ALTER TABLE osm_changes ALTER COLUMN locha_id SET DEFAULT 1;
+
 \set osm_filter_tags true
+
+\i lib/time_machine/validators/network.sql
+CREATE OR REPLACE FUNCTION vnv() RETURNS TABLE (
+  r text
+) AS $$
+  SELECT
+    array_agg(id)::text ||
+    coalesce(array_agg(coalesce(base_neighbors_ways::text, 'NULL'))::text, '{}') ||
+    coalesce(array_agg(coalesce(change_neighbors_ways::text, 'NULL'))::text, '{}')
+  FROM
+    validator_network
+  ;
+$$ LANGUAGE sql STABLE;
 
 -- Test osm_base_w update
 
@@ -32,13 +48,11 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set base_ways_ids ARRAY[10]
-\set change_ways_ids ARRAY[10]
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network) IS NULL,
-    (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
+  ASSERT (SELECT * FROM vnv()) IS NULL,
+    (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
 
@@ -50,13 +64,11 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set base_ways_ids ARRAY[10]
-\set change_ways_ids ARRAY[10]
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{10}{t}{2}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
-    (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
+  ASSERT '{10}{"{11}"}{"NULL"}' = (SELECT * FROM vnv()),
+    (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
 
@@ -68,13 +80,11 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set base_ways_ids ARRAY[10]
-\set change_ways_ids ARRAY[10]
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{10}{f}{3}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
-    (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
+  ASSERT '{10}{"{11}"}{"{11,12}"}' = (SELECT * FROM vnv()),
+    (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
 
@@ -87,13 +97,11 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set base_ways_ids ARRAY[11, 12]
-\set change_ways_ids ARRAY[11, 12]
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{12}{NULL}{NULL}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
-    (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
+  ASSERT '{11,12}{"{10,12}","{11,13}"}{"{10}","{13}"}' = (SELECT * FROM vnv()),
+    (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
 
@@ -107,12 +115,10 @@ INSERT INTO osm_changes VALUES
 ;
 COMMIT;
 
-\set base_ways_ids ARRAY[11, 12, 13]
-\set change_ways_ids ARRAY[11, 12, 13]
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{12}{NULL}{NULL}' = (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network),
-    (SELECT array_agg(id)::text || array_agg(lost_connection)::text || array_agg(node_id)::text FROM validator_network);
+  ASSERT '{11,12,13}{"{10,12}","{11,13}","{12}"}{"{10,13}","NULL","{10,11}"}' = (SELECT * FROM vnv()),
+    (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
