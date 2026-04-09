@@ -38,14 +38,14 @@ module Validation
   sig {
     params(
       conn: T.nilable(PG::Connection),
-      proj: Integer,
       validators: T::Array[Validators::ValidatorBase],
+      locha_id: Integer,
       prevalidation_clusters: T::Array[[T::Array[Link], T::Array[Link]]],
     ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
   }
-  def self.time_machine_validate(conn, proj, validators, prevalidation_clusters)
+  def self.time_machine_validate(conn, validators, locha_id, prevalidation_clusters)
     validators.each{ |validator|
-      validator.apply(conn, proj, prevalidation_clusters)
+      validator.apply(conn, locha_id, prevalidation_clusters)
     }
 
     prevalidation_clusters.collect{ |accepted_links, conflations_matches|
@@ -164,7 +164,7 @@ module Validation
       [links, remeaning_conflations]
     }
 
-    prevalidation_clusters = time_machine_validate(conn, config.local_srid, config.validators, prevalidation_clusters)
+    prevalidation_clusters = time_machine_validate(conn, config.validators, locha_id, prevalidation_clusters)
     locha_action, semantic_clusters = propagate_action(prevalidation_clusters)
 
     LoCha.new(
@@ -181,6 +181,10 @@ module Validation
     ).returns(T::Enumerable[LoCha])
   }
   def self.time_machine(conn, config)
+    config.validators.each{ |validator|
+      validator.pre_compute_sql(conn, config.local_srid) if validator.is_a?(Validators::ValidatorLochaSql)
+    }
+
     Enumerator.new { |yielder|
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |locha_id, lo_cha|
         yielder << time_machine_locha(conn, config, locha_id, lo_cha)
