@@ -16,19 +16,16 @@ module Validators
     sig {
       params(
         conn: T.nilable(PG::Connection),
-        before_ids: T::Array[Integer],
-        after_ids: T::Array[Integer],
-      ).returns(T::Array[T::Hash[String, T.untyped]])
+        _proj: Integer,
+      ).void
     }
-    def sql(conn, before_ids, after_ids)
+    def pre_compute_sql(conn, _proj)
       node_ids = T.let([], T::Array[T::Hash[String, T.untyped]])
       T.must(conn).transaction { |conn|
         specific_osm_tags_matches = T.must(@settings.specific_osm_tags_matches)
         sql_osm_filter_tags = specific_osm_tags_matches.to_sql('postgres', '_', proc { |s| conn.escape_literal(s) })
         conn.exec(File.new(File.join(File.dirname(__FILE__), 'network.sql')).read
-          .gsub(':osm_filter_tags', sql_osm_filter_tags)
-          .gsub(':base_ways_ids', "ARRAY[#{before_ids.join(',')}]")
-          .gsub(':change_ways_ids', "ARRAY[#{after_ids.join(',')}]"))
+          .gsub(':osm_filter_tags', sql_osm_filter_tags))
         node_ids = T.cast(conn.exec('SELECT * FROM validator_network').to_a, T::Array[T::Hash[String, T.untyped]])
         raise 'rollback'
       }
