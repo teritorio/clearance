@@ -15,11 +15,10 @@ module Validators
 
     sig {
       params(
-        conn: T.nilable(PG::Connection),
+        conn: PG::Connection,
         proj: Integer,
-        prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
       ).void
     }
-    def apply(conn, proj, prevalidation_clusters); end
+    def pre_compute_sql(conn, proj); end
   end
 end
