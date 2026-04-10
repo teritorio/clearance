@@ -38,7 +38,7 @@ INSERT INTO osm_changes VALUES
 COMMIT;
 
 do $$ BEGIN
-  ASSERT 'LINESTRING(1 1,1 1)' = (SELECT ST_AsText(geom) FROM osm_changes_geom WHERE objtype = 'w'),
+  ASSERT 'POINT(1 1)' = (SELECT ST_AsText(geom) FROM osm_changes_geom WHERE objtype = 'w'),
     (SELECT ST_AsText(geom) FROM osm_changes_geom WHERE objtype = 'w');
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;

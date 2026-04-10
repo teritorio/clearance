@@ -47,8 +47,19 @@ t AS (
     osm_changes.members,
     osm_changes.cibled,
     way_nodes.index,
-    coalesce(nodes_change.lon, nodes.lon) AS lon,
-    coalesce(nodes_change.lat, nodes.lat) AS lat,
+    CASE
+    WHEN coalesce(nodes_change.lon, nodes.lon) = coalesce(
+      lead(nodes_change.lon) OVER (PARTITION BY osm_changes.objtype, osm_changes.id ORDER BY way_nodes.index),
+      lead(nodes.lon) OVER (PARTITION BY osm_changes.objtype, osm_changes.id ORDER BY way_nodes.index)
+    ) AND coalesce(nodes_change.lat, nodes.lat) = coalesce(
+      lead(nodes_change.lat) OVER (PARTITION BY osm_changes.objtype, osm_changes.id ORDER BY way_nodes.index),
+      lead(nodes.lat) OVER (PARTITION BY osm_changes.objtype, osm_changes.id ORDER BY way_nodes.index)
+    ) THEN NULL
+    ELSE ST_MakePoint(
+      coalesce(nodes_change.lon, nodes.lon),
+      coalesce(nodes_change.lat, nodes.lat)
+    )
+    END AS geom,
     osm_changes.nodes[1] = osm_changes.nodes[array_length(osm_changes.nodes, 1)] AS is_closed,
     osm_changes.locha_id
   FROM
@@ -60,6 +71,8 @@ t AS (
       nodes_change.objtype = 'n' AND
       nodes_change.id = way_nodes.node_id
   WHERE
+    coalesce(nodes_change.lon, nodes.lon) IS NOT NULL AND
+    coalesce(nodes_change.lat, nodes.lat) IS NOT NULL AND
     osm_changes.objtype = 'w'
   ORDER BY
     osm_changes.objtype,
@@ -85,17 +98,12 @@ with_geom AS (
     NULL::real as lat,
     nodes,
     members,
-    ST_SetSRID(ST_MakeLine(
-      ST_MakePoint(lon, lat) ORDER BY index
-    ), 4326) AS geom,
+    ST_SetSRID(ST_MakeLine(geom ORDER BY index), 4326) AS geom,
     cibled,
     is_closed,
     locha_id
   FROM
     t
-  WHERE
-    lon IS NOT NULL AND
-    lat IS NOT NULL
   GROUP BY
     objtype,
     id,
