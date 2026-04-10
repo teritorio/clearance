@@ -255,35 +255,44 @@ components:
           type: string
 
     Project:
-      type: object
-      required: [id, title, description, date_last_update, to_be_validated, main_contacts, user_groups, project_tags]
-      properties:
-        id:
-          type: string
-        title:
-          type: object
-          additionalProperties:
+      oneOf:
+      - type: object
+        required: [id, initialized]
+        properties:
+          id:
             type: string
-        description:
-          type: object
-          additionalProperties:
+          initialized:
+            type: boolean
+            value: false
+      - type: object
+        required: [id, title, description, date_last_update, to_be_validated, main_contacts, user_groups, project_tags]
+        properties:
+          id:
             type: string
-        date_last_update:
-          type: [string, 'null']
-        to_be_validated:
-          type: [integer, 'null']
-        main_contacts:
-          type: array
-          items:
-            type: string
-        user_groups:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/ProjectUserGroup'
-        project_tags:
-          type: array
-          items:
-            type: string
+          title:
+            type: object
+            additionalProperties:
+              type: string
+          description:
+            type: object
+            additionalProperties:
+              type: string
+          date_last_update:
+            type: [string, 'null']
+          to_be_validated:
+            type: [integer, 'null']
+          main_contacts:
+            type: array
+            items:
+              type: string
+          user_groups:
+            type: object
+            additionalProperties:
+              $ref: '#/components/schemas/ProjectUserGroup'
+          project_tags:
+            type: array
+            items:
+              type: string
 
     Diff:
       type: array
