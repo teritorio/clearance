@@ -31,6 +31,14 @@ class Project < ActiveFile::Base
     def load_file
       Dir.glob('*/', base: "#{projects_config_path}/").collect{ |project|
         project = project[..-2]
+        count_validation = count(project) # Check database first to avoid loading configuration for projects that are not yet initialized
+        if count_validation.nil?
+          next {
+            id: project,
+            initialized: false,
+          }
+        end
+
         c = ::Configuration.load("#{projects_config_path}/#{project}/config.yaml")
         date_last_update = Osm::StateFile.from_file("#{projects_data_path}/#{project}/export/state.txt")
 
@@ -39,12 +47,12 @@ class Project < ActiveFile::Base
           title: c.title,
           description: c.description,
           date_last_update: date_last_update&.timestamp,
-          to_be_validated: count(project),
+          to_be_validated: count_validation,
           main_contacts: c.main_contacts,
           user_groups: c.user_groups,
           project_tags: c.project_tags,
         }
-      }
+      }.compact
     end
 
     def count(project)
