@@ -31,11 +31,25 @@ UPDATE
 SET
   geom = (
     SELECT
-      ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
+      CASE
+        WHEN ST_NPoints(ST_MakeLine(geom ORDER BY index)) = 1 THEN ST_PointN(ST_MakeLine(geom ORDER BY index), 1)
+        ELSE ST_MakeLine(geom ORDER BY index)
+      END AS geom
     FROM
-      unnest(osm_base_w.nodes) WITH ORDINALITY AS way_nodes(node_id, index)
-      JOIN osm_base_n AS nodes ON
-        nodes.id = way_nodes.node_id
+      (
+      SELECT
+        way_nodes.index,
+        CASE
+          WHEN nodes.geom = lead(nodes.geom) OVER (ORDER BY way_nodes.index) THEN NULL
+          ELSE nodes.geom
+        END AS geom
+      FROM
+        unnest(osm_base_w.nodes) WITH ORDINALITY AS way_nodes(node_id, index)
+        LEFT JOIN osm_base_n AS nodes ON
+          nodes.id = way_nodes.node_id
+      WHERE
+        nodes.geom IS NOT NULL
+      ) AS nodes
   )
 ;
 VACUUM FULL ANALYZE osm_base_w;
@@ -281,15 +295,29 @@ BEGIN
   ),
   a AS (
     SELECT
-      ways.id,
-      ST_MakeLine(nodes.geom ORDER BY way_nodes.index) AS geom
-    FROM
-      ways
-      JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-      JOIN osm_base_n AS nodes ON
-        nodes.id = way_nodes.node_id
+      id,
+      CASE
+        WHEN ST_NPoints(ST_MakeLine(geom ORDER BY index)) = 1 THEN ST_PointN(ST_MakeLine(geom ORDER BY index), 1)
+        ELSE ST_MakeLine(geom ORDER BY index)
+      END AS geom
+    FROM (
+      SELECT
+        ways.id,
+        way_nodes.index,
+        CASE
+          WHEN nodes.geom = lead(nodes.geom) OVER (PARTITION BY ways.id ORDER BY way_nodes.index) THEN NULL
+          ELSE nodes.geom
+        END AS geom
+      FROM
+        ways
+        LEFT JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
+        LEFT JOIN osm_base_n AS nodes ON
+          nodes.id = way_nodes.node_id
+        WHERE
+          nodes.geom IS NOT NULL
+      ) AS nodes
     GROUP BY
-      ways.id
+      id
   )
   UPDATE
     osm_base_w
