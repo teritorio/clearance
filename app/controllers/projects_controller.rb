@@ -21,7 +21,7 @@ class ProjectsController < ApplicationController
   private
 
   def prepare(project)
-    project[:user_groups] = (project[:user_groups] || []).transform_values { |user_group|
+    project[:user_groups] = (project[:user_groups] || {}).transform_values { |user_group|
       user_group.with(polygon: user_group.polygon&.gsub(%r{^\./}, "/api/0.1/#{project[:id]}/"))
     }
     project
