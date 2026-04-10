@@ -57,7 +57,7 @@ SELECT * FROM osm_base_changes_ids;
 SELECT * FROM osm_base_changes_flag;
 
 do $$ BEGIN
-  ASSERT 'LINESTRING(3 3,3 3)' = (SELECT ST_AsText(geom) FROM osm_base_w),
+  ASSERT 'POINT(3 3)' = (SELECT ST_AsText(geom) FROM osm_base_w),
     (SELECT ST_AsText(geom) FROM osm_base_w);
 END; $$ LANGUAGE plpgsql;
 
