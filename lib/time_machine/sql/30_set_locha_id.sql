@@ -62,72 +62,69 @@ ring_snap AS (
         id
 ),
 locha AS (
-    SELECT
-        objtype,
-        id,
-        version,
-        deleted,
-        geom,
-        snap_geom,
-        coalesce(
-            -- Equivalent to ST_ClusterWithinWin
-            ST_ClusterDBSCAN(geom, :distance, 0) OVER (PARTITION BY snap_geom),
-            -- Negative value to avoid colision with cluster id
-            -1 * row_number() OVER ()
-        ) AS locha_id
-    FROM
-        ring_snap
+    WITH RECURSIVE
+    locha AS ((
+        SELECT
+            NULL::bigint AS size,
+            0 AS it,
+            objtype,
+            id,
+            version,
+            deleted,
+            geom,
+            array[coalesce(
+                -- Equivalent to ST_ClusterWithinWin
+                ST_ClusterDBSCAN(geom, :distance, 0) OVER (PARTITION BY snap_geom),
+                -- Negative value to avoid colision with cluster id
+                -1 * row_number() OVER ()
+            )] AS locha_id
+        FROM
+            ring_snap
+    )
+    UNION ALL
+    (
+        WITH
+        locha AS (SELECT * FROM locha),
+        locha_size AS (SELECT locha_id, count(*) AS size FROM locha GROUP BY locha_id)
+        SELECT
+            locha_size.size,
+            it + 1 AS it,
+            objtype,
+            id,
+            version,
+            deleted,
+            geom,
+            -- Max 300 objects (think about nodes), max radius
+            locha_id || array[
+                ST_ClusterKMeans(geom, ceil(locha_size.size::float / 300)::integer, :distance * 20)
+                OVER (PARTITION BY locha_id)
+            ] AS locha_id
+            -- locha_id
+        FROM
+            locha
+            JOIN locha_size USING (locha_id)
+        WHERE
+            it < 5 AND
+            (it = 0 OR locha_size.size > 300)
+    ))
+    SELECT * FROM locha
 ),
-locha_size AS (
-    SELECT
-        snap_geom,
-        locha_id,
-        count(*) AS size
-    FROM
-        locha
-    GROUP BY
-        snap_geom,
-        locha_id
+locha_final_size AS (
+    SELECT locha_id, count(*) AS size FROM locha GROUP BY locha_id
 ),
 locha_split AS (
-    SELECT
-        objtype,
-        id,
-        version,
-        deleted,
-        -- Max 300 objects (think about nodes), max radius
-        ST_ClusterKMeans(geom, ceil(size::float / 300)::integer, :distance * 20) OVER (PARTITION BY locha.locha_id, locha.snap_geom) AS cluster_id,
-        locha_id
-    FROM
-        locha
-        JOIN locha_size USING (snap_geom, locha_id)
-    WHERE
-        size > 1
-    UNION ALL
-    SELECT
-        objtype,
-        id,
-        version,
-        deleted,
-        -- Max 300 objects (think about nodes), max radius
-        (SELECT sum(size) FROM locha_size) + row_number() OVER() AS cluster_id,
-        locha_id
-    FROM
-        locha
-        JOIN locha_size USING (snap_geom, locha_id)
-    WHERE
-        size = 1
+    SELECT locha_id, objtype, id, version, deleted, geom
+    FROM locha JOIN locha_final_size USING (locha_id)
+    WHERE (it > 0 AND locha_final_size.size <= 300) OR it >= 5
 ),
 g AS(
     SELECT
         locha_id,
-        cluster_id,
         (hashtext(string_agg(objtype || '|' || id || '|' || version || '|' || deleted, ',')))::integer AS hash_keys
     FROM
         locha_split
     GROUP BY
-        locha_id,
-        cluster_id
+        locha_id
 )
 UPDATE
     osm_changes
@@ -136,8 +133,7 @@ SET
 FROM
     locha_split
     JOIN g ON
-        g.locha_id = locha_split.locha_id AND
-        g.cluster_id = locha_split.cluster_id
+        g.locha_id = locha_split.locha_id
 WHERE
     osm_changes.objtype = locha_split.objtype AND
     osm_changes.id = locha_split.id
