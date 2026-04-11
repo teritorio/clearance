@@ -14,10 +14,10 @@ module Osm
     const :open, T::Boolean
     const :user, String
     const :uid, Integer
-    const :min_lat, T.nilable(T.any(Float, Integer))
-    const :min_lon, T.nilable(T.any(Float, Integer))
-    const :max_lat, T.nilable(T.any(Float, Integer))
-    const :max_lon, T.nilable(T.any(Float, Integer))
+    const :minlat, T.nilable(T.any(Float, Integer))
+    const :minlon, T.nilable(T.any(Float, Integer))
+    const :maxlat, T.nilable(T.any(Float, Integer))
+    const :maxlon, T.nilable(T.any(Float, Integer))
     const :comments_count, Integer
     const :changes_count, Integer
     const :created_count, T.nilable(Integer)
