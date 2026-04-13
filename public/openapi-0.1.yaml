@@ -29,9 +29,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Project'
+                type: object
+                required: [projects]
+                properties:
+                  admin:
+                    type: string
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
 
   /api/0.1/projects/{project}:
     parameters:
