@@ -149,10 +149,10 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
         jsonb_build_object(
             'type', 'FeatureCollection',
             'bbox', array[
-                ST_YMin(bbox),
                 ST_XMin(bbox),
-                ST_YMax(bbox),
-                ST_XMax(bbox)
+                ST_YMin(bbox),
+                ST_XMax(bbox),
+                ST_YMax(bbox)
             ],
             'features', features,
             'metadata', jsonb_build_object(
