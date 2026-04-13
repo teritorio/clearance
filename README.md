@@ -94,7 +94,7 @@ docker compose run --rm script ./bin/update.sh emergency
 
 Run update for all projects from cron every 2 minutes:
 ```
-*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-`date --iso`"
+*/2 * * * * cd clearance && bash -c "docker compose run --rm script ./bin/update.sh &>> log-$(date --iso)"
 ```
 
 Note 1: If you use only Geofabrik, set a daily cron, check the hour of Geofabrik diff release.
