@@ -10,7 +10,10 @@ require './lib/time_machine/configuration'
 class ProjectsController < ApplicationController
   def index
     Project.reload(true)
-    render json: Project.all.collect(&:attributes).collect{ |project| prepare(project) }
+    render json: {
+      admin: ENV['CLEARENCE_ADMIN_OSM_USERNAME']&.presence,
+      projects: Project.all.collect(&:attributes).collect{ |project| prepare(project) }
+    }.compact
   end
 
   def project
