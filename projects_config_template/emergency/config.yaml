@@ -111,6 +111,7 @@ validators:
     specific_osm_tags: duplicate.osm_tags.json
 
   # Hold hot changes
+  # Means your synchronised copie will lag by 1 day
   delay_hot:
     instance: Validators::Delayed
     before_delay: 86400 # 1 day
@@ -119,5 +120,5 @@ validators:
   # Let's accept cold changes
   accept_after_delay:
     instance: Validators::Delayed
-    after_delay: 86400 # 1O days
+    after_delay: 864000 # 10 days
     action_force: accept
