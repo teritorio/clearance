@@ -1,3 +1,5 @@
+SET search_path TO :"schema", public;
+
 CREATE OR REPLACE FUNCTION osm_base_w_check_fk() RETURNS trigger AS $$
 DECLARE
     r record;
@@ -19,11 +21,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER osm_base_w
+CREATE OR REPLACE TRIGGER osm_base_w
   AFTER INSERT OR UPDATE
   ON osm_base_w
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_w_check_fk();
+
+CREATE OR REPLACE FUNCTION osm_base_n_check_fk() RETURNS trigger AS $$
+DECLARE
+    r record;
+BEGIN
+    FOR r IN (
+    SELECT
+        id
+    FROM
+        osm_base_w
+    WHERE
+        OLD.id = ANY(nodes)
+    LIMIT 1
+    ) LOOP
+        RAISE 'Node % is still referenced by way %', OLD.id, r.id;
+    END LOOP;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER osm_base_n
+  AFTER DELETE
+  ON osm_base_n
+  FOR EACH ROW
+EXECUTE PROCEDURE osm_base_n_check_fk();
 
 -- CREATE OR REPLACE FUNCTION osm_base_r_check_fk() RETURNS trigger AS $$
 -- DECLARE
@@ -52,7 +79,7 @@ EXECUTE PROCEDURE osm_base_w_check_fk();
 -- END;
 -- $$ LANGUAGE plpgsql;
 
--- CREATE TRIGGER osm_base_r
+-- CREATE OR REPLACE TRIGGER osm_base_r
 --   AFTER INSERT OR UPDATE
 --   ON osm_base_r
 --   FOR EACH ROW

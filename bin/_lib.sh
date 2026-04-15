@@ -31,7 +31,7 @@ function read_config {
 
     local CONFIG=${PROJECTS_CONFIG_PATH}/${PROJECT}/config.yaml
     EXTRACT_URLS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
-    CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == 'true' || ''"`
+    CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == true || ''"`
 
     # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
 }
