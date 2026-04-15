@@ -2,9 +2,9 @@
 
 set -eu
 
-PROJECTS_CONFIG_PATH=${PROJECTS_CONFIG_PATH:-projects_config}
-PROJECTS_DATA_PATH=${PROJECTS_DATA_PATH:-projects_data}
-PROJECTS=${1:-$(find ${PROJECTS_CONFIG_PATH}/* -maxdepth 0 -type d | sed -e 's#${PROJECTS_CONFIG_PATH}##')}
+source $(dirname $0)/_lib.sh
+
+projects_path ${1:-} # Fills variables PROJECTS, PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
 
 for PROJECT in $PROJECTS; do
     PROJECT=$(basename "$PROJECT")

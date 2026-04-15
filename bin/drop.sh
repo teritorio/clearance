@@ -4,8 +4,9 @@ set -eu
 
 source $(dirname $0)/_lib.sh
 
+projects_path # Fills variables PROJECTS, PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
+
 PROJECT=$1
-project_path # Fills variables PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
 
 lock_or_wait $PROJECT
 

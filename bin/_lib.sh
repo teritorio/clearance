@@ -18,11 +18,12 @@ function lock_or_wait {
     exec 8>$LOCK;
 }
 
-function project_path {
+function projects_path {
     PROJECTS_CONFIG_PATH=${PROJECTS_CONFIG_PATH:-projects_config}
     PROJECTS_DATA_PATH=${PROJECTS_DATA_PATH:-projects_data}
+    PROJECTS=${1:-$(find ${PROJECTS_CONFIG_PATH}/* -maxdepth 0 -type d | sed -e 's#${PROJECTS_CONFIG_PATH}##')}
 
-    # Fills variables PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
+    # Fills variables PROJECTS, PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
 }
 
 function read_config {
