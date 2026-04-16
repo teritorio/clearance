@@ -65,6 +65,9 @@ function geofabrik_cookie {
                 --consumer-url "https://osm-internal.download.geofabrik.de/get_cookie" \
             && (echo "Got a cookie") || (echo "Fails to get geofabrik cookie, abort" && exit 1)
         fi
+    else
+        WGET_OPS=""
+        PYOSMIUM_OPS=""
     fi
 
     # Fills variables WGET_OPS and PYOSMIUM_OPS
