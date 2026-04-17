@@ -16,7 +16,7 @@ SELECT
     ST_Transform(ST_MakeValid(geom), :proj) AS geom,
     cibled
 FROM osm_changes_geom;
-CREATE INDEX osm_changes_geom_proj_idx_objtype_id ON osm_changes_geom_proj (objtype, id);
+ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
 
 CREATE TEMP TABLE osm_changes_geom_part AS
 SELECT
@@ -77,12 +77,12 @@ cibled_base AS (
             _.geom IS NULL
         )
 ),
--- Select related changes liked to cibled_base
+-- Select related changes linked to cibled_base
 cibled_changes_from_base AS (
     SELECT
         changes.*
     FROM
-        osm_changes_geom_ AS changes
+        osm_changes_geom_proj AS changes
         JOIN cibled_base AS base ON
             base.objtype = changes.objtype AND
             base.id = changes.id
@@ -92,7 +92,7 @@ cibled_changes AS (
     SELECT
         _.*
     FROM
-        osm_changes_geom_ AS _,
+        osm_changes_geom_proj AS _,
         clip
     WHERE
         (
@@ -102,23 +102,31 @@ cibled_changes AS (
             _.geom IS NULL
         )
 )
-SELECT DISTINCT ON (changes.objtype, changes.id)
-    *
-FROM (
-    SELECT
-        cibled_changes_from_base.*
-    FROM
-        cibled_changes_from_base
-    UNION ALL
-    SELECT
-        cibled_changes.*
-    FROM
-        cibled_changes
-) AS changes
-ORDER BY
-    changes.objtype,
-    changes.id
+SELECT
+    objtype,
+    id,
+    CASE WHEN base.nodes IS NOT NULL THEN cibled_changes.nodes || base.nodes ELSE cibled_changes.nodes END AS nodes,
+    CASE WHEN base.members IS NOT NULL THEN cibled_changes.members || base.members ELSE cibled_changes.members END AS members,
+    CASE WHEN base.geom IS NOT NULL THEN ST_Union(cibled_changes.geom, base.geom) ELSE cibled_changes.geom END AS geom
+FROM
+    cibled_changes
+    LEFT JOIN cibled_changes_from_base AS base USING (objtype, id)
+
+UNION ALL
+
+SELECT
+    objtype,
+    id,
+    base.nodes,
+    base.members,
+    base.geom
+FROM
+    cibled_changes_from_base AS base
+    LEFT JOIN cibled_changes USING (objtype, id)
+WHERE
+    cibled_changes.id IS NULL
 ;
+ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
 
 UPDATE osm_changes
 SET cibled = false
@@ -143,23 +151,7 @@ END; $$ LANGUAGE plpgsql;
 
 INSERT INTO cibled_changes
 WITH RECURSIVE a AS (
-    SELECT
-        objtype,
-        id,
-        version,
-        false AS deleted,
-        changeset_id,
-        created,
-        uid,
-        username,
-        tags,
-        lon,
-        lat,
-        nodes,
-        members,
-        ST_Transform(ST_MakeValid(geom), :proj) AS geom
-    FROM
-        cibled_changes
+    SELECT * FROM cibled_changes
     UNION
     (
         WITH b AS (
@@ -170,15 +162,6 @@ WITH RECURSIVE a AS (
         SELECT DISTINCT ON (ways.objtype, ways.id)
             ways.objtype,
             ways.id,
-            ways.version,
-            false AS deleted,
-            ways.changeset_id,
-            ways.created,
-            ways.uid,
-            ways.username,
-            ways.tags,
-            ways.lon,
-            ways.lat,
             ways.nodes,
             ways.members,
             ways.geom
@@ -198,15 +181,6 @@ WITH RECURSIVE a AS (
         SELECT DISTINCT ON (relations.objtype, relations.id)
             relations.objtype,
             relations.id,
-            relations.version,
-            false AS deleted,
-            relations.changeset_id,
-            relations.created,
-            relations.uid,
-            relations.username,
-            relations.tags,
-            relations.lon,
-            relations.lat,
             relations.nodes,
             relations.members,
             relations.geom
@@ -226,15 +200,6 @@ WITH RECURSIVE a AS (
         SELECT DISTINCT ON (relations.objtype, relations.id)
             relations.objtype,
             relations.id,
-            relations.version,
-            false AS deleted,
-            relations.changeset_id,
-            relations.created,
-            relations.uid,
-            relations.username,
-            relations.tags,
-            relations.lon,
-            relations.lat,
             relations.nodes,
             relations.members,
             relations.geom
