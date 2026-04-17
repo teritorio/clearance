@@ -154,11 +154,24 @@ WITH RECURSIVE a AS (
     SELECT * FROM cibled_changes
     UNION
     (
-        WITH b AS (
-            -- Recursive term should be referenced only once time
-            SELECT * FROM a
-        )
-        (
+        WITH
+        -- Recursive term should be referenced only once time
+        b AS (SELECT * FROM a),
+
+        by_geom AS (
+        SELECT DISTINCT ON (other.objtype, other.id)
+            other.objtype,
+            other.id,
+            other.nodes,
+            other.members,
+            other.geom
+        FROM
+            b AS cibled_changes
+            JOIN osm_changes_geom_ AS other ON
+                ST_DWithin(cibled_changes.geom, other.geom_part, :distance)
+        ),
+
+        nodes_to_ways AS (
         SELECT DISTINCT ON (ways.objtype, ways.id)
             ways.objtype,
             ways.id,
@@ -166,18 +179,64 @@ WITH RECURSIVE a AS (
             ways.members,
             ways.geom
         FROM
-            b AS cibled_changes
-            JOIN osm_changes_geom_ AS ways ON
+            b AS nodes
+            JOIN osm_changes_geom_proj AS ways ON
                 ways.objtype = 'w' AND
-                ST_DWithin(cibled_changes.geom, ways.geom_part, :distance)
+                nodes.id = ANY(ways.nodes)
         WHERE
-            cibled_changes.objtype = 'n'
-        ORDER BY
+            nodes.objtype = 'n'
+        ),
+        ways_to_nodes AS (
+        SELECT DISTINCT ON (nodes.objtype, nodes.id)
+            nodes.objtype,
+            nodes.id,
+            nodes.nodes,
+            nodes.members,
+            nodes.geom
+        FROM
+            b AS ways
+            JOIN osm_changes_geom_proj AS nodes ON
+                nodes.objtype = 'n' AND
+                nodes.id = ANY(ways.nodes)
+        WHERE
+            ways.objtype = 'w'
+        ),
+
+        relations_to_nodes AS (
+        SELECT DISTINCT ON (nodes.objtype, nodes.id)
+            nodes.objtype,
+            nodes.id,
+            nodes.nodes,
+            nodes.members,
+            nodes.geom
+        FROM
+            b AS relations
+            JOIN LATERAL jsonb_to_recordset(relations.members) AS relations_members(ref bigint, role text, type text) ON
+                relations_members.type = 'n'
+            JOIN osm_changes_geom_proj AS nodes ON
+                nodes.objtype = 'n' AND
+                nodes.id = relations_members.ref
+        WHERE
+            relations.objtype = 'r'
+        ),
+        relations_to_ways AS (
+        SELECT DISTINCT ON (ways.objtype, ways.id)
             ways.objtype,
-            ways.id
-
-        ) UNION (
-
+            ways.id,
+            ways.nodes,
+            ways.members,
+            ways.geom
+        FROM
+            b AS relations
+            JOIN LATERAL jsonb_to_recordset(relations.members) AS relations_members(ref bigint, role text, type text) ON
+                relations_members.type = 'w'
+            JOIN osm_changes_geom_proj AS ways ON
+                ways.objtype = 'w' AND
+                ways.id = relations_members.ref
+        WHERE
+            relations.objtype = 'r'
+        ),
+        nodes_or_ways_to_relations AS (
         SELECT DISTINCT ON (relations.objtype, relations.id)
             relations.objtype,
             relations.id,
@@ -185,35 +244,26 @@ WITH RECURSIVE a AS (
             relations.members,
             relations.geom
         FROM
-            b AS cibled_changes
-            JOIN osm_changes_geom_ AS relations ON
-                relations.objtype = 'r' AND
-                ST_DWithin(cibled_changes.geom, relations.geom_part, :distance)
+            b AS nodes_or_ways
+            JOIN osm_changes_geom_proj AS relations ON
+                relations.objtype = 'r'
+            JOIN LATERAL jsonb_to_recordset(relations.members) AS relations_members(ref bigint, role text, type text) ON
+                relations_members.type = nodes_or_ways.objtype AND
+                relations_members.ref = nodes_or_ways.id
         WHERE
-            cibled_changes.objtype = 'n'
-        ORDER BY
-            relations.objtype,
-            relations.id
-
-        ) UNION (
-
-        SELECT DISTINCT ON (relations.objtype, relations.id)
-            relations.objtype,
-            relations.id,
-            relations.nodes,
-            relations.members,
-            relations.geom
-        FROM
-            b AS cibled_changes
-            JOIN osm_changes_geom_ AS relations ON
-                relations.objtype = 'r' AND
-                ST_DWithin(cibled_changes.geom, relations.geom_part, :distance)
-        WHERE
-            cibled_changes.objtype = 'w'
-        ORDER BY
-            relations.objtype,
-            relations.id
+            nodes_or_ways.objtype IN ('n', 'w')
         )
+        SELECT * FROM by_geom
+        UNION ALL
+        SELECT * FROM nodes_to_ways
+        UNION ALL
+        SELECT * FROM ways_to_nodes
+        UNION ALL
+        SELECT * FROM relations_to_nodes
+        UNION ALL
+        SELECT * FROM relations_to_ways
+        UNION ALL
+        SELECT * FROM nodes_or_ways_to_relations
     )
 )
 SELECT DISTINCT ON (objtype, id)
