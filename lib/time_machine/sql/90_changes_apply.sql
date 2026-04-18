@@ -1,41 +1,6 @@
 -- DO $$ BEGIN
---     RAISE NOTICE '90_changes_apply - delete: %', (SELECT COUNT(*) FROM :changes_source WHERE deleted);
--- END; $$ LANGUAGE plpgsql;
-
-DELETE FROM
-    osm_base_r AS osm_base
-USING
-    :changes_source AS changes
-WHERE
-    changes.objtype = 'r' AND
-    changes.id = osm_base.id AND
-    changes.deleted
-;
-
-DELETE FROM
-    osm_base_w AS osm_base
-USING
-    :changes_source AS changes
-WHERE
-    changes.objtype = 'w' AND
-    changes.id = osm_base.id AND
-    changes.deleted
-;
-
-DELETE FROM
-    osm_base_n AS osm_base
-USING
-    :changes_source AS changes
-WHERE
-    changes.objtype = 'n' AND
-    changes.id = osm_base.id AND
-    changes.deleted
-;
-
--- DO $$ BEGIN
 --     RAISE NOTICE '90_changes_apply - to insert: %', (SELECT COUNT(*) FROM :changes_source WHERE NOT deleted);
 -- END; $$ LANGUAGE plpgsql;
-
 
 INSERT INTO
     osm_base_n
@@ -140,6 +105,44 @@ ORDER BY
 ON CONFLICT ON CONSTRAINT osm_changes_applyed_pkey
 DO NOTHING
 ;
+
+-- DO $$ BEGIN
+--     RAISE NOTICE '90_changes_apply - delete: %', (SELECT COUNT(*) FROM :changes_source WHERE deleted);
+-- END; $$ LANGUAGE plpgsql;
+
+DELETE FROM
+    osm_base_r AS osm_base
+USING
+    :changes_source AS changes
+WHERE
+    changes.objtype = 'r' AND
+    changes.id = osm_base.id AND
+    changes.deleted
+;
+
+DELETE FROM
+    osm_base_w AS osm_base
+USING
+    :changes_source AS changes
+WHERE
+    changes.objtype = 'w' AND
+    changes.id = osm_base.id AND
+    changes.deleted
+;
+
+DELETE FROM
+    osm_base_n AS osm_base
+USING
+    :changes_source AS changes
+WHERE
+    changes.objtype = 'n' AND
+    changes.id = osm_base.id AND
+    changes.deleted
+;
+
+-- DO $$ BEGIN
+--     RAISE NOTICE '90_changes_apply - prune changes: %', (SELECT COUNT(*) FROM :changes_source);
+-- END; $$ LANGUAGE plpgsql;
 
 DELETE FROM
     osm_changes AS changes
