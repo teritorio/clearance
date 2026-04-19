@@ -70,11 +70,11 @@ cibled_base AS (
         osm_base AS _,
         clip
     WHERE
+        (:osm_filter_tags) AND
         (
-            (:osm_filter_tags) AND
-            (clip.geom IS NULL OR (clip.geom && _.geom AND ST_Intersects(clip.geom, ST_MakeValid(_.geom))))
-        ) OR (
             _.geom IS NULL
+            OR
+            (clip.geom IS NULL OR (clip.geom && _.geom AND ST_Intersects(clip.geom, ST_MakeValid(_.geom))))
         )
 ),
 -- Select related changes linked to cibled_base
@@ -95,11 +95,11 @@ cibled_changes AS (
         osm_changes_geom_proj AS _,
         clip
     WHERE
+        (:osm_filter_tags) AND
         (
-            (:osm_filter_tags) AND
-            (clip.geom IS NULL OR ST_Intersects(clip.geom_proj, _.geom))
-        ) OR (
             _.geom IS NULL
+            OR
+            (clip.geom IS NULL OR ST_Intersects(clip.geom_proj, _.geom))
         )
 )
 SELECT
