@@ -44,8 +44,6 @@ rings AS (
         ) AS geom
     FROM
         objects
-    WHERE
-        geom IS NOT NULL
 ),
 ring_snap AS (
     SELECT
@@ -96,10 +94,14 @@ locha AS (
             geom,
             -- Max 300 objects (think about nodes), max radius
             locha_id || array[
-                ST_ClusterKMeans(geom, ceil(locha_size.size::float / 300)::integer, :distance * 20)
-                OVER (PARTITION BY locha_id)
+                coalesce(
+                    nullif(
+                        ST_ClusterKMeans(geom, ceil(locha_size.size::float / 300)::integer, :distance * 20)
+                            OVER (PARTITION BY locha_id),
+                        -1),
+                    -1 * row_number() OVER (PARTITION BY locha_id)
+                )
             ] AS locha_id
-            -- locha_id
         FROM
             locha
             JOIN locha_size USING (locha_id)
