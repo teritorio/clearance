@@ -73,13 +73,14 @@ module Validation
       [local_srid, locha_cluster_distance],
     ) { |result|
       result.each{ |osm_change_object|
-        if !last_locha_id.nil? && last_locha_id != osm_change_object['locha_id']
+        locha_id = Integer(osm_change_object['locha_id'])
+        if !last_locha_id.nil? && last_locha_id != locha_id
           block.call(results)
           results = []
         end
 
         results << convert_locha_item(osm_change_object)
-        last_locha_id = osm_change_object['locha_id']
+        last_locha_id = locha_id
       }
 
       if !results.empty?
