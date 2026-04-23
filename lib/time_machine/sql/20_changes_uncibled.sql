@@ -187,7 +187,7 @@ WITH RECURSIVE a AS (
         b AS (SELECT * FROM a),
 
         by_geom AS (
-        SELECT DISTINCT ON (other.objtype, other.id)
+        SELECT
             other.objtype,
             other.id,
             other.nodes,
