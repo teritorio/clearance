@@ -72,16 +72,17 @@ FROM
 CREATE INDEX osm_changes_geom_idx_geom_part ON osm_changes_geom_ USING GIST (geom_part);
 DROP TABLE osm_changes_geom_part CASCADE;
 
-DROP TABLE IF EXISTS cibled_changes;
-CREATE TEMP TABLE cibled_changes AS
-WITH
-clip AS (
+
+CREATE TEMP TABLE clip AS
     SELECT
         ST_Union(ST_GeomFromGeoJSON(geom)) AS geom,
         ST_MakeValid(ST_Transform(ST_Union(ST_GeomFromGeoJSON(geom)), :proj)) AS geom_proj
     FROM
         json_array_elements_text(:polygon::json) AS t(geom)
-),
+;
+
+CREATE TEMP TABLE cibled_changes_from_base AS
+WITH
 -- Select only objects of interest in the area from osm_base
 cibled_base AS (
     SELECT
@@ -97,9 +98,8 @@ cibled_base AS (
             OR
             (clip.geom IS NULL OR (clip.geom && _.geom AND ST_Intersects(clip.geom, ST_MakeValid(_.geom))))
         )
-),
+)
 -- Select related changes linked to cibled_base
-cibled_changes_from_base AS (
     SELECT
         changes.*
     FROM
@@ -107,7 +107,11 @@ cibled_changes_from_base AS (
         JOIN cibled_base AS base ON
             base.objtype = changes.objtype AND
             base.id = changes.id
-),
+;
+CREATE INDEX cibled_changes_from_base_idx ON cibled_changes_from_base (objtype, id);
+
+CREATE TEMP TABLE cibled_changes AS
+WITH
 -- Select only object of interest in the area from osm_changes
 cibled_changes AS (
     SELECT
@@ -148,6 +152,9 @@ WHERE
     cibled_changes.id IS NULL
 ;
 ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
+
+DROP TABLE IF EXISTS clip CASCADE;
+DROP TABLE IF EXISTS cibled_changes_from_base CASCADE;
 
 UPDATE osm_changes
 SET cibled = false
