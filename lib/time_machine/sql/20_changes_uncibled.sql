@@ -172,10 +172,13 @@ WITH RECURSIVE a AS (
             b AS cibled_changes
             JOIN osm_changes_geom_ AS other ON
                 ST_DWithin(cibled_changes.geom, other.geom_part, :distance)
+        ORDER BY
+            other.objtype,
+            other.id
         ),
 
         nodes_to_ways AS (
-        SELECT DISTINCT ON (ways.objtype, ways.id)
+        SELECT
             ways.objtype,
             ways.id,
             ways.nodes,
@@ -190,7 +193,7 @@ WITH RECURSIVE a AS (
             nodes.objtype = 'n'
         ),
         ways_to_nodes AS (
-        SELECT DISTINCT ON (nodes.objtype, nodes.id)
+        SELECT
             nodes.objtype,
             nodes.id,
             nodes.nodes,
@@ -206,7 +209,7 @@ WITH RECURSIVE a AS (
         ),
 
         relations_to_nodes AS (
-        SELECT DISTINCT ON (nodes.objtype, nodes.id)
+        SELECT
             nodes.objtype,
             nodes.id,
             nodes.nodes,
@@ -223,7 +226,7 @@ WITH RECURSIVE a AS (
             relations.objtype = 'r'
         ),
         relations_to_ways AS (
-        SELECT DISTINCT ON (ways.objtype, ways.id)
+        SELECT
             ways.objtype,
             ways.id,
             ways.nodes,
@@ -240,7 +243,7 @@ WITH RECURSIVE a AS (
             relations.objtype = 'r'
         ),
         nodes_or_ways_to_relations AS (
-        SELECT DISTINCT ON (relations.objtype, relations.id)
+        SELECT
             relations.objtype,
             relations.id,
             relations.nodes,
