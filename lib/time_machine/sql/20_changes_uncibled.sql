@@ -46,7 +46,7 @@ FROM
 ;
 CREATE INDEX osm_changes_geom_part_idx_geom ON osm_changes_geom_part USING GIST (geom_part);
 
-CREATE TEMP VIEW osm_changes_geom_ AS
+CREATE TEMP TABLE osm_changes_geom_ AS
 SELECT
     objtype,
     id,
@@ -69,6 +69,8 @@ FROM
     osm_changes_geom_proj
     JOIN osm_changes_geom_part USING (objtype, id)
 ;
+CREATE INDEX osm_changes_geom_idx_geom_part ON osm_changes_geom_ USING GIST (geom_part);
+DROP TABLE osm_changes_geom_part CASCADE;
 
 DROP TABLE IF EXISTS cibled_changes;
 CREATE TEMP TABLE cibled_changes AS
@@ -187,6 +189,7 @@ WITH RECURSIVE a AS (
         FROM
             b AS cibled_changes
             JOIN osm_changes_geom_ AS other ON
+                NOT (other.objtype = cibled_changes.objtype AND other.id = cibled_changes.id) AND
                 ST_DWithin(cibled_changes.geom, other.geom_part, :distance)
         ORDER BY
             other.objtype,
@@ -303,7 +306,7 @@ ON CONFLICT DO NOTHING
 ;
 
 DROP TABLE osm_changes_geom_proj CASCADE;
-DROP TABLE osm_changes_geom_part CASCADE;
+DROP TABLE osm_changes_geom_ CASCADE;
 DROP TABLE osm_changes_members;
 
 DO $$ BEGIN
