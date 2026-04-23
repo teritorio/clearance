@@ -18,6 +18,7 @@ SELECT
     locha_id
 FROM osm_changes_geom;
 ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
+CREATE INDEX osm_changes_geom_proj_idx_nodes ON osm_changes_geom_proj USING GIN (nodes);
 
 CREATE TEMP TABLE osm_changes_geom_part AS
 SELECT
@@ -184,7 +185,7 @@ WITH RECURSIVE a AS (
             b AS nodes
             JOIN osm_changes_geom_proj AS ways ON
                 ways.objtype = 'w' AND
-                nodes.id = ANY(ways.nodes)
+                ways.nodes @> ARRAY[nodes.id]
         WHERE
             nodes.objtype = 'n'
         ),
@@ -199,7 +200,7 @@ WITH RECURSIVE a AS (
             b AS ways
             JOIN osm_changes_geom_proj AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = ANY(ways.nodes)
+                ways.nodes @> ARRAY[nodes.id]
         WHERE
             ways.objtype = 'w'
         ),
