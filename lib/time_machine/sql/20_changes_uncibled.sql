@@ -20,6 +20,22 @@ FROM osm_changes_geom;
 ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
 CREATE INDEX osm_changes_geom_proj_idx_nodes ON osm_changes_geom_proj USING GIN (nodes);
 
+CREATE TEMP TABLE osm_changes_members AS
+SELECT
+    relations.id AS relation_id,
+    m.ref,
+    m.type
+FROM
+    osm_changes_geom_proj AS relations
+    JOIN LATERAL jsonb_to_recordset(relations.members) AS m(ref bigint, role text, type text) ON true
+WHERE
+    relations.objtype = 'r'
+;
+CREATE INDEX osm_changes_members_idx ON osm_changes_members (type, ref) WHERE type IN ('n', 'w');
+CREATE INDEX osm_changes_members_relation_idx_n ON osm_changes_members (relation_id) WHERE type = 'n';
+CREATE INDEX osm_changes_members_relation_idx_w ON osm_changes_members (relation_id) WHERE type = 'w';
+
+
 CREATE TEMP TABLE osm_changes_geom_part AS
 SELECT
     objtype,
@@ -217,11 +233,12 @@ WITH RECURSIVE a AS (
             nodes.geom
         FROM
             b AS relations
-            JOIN LATERAL jsonb_to_recordset(relations.members) AS relations_members(ref bigint, role text, type text) ON
-                relations_members.type = 'n'
+            JOIN osm_changes_members AS m ON
+                m.relation_id = relations.id AND
+                m.type = 'n'
             JOIN osm_changes_geom_proj AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = relations_members.ref
+                nodes.id = m.ref
         WHERE
             relations.objtype = 'r'
         ),
@@ -234,11 +251,12 @@ WITH RECURSIVE a AS (
             ways.geom
         FROM
             b AS relations
-            JOIN LATERAL jsonb_to_recordset(relations.members) AS relations_members(ref bigint, role text, type text) ON
-                relations_members.type = 'w'
+            JOIN osm_changes_members AS m ON
+                m.relation_id = relations.id AND
+                m.type = 'w'
             JOIN osm_changes_geom_proj AS ways ON
                 ways.objtype = 'w' AND
-                ways.id = relations_members.ref
+                ways.id = m.ref
         WHERE
             relations.objtype = 'r'
         ),
@@ -251,11 +269,13 @@ WITH RECURSIVE a AS (
             relations.geom
         FROM
             b AS nodes_or_ways
+            JOIN osm_changes_members AS m ON
+                m.type IN ('n', 'w') AND
+                m.type = nodes_or_ways.objtype AND
+                m.ref = nodes_or_ways.id
             JOIN osm_changes_geom_proj AS relations ON
-                relations.objtype = 'r'
-            JOIN LATERAL jsonb_to_recordset(relations.members) AS relations_members(ref bigint, role text, type text) ON
-                relations_members.type = nodes_or_ways.objtype AND
-                relations_members.ref = nodes_or_ways.id
+                relations.objtype = 'r' AND
+                relations.id = m.relation_id
         WHERE
             nodes_or_ways.objtype IN ('n', 'w')
         )
@@ -284,6 +304,7 @@ ON CONFLICT DO NOTHING
 
 DROP TABLE osm_changes_geom_proj CASCADE;
 DROP TABLE osm_changes_geom_part CASCADE;
+DROP TABLE osm_changes_members;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - cibled_changes & transitive: %', (SELECT COUNT(*) FROM cibled_changes);
