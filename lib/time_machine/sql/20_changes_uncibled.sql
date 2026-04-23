@@ -110,10 +110,8 @@ cibled_base AS (
 ;
 CREATE INDEX cibled_changes_from_base_idx ON cibled_changes_from_base (objtype, id);
 
-CREATE TEMP TABLE cibled_changes AS
-WITH
+CREATE TEMP TABLE cibled_changes_0 AS
 -- Select only object of interest in the area from osm_changes
-cibled_changes AS (
     SELECT
         _.*
     FROM
@@ -126,7 +124,10 @@ cibled_changes AS (
             OR
             (clip.geom IS NULL OR ST_Intersects(clip.geom_proj, _.geom))
         )
-)
+;
+CREATE INDEX cibled_changes_0_idx ON cibled_changes_0 (objtype, id);
+
+CREATE TEMP TABLE cibled_changes AS
 SELECT
     objtype,
     id,
@@ -134,7 +135,7 @@ SELECT
     CASE WHEN base.members IS NOT NULL THEN cibled_changes.members || base.members ELSE cibled_changes.members END AS members,
     CASE WHEN base.geom IS NOT NULL THEN ST_Union(cibled_changes.geom, base.geom) ELSE cibled_changes.geom END AS geom
 FROM
-    cibled_changes
+    cibled_changes_0 AS cibled_changes
     LEFT JOIN cibled_changes_from_base AS base USING (objtype, id)
 
 UNION ALL
@@ -147,7 +148,7 @@ SELECT
     base.geom
 FROM
     cibled_changes_from_base AS base
-    LEFT JOIN cibled_changes USING (objtype, id)
+    LEFT JOIN cibled_changes_0 AS cibled_changes USING (objtype, id)
 WHERE
     cibled_changes.id IS NULL
 ;
@@ -155,6 +156,7 @@ ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
 
 DROP TABLE IF EXISTS clip CASCADE;
 DROP TABLE IF EXISTS cibled_changes_from_base CASCADE;
+DROP TABLE IF EXISTS cibled_changes_0 CASCADE;
 
 UPDATE osm_changes
 SET cibled = false
