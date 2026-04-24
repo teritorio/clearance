@@ -92,11 +92,11 @@ locha AS (
             version,
             deleted,
             geom,
-            -- Max 300 objects (think about nodes), max radius
+            -- Max 200 objects (think about nodes), max radius
             locha_id || array[
                 coalesce(
                     nullif(
-                        ST_ClusterKMeans(geom, ceil(locha_size.size::float / 300)::integer, :distance * 20)
+                        ST_ClusterKMeans(geom, ceil(locha_size.size::float / 200)::integer, :distance * 20)
                             OVER (PARTITION BY locha_id),
                         -1),
                     -1 * row_number() OVER (PARTITION BY locha_id)
@@ -107,7 +107,7 @@ locha AS (
             JOIN locha_size USING (locha_id)
         WHERE
             it < 5 AND
-            (it = 0 OR locha_size.size > 300)
+            (it = 0 OR locha_size.size > 200)
     ))
     SELECT * FROM locha
 ),
@@ -117,7 +117,7 @@ locha_final_size AS (
 locha_split AS (
     SELECT locha_id, objtype, id, version, deleted, geom
     FROM locha JOIN locha_final_size USING (locha_id)
-    WHERE (it > 0 AND locha_final_size.size <= 300) OR it >= 5
+    WHERE (it > 0 AND locha_final_size.size <= 200) OR it >= 5
 ),
 g AS(
     SELECT
