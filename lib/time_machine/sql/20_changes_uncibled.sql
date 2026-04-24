@@ -121,9 +121,9 @@ WHERE
 ;
 ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
 
-DROP TABLE IF EXISTS clip CASCADE;
-DROP TABLE IF EXISTS cibled_changes_from_base CASCADE;
-DROP TABLE IF EXISTS cibled_changes_0 CASCADE;
+DROP TABLE clip CASCADE;
+DROP TABLE cibled_changes_from_base CASCADE;
+DROP TABLE cibled_changes_0 CASCADE;
 
 UPDATE osm_changes
 SET cibled = false
@@ -287,14 +287,13 @@ ON CONFLICT DO NOTHING
 ;
 
 DROP TABLE osm_changes_geom_proj CASCADE;
-DROP TABLE osm_changes_geom_ CASCADE;
-DROP TABLE osm_changes_members;
+DROP TABLE osm_changes_members CASCADE;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - cibled_changes & transitive: %', (SELECT COUNT(*) FROM cibled_changes);
 END; $$ LANGUAGE plpgsql;
 
---- Select only changes not related to objects and area of interest, and not transitively related to them
+-- Select only changes not related to objects and area of interest, and not transitively related to them
 DROP TABLE IF EXISTS changes_update;
 CREATE TEMP TABLE changes_update AS
 SELECT DISTINCT ON (osm_changes.id, osm_changes.objtype)
