@@ -245,27 +245,14 @@ module Validation
     conn.exec("
       INSERT INTO changes_update
       SELECT
-        before_object->>'objtype' AS objtype,
-        (before_object->>'id')::bigint AS id,
-        (before_object->>'version')::integer AS version,
-        (before_object->>'deleted')::boolean AS deleted
+        objtype,
+        id,
+        version,
+        deleted
       FROM
-        validations_log
+        osm_changes
       WHERE
-        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[]) AND
-        before_object IS NOT NULL
-      UNION ALL
-      SELECT
-        after_object->>'objtype' AS objtype,
-        (after_object->>'id')::bigint AS id,
-        (after_object->>'version')::integer AS version,
-        (after_object->>'deleted')::boolean AS deleted
-      FROM
-        validations_log
-      WHERE
-        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[]) AND
-        after_object IS NOT NULL
-
+        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[])
       ON CONFLICT (objtype, id, version, deleted)
       DO NOTHING
     ", [
@@ -283,30 +270,8 @@ module Validation
     ).void
   }
   def self.apply_changes(conn, changes)
-    sql_create_table = "
-      CREATE TEMP TABLE changes_update (
-        objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
-        id BIGINT NOT NULL,
-        version INTEGER NOT NULL,
-        deleted BOOLEAN NOT NULL,
-        PRIMARY KEY (objtype, id)
-      )
-    "
-    r = conn.exec(sql_create_table)
-    puts "  changes_update #{r.inspect}"
-
-    conn.prepare('changes_update_insert', 'INSERT INTO changes_update VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING')
-    i = 0
-    changes.each{ |change|
-      after_objects = change.after_objects
-      if !after_objects.nil? # If after_objects is nil, it will be accepted or rejected by an other part of the same cluster
-        i += 1
-        conn.exec_prepared('changes_update_insert', [after_objects.objtype, after_objects.id, after_objects.version, after_objects.deleted])
-      end
-    }
-    puts "Apply on #{i} changes"
-
-    validate_changes(conn)
+    locha_ids = changes.collect(&:locha_id).uniq
+    apply_lochas_ids(conn, locha_ids, nil)
   end
 
   sig {
