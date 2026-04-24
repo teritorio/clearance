@@ -37,8 +37,8 @@ BEGIN
     FROM
         osm_base_w
     WHERE
-        OLD.id = ANY(nodes)
-    LIMIT 1
+        nodes && ARRAY[OLD.id]
+    -- LIMIT 1 -- No limit to use index
     ) LOOP
         RAISE 'Node % is still referenced by way %', OLD.id, r.id;
     END LOOP;
