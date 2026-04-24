@@ -1,26 +1,29 @@
+-- Match grid cells to pairs of integers using Cantor pairing
+DROP FUNCTION IF EXISTS cantor_pairing CASCADE;
+CREATE FUNCTION cantor_pairing(x bigint, y bigint) RETURNS bigint AS $$
+DECLARE
+    a bigint := CASE WHEN x >= 0 THEN 2*x ELSE -2*x - 1 END;
+    b bigint := CASE WHEN y >= 0 THEN 2*y ELSE -2*y - 1 END;
+BEGIN
+  RETURN (a + b) * (a + b + 1) / 2 + b;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
 CREATE TEMP TABLE osm_changes_geom_proj AS
+WITH
+a AS (SELECT objtype, id, version, deleted, tags, nodes, members, locha_id, ST_Transform(ST_MakeValid(geom), :proj) AS geom FROM osm_changes_geom),
+b AS (SELECT objtype, id, version, deleted, tags, nodes, members, locha_id, geom, ST_SnapToGrid(ST_PointOnSurface(geom), :distance * 100) AS snap_geom FROM a),
+c AS (SELECT objtype, id, version, deleted, tags, nodes, members, locha_id, cantor_pairing(ST_X(snap_geom)::bigint, ST_Y(snap_geom)::bigint) AS snap_grid_id, geom FROM b)
 SELECT
-    objtype,
-    id,
-    version,
-    deleted,
-    changeset_id,
-    created,
-    uid,
-    username,
-    tags,
-    lon,
-    lat,
-    nodes,
-    members,
-    ST_Transform(ST_MakeValid(geom), :proj) AS geom,
-    ST_ClusterWithinWin(ST_Transform(ST_MakeValid(geom), :proj), :distance) OVER () AS cluster_id,
-    cibled,
-    locha_id
-FROM osm_changes_geom;
+    objtype, id, version, deleted, tags, nodes, members, locha_id,
+    snap_grid_id,
+    ST_ClusterWithinWin(geom, :distance) OVER (PARTITION BY snap_grid_id) AS cluster_id,
+    geom
+FROM c
+;
 ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
 CREATE INDEX osm_changes_geom_proj_idx_nodes ON osm_changes_geom_proj USING GIN (nodes);
-CREATE INDEX osm_changes_geom_proj_idx_cluster_id ON osm_changes_geom_proj (cluster_id);
+CREATE INDEX osm_changes_geom_proj_idx_snap_grid_id_cluster_id ON osm_changes_geom_proj (snap_grid_id, cluster_id);
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - reproject and cluster changes: %', (SELECT COUNT(*) FROM osm_changes_geom_proj);
@@ -115,7 +118,8 @@ CREATE TEMP TABLE cibled_changes AS
 SELECT
     objtype,
     id,
-    CASE WHEN base.cluster_id IS NOT NULL THEN cibled_changes.cluster_id ELSE NULL END AS cluster_id,
+    cibled_changes.snap_grid_id,
+    cibled_changes.cluster_id,
     CASE WHEN base.nodes IS NOT NULL THEN cibled_changes.nodes || base.nodes ELSE cibled_changes.nodes END AS nodes,
     CASE WHEN base.members IS NOT NULL THEN cibled_changes.members || base.members ELSE cibled_changes.members END AS members,
     CASE WHEN base.geom IS NOT NULL THEN ST_Union(cibled_changes.geom, base.geom) ELSE cibled_changes.geom END AS geom
@@ -128,6 +132,7 @@ UNION ALL
 SELECT
     objtype,
     id,
+    base.snap_grid_id,
     base.cluster_id,
     base.nodes,
     base.members,
@@ -183,13 +188,15 @@ WITH RECURSIVE a AS (
         SELECT
             other.objtype,
             other.id,
+            other.snap_grid_id,
             other.cluster_id,
             other.nodes,
             other.members,
             other.geom
         FROM
-            (SELECT DISTINCT cluster_id FROM b) AS cibled_changes
+            (SELECT snap_grid_id, cluster_id FROM b GROUP BY snap_grid_id, cluster_id) AS cibled_changes
             JOIN osm_changes_geom_proj AS other ON
+                other.snap_grid_id = cibled_changes.snap_grid_id AND
                 other.cluster_id = cibled_changes.cluster_id
         ORDER BY
             other.objtype,
@@ -200,6 +207,7 @@ WITH RECURSIVE a AS (
         SELECT
             ways.objtype,
             ways.id,
+            ways.snap_grid_id,
             ways.cluster_id,
             ways.nodes,
             ways.members,
@@ -216,6 +224,7 @@ WITH RECURSIVE a AS (
         SELECT
             nodes.objtype,
             nodes.id,
+            nodes.snap_grid_id,
             nodes.cluster_id,
             nodes.nodes,
             nodes.members,
@@ -233,6 +242,7 @@ WITH RECURSIVE a AS (
         SELECT
             nodes.objtype,
             nodes.id,
+            nodes.snap_grid_id,
             nodes.cluster_id,
             nodes.nodes,
             nodes.members,
@@ -252,6 +262,7 @@ WITH RECURSIVE a AS (
         SELECT
             ways.objtype,
             ways.id,
+            ways.snap_grid_id,
             ways.cluster_id,
             ways.nodes,
             ways.members,
@@ -271,6 +282,7 @@ WITH RECURSIVE a AS (
         SELECT
             relations.objtype,
             relations.id,
+            relations.snap_grid_id,
             relations.cluster_id,
             relations.nodes,
             relations.members,
