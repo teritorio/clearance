@@ -22,6 +22,11 @@ ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
 CREATE INDEX osm_changes_geom_proj_idx_nodes ON osm_changes_geom_proj USING GIN (nodes);
 CREATE INDEX osm_changes_geom_proj_idx_cluster_id ON osm_changes_geom_proj (cluster_id);
 
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - reproject and cluster changes: %', (SELECT COUNT(*) FROM osm_changes_geom_proj);
+END; $$ LANGUAGE plpgsql;
+
+
 CREATE TEMP TABLE osm_changes_members AS
 SELECT
     relations.id AS relation_id,
@@ -36,6 +41,10 @@ WHERE
 CREATE INDEX osm_changes_members_idx ON osm_changes_members (type, ref) WHERE type IN ('n', 'w');
 CREATE INDEX osm_changes_members_relation_idx_n ON osm_changes_members (relation_id) WHERE type = 'n';
 CREATE INDEX osm_changes_members_relation_idx_w ON osm_changes_members (relation_id) WHERE type = 'w';
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - index relation members: %', (SELECT COUNT(*) FROM osm_changes_members);
+END; $$ LANGUAGE plpgsql;
 
 
 CREATE TEMP TABLE clip AS
@@ -75,6 +84,11 @@ cibled_base AS (
 ;
 CREATE INDEX cibled_changes_from_base_idx ON cibled_changes_from_base (objtype, id);
 
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - fetch cibled changes from base: %', (SELECT COUNT(*) FROM cibled_changes_from_base);
+END; $$ LANGUAGE plpgsql;
+
+
 CREATE TEMP TABLE cibled_changes_0 AS
 -- Select only object of interest in the area from osm_changes
     SELECT
@@ -91,6 +105,11 @@ CREATE TEMP TABLE cibled_changes_0 AS
         )
 ;
 CREATE INDEX cibled_changes_0_idx ON cibled_changes_0 (objtype, id);
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - fetch cibled changes: %', (SELECT COUNT(*) FROM cibled_changes_0);
+END; $$ LANGUAGE plpgsql;
+
 
 CREATE TEMP TABLE cibled_changes AS
 SELECT
@@ -124,6 +143,11 @@ ALTER TABLE cibled_changes ADD PRIMARY KEY (objtype, id);
 DROP TABLE clip CASCADE;
 DROP TABLE cibled_changes_from_base CASCADE;
 DROP TABLE cibled_changes_0 CASCADE;
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - cibled changes union: %', (SELECT COUNT(*) FROM cibled_changes);
+END; $$ LANGUAGE plpgsql;
+
 
 UPDATE osm_changes
 SET cibled = false
