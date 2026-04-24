@@ -14,11 +14,13 @@ SELECT
     nodes,
     members,
     ST_Transform(ST_MakeValid(geom), :proj) AS geom,
+    ST_ClusterWithinWin(ST_Transform(ST_MakeValid(geom), :proj), :distance) OVER () AS cluster_id,
     cibled,
     locha_id
 FROM osm_changes_geom;
 ALTER TABLE osm_changes_geom_proj ADD PRIMARY KEY (objtype, id);
 CREATE INDEX osm_changes_geom_proj_idx_nodes ON osm_changes_geom_proj USING GIN (nodes);
+CREATE INDEX osm_changes_geom_proj_idx_cluster_id ON osm_changes_geom_proj (cluster_id);
 
 CREATE TEMP TABLE osm_changes_members AS
 SELECT
@@ -34,43 +36,6 @@ WHERE
 CREATE INDEX osm_changes_members_idx ON osm_changes_members (type, ref) WHERE type IN ('n', 'w');
 CREATE INDEX osm_changes_members_relation_idx_n ON osm_changes_members (relation_id) WHERE type = 'n';
 CREATE INDEX osm_changes_members_relation_idx_w ON osm_changes_members (relation_id) WHERE type = 'w';
-
-
-CREATE TEMP TABLE osm_changes_geom_part AS
-SELECT
-    objtype,
-    id,
-    ST_Subdivide(geom, 1000) AS geom_part
-FROM
-    osm_changes_geom_proj
-;
-CREATE INDEX osm_changes_geom_part_idx_geom ON osm_changes_geom_part USING GIST (geom_part);
-
-CREATE TEMP TABLE osm_changes_geom_ AS
-SELECT
-    objtype,
-    id,
-    version,
-    deleted,
-    changeset_id,
-    created,
-    uid,
-    username,
-    tags,
-    lon,
-    lat,
-    nodes,
-    members,
-    geom,
-    geom_part,
-    cibled,
-    locha_id
-FROM
-    osm_changes_geom_proj
-    JOIN osm_changes_geom_part USING (objtype, id)
-;
-CREATE INDEX osm_changes_geom_idx_geom_part ON osm_changes_geom_ USING GIST (geom_part);
-DROP TABLE osm_changes_geom_part CASCADE;
 
 
 CREATE TEMP TABLE clip AS
@@ -131,6 +96,7 @@ CREATE TEMP TABLE cibled_changes AS
 SELECT
     objtype,
     id,
+    CASE WHEN base.cluster_id IS NOT NULL THEN cibled_changes.cluster_id ELSE NULL END AS cluster_id,
     CASE WHEN base.nodes IS NOT NULL THEN cibled_changes.nodes || base.nodes ELSE cibled_changes.nodes END AS nodes,
     CASE WHEN base.members IS NOT NULL THEN cibled_changes.members || base.members ELSE cibled_changes.members END AS members,
     CASE WHEN base.geom IS NOT NULL THEN ST_Union(cibled_changes.geom, base.geom) ELSE cibled_changes.geom END AS geom
@@ -143,6 +109,7 @@ UNION ALL
 SELECT
     objtype,
     id,
+    base.cluster_id,
     base.nodes,
     base.members,
     base.geom
@@ -192,14 +159,14 @@ WITH RECURSIVE a AS (
         SELECT
             other.objtype,
             other.id,
+            other.cluster_id,
             other.nodes,
             other.members,
             other.geom
         FROM
-            b AS cibled_changes
-            JOIN osm_changes_geom_ AS other ON
-                NOT (other.objtype = cibled_changes.objtype AND other.id = cibled_changes.id) AND
-                ST_DWithin(cibled_changes.geom, other.geom_part, :distance)
+            (SELECT DISTINCT cluster_id FROM b) AS cibled_changes
+            JOIN osm_changes_geom_proj AS other ON
+                other.cluster_id = cibled_changes.cluster_id
         ORDER BY
             other.objtype,
             other.id
@@ -209,6 +176,7 @@ WITH RECURSIVE a AS (
         SELECT
             ways.objtype,
             ways.id,
+            ways.cluster_id,
             ways.nodes,
             ways.members,
             ways.geom
@@ -224,6 +192,7 @@ WITH RECURSIVE a AS (
         SELECT
             nodes.objtype,
             nodes.id,
+            nodes.cluster_id,
             nodes.nodes,
             nodes.members,
             nodes.geom
@@ -240,6 +209,7 @@ WITH RECURSIVE a AS (
         SELECT
             nodes.objtype,
             nodes.id,
+            nodes.cluster_id,
             nodes.nodes,
             nodes.members,
             nodes.geom
@@ -258,6 +228,7 @@ WITH RECURSIVE a AS (
         SELECT
             ways.objtype,
             ways.id,
+            ways.cluster_id,
             ways.nodes,
             ways.members,
             ways.geom
@@ -276,6 +247,7 @@ WITH RECURSIVE a AS (
         SELECT
             relations.objtype,
             relations.id,
+            relations.cluster_id,
             relations.nodes,
             relations.members,
             relations.geom
