@@ -56,7 +56,7 @@ INSERT INTO osm_changes VALUES
 COMMIT;
 
 -- Base in tags, but changes not
-\set osm_filter_tags 'tags?\'a\''
+\set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
@@ -65,7 +65,7 @@ do $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- Base not in tags, but change yes
-\set osm_filter_tags 'tags?\'b\''
+\set osm_filter_tags '_.tags?\'b\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
@@ -74,7 +74,7 @@ do $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- All not in tags
-\set osm_filter_tags 'tags?\'z\''
+\set osm_filter_tags '_.tags?\'z\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
@@ -83,7 +83,7 @@ do $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- All in tags
-\set osm_filter_tags 'tags?\'a\' OR tags?\'b\''
+\set osm_filter_tags '_.tags?\'a\' OR _.tags?\'b\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
@@ -114,7 +114,7 @@ INSERT INTO osm_changes VALUES
   -- not cibled
   ('n', 9, 2, false, 1, NULL, NULL, NULL, NULL, 9, 9, NULL, NULL, true)
 ;
-\set osm_filter_tags 'tags?\'a\''
+\set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
@@ -127,13 +127,13 @@ TRUNCATE osm_changes;
 -- From ways change, we should get the nodes change
 INSERT INTO osm_changes VALUES
   -- cibled
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true),
-  -- included by transity
   ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true),
+  -- included by transity
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true),
   -- not cibled
   ('n', 9, 2, false, 1, NULL, NULL, NULL, NULL, 9, 9, NULL, NULL, true)
 ;
-\set osm_filter_tags 'tags?\'a\''
+\set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
@@ -141,3 +141,19 @@ do $$ BEGIN
     (SELECT array_agg(id) FROM changes_update);
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
+
+
+-- Remove node from way, and delete node
+INSERT INTO osm_changes VALUES
+  -- cibled
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 9], NULL, true),
+  ('n', 2, 1, true, 1, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, true)
+;
+\set osm_filter_tags '_.tags?\'w\''
+\i lib/time_machine/sql/20_changes_uncibled.sql
+
+select array_agg(id) from changes_update;
+
+do $$ BEGIN
+  ASSERT (SELECT array_agg(id) FROM changes_update) IS NULL;
+END; $$ LANGUAGE plpgsql;
