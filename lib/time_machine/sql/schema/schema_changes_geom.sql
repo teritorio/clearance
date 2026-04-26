@@ -67,7 +67,7 @@ t AS (
     osm_changes.version,
     osm_changes.deleted,
     way_nodes.index,
-    coalesce(nodes_change.version, nodes.version) DESC NULLS LAST,
+    coalesce(nodes_change.version, nodes.version) ASC NULLS LAST,
     nodes_change.deleted DESC
 ),
 with_geom AS (

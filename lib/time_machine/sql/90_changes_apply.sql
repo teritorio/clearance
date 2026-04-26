@@ -12,7 +12,7 @@ WHERE
     NOT changes.deleted AND
     objtype = 'n'
 ORDER BY
-    id, version DESC
+    id, version
 ON CONFLICT (id) DO
 UPDATE
 SET
@@ -38,7 +38,7 @@ WHERE
     NOT changes.deleted AND
     objtype = 'w'
 ORDER BY
-    id, version DESC
+    id, version
 ON CONFLICT (id) DO
 UPDATE
 SET
@@ -63,7 +63,7 @@ WHERE
     NOT changes.deleted AND
     objtype = 'r'
 ORDER BY
-    id, version DESC
+    id, version
 ON CONFLICT (id) DO
 UPDATE
 SET
@@ -100,7 +100,7 @@ FROM
         update.objtype = changes.objtype AND
         update.id = changes.id
 ORDER BY
-    changes.objtype, changes.id, changes.version DESC, changes.deleted
+    changes.objtype, changes.id, changes.version, changes.deleted
 -- FIXME rather than check for conflicts on each, better validate data by lochas and do not re-insert objects changed only by transitivity.
 ON CONFLICT ON CONSTRAINT osm_changes_applyed_pkey
 DO NOTHING

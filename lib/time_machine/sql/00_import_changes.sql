@@ -1,5 +1,8 @@
 CREATE TEMP TABLE osm_changes_import (LIKE osm_changes);
-ALTER TABLE osm_changes_import DROP COLUMN cibled;
+ALTER TABLE osm_changes_import
+    DROP COLUMN cibled,
+    ADD COLUMN insert_order SERIAL
+;
 
 COPY osm_changes_import(
     objtype,
@@ -37,7 +40,7 @@ INSERT INTO osm_changes(
     nodes,
     members
 )
-SELECT DISTINCT ON (id, objtype)
+SELECT
     objtype,
     id,
     version,
@@ -54,7 +57,7 @@ SELECT DISTINCT ON (id, objtype)
 FROM
     osm_changes_import
 ORDER BY
-    id, objtype, version DESC, deleted DESC
+    insert_order
 ON CONFLICT (id, objtype) DO
 UPDATE
 SET
