@@ -70,6 +70,7 @@ locha AS (
             version,
             deleted,
             geom,
+            snap_geom,
             array[coalesce(
                 -- Equivalent to ST_ClusterWithinWin
                 ST_ClusterDBSCAN(geom, :distance, 0) OVER (PARTITION BY snap_geom),
@@ -83,7 +84,7 @@ locha AS (
     (
         WITH
         locha AS (SELECT * FROM locha),
-        locha_size AS (SELECT locha_id, count(*) AS size FROM locha GROUP BY locha_id)
+        locha_size AS (SELECT snap_geom, locha_id, count(*) AS size FROM locha GROUP BY snap_geom, locha_id)
         SELECT
             locha_size.size,
             it + 1 AS it,
@@ -92,6 +93,7 @@ locha AS (
             version,
             deleted,
             geom,
+            snap_geom,
             -- Max 200 objects (think about nodes), max radius
             locha_id || array[
                 coalesce(
@@ -104,7 +106,7 @@ locha AS (
             ] AS locha_id
         FROM
             locha
-            JOIN locha_size USING (locha_id)
+            JOIN locha_size USING (snap_geom, locha_id)
         WHERE
             it < 5 AND
             (it = 0 OR locha_size.size > 200)
@@ -112,20 +114,22 @@ locha AS (
     SELECT * FROM locha
 ),
 locha_final_size AS (
-    SELECT locha_id, count(*) AS size FROM locha GROUP BY locha_id
+    SELECT snap_geom, locha_id, count(*) AS size FROM locha GROUP BY snap_geom, locha_id
 ),
 locha_split AS (
-    SELECT locha_id, objtype, id, version, deleted, geom
-    FROM locha JOIN locha_final_size USING (locha_id)
+    SELECT snap_geom, locha_id, objtype, id, version, deleted, geom
+    FROM locha JOIN locha_final_size USING (snap_geom, locha_id)
     WHERE (it > 0 AND locha_final_size.size <= 200) OR it >= 5
 ),
 g AS(
     SELECT
+        snap_geom,
         locha_id,
         (hashtext(string_agg(objtype || '|' || id || '|' || version || '|' || deleted, ',')))::integer AS hash_keys
     FROM
         locha_split
     GROUP BY
+        snap_geom,
         locha_id
 )
 UPDATE
@@ -135,6 +139,7 @@ SET
 FROM
     locha_split
     JOIN g ON
+        g.snap_geom = locha_split.snap_geom AND
         g.locha_id = locha_split.locha_id
 WHERE
     osm_changes.objtype = locha_split.objtype AND
