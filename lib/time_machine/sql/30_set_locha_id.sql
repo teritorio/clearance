@@ -1,3 +1,10 @@
+DROP AGGREGATE IF EXISTS array_concat(anycompatiblearray);
+CREATE AGGREGATE array_concat(anycompatiblearray) (
+    sfunc = array_cat,
+    stype = anycompatiblearray,
+    initcond = '{}'
+);
+
 WITH
 objects AS (
     SELECT *, true AS is_change FROM osm_changes_geom
@@ -33,6 +40,7 @@ rings AS (
         version,
         deleted,
         is_change,
+        nodes,
         ST_Transform(
             CASE
                 WHEN ST_dimension(geom) = 2 THEN
@@ -49,8 +57,9 @@ ring_snap AS (
     SELECT
         objtype,
         id,
-        max(version) FILTER (WHERE is_change) AS version,-- there is only one version for non change
+        max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
+        array_concat(DISTINCT nodes) AS nodes,
         ST_Union(geom) AS geom,
         ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
     FROM
@@ -69,6 +78,7 @@ locha AS (
             id,
             version,
             deleted,
+            nodes,
             geom,
             snap_geom,
             array[coalesce(
@@ -92,6 +102,7 @@ locha AS (
             id,
             version,
             deleted,
+            nodes,
             geom,
             snap_geom,
             -- Max 200 objects (think about nodes), max radius
@@ -117,7 +128,7 @@ locha_final_size AS (
     SELECT snap_geom, locha_id, count(*) AS size FROM locha GROUP BY snap_geom, locha_id
 ),
 locha_split AS (
-    SELECT snap_geom, locha_id, objtype, id, version, deleted, geom
+    SELECT snap_geom, locha_id, objtype, id, version, deleted, nodes, geom
     FROM locha JOIN locha_final_size USING (snap_geom, locha_id)
     WHERE (it > 0 AND locha_final_size.size <= 200) OR it >= 5
 ),
