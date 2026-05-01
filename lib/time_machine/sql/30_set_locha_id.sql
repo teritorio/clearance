@@ -52,7 +52,7 @@ ring_snap AS (
         max(version) FILTER (WHERE is_change) AS version,-- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
         ST_Union(geom) AS geom,
-        ST_SnapToGrid(ST_Centroid(ST_Union(geom)), :distance * 100) AS snap_geom
+        ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
     FROM
         rings
     GROUP BY
