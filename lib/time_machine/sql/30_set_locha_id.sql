@@ -136,7 +136,7 @@ g AS(
     SELECT
         snap_geom,
         locha_id,
-        (hashtext(string_agg(objtype || '|' || id || '|' || version || '|' || deleted, ',')))::integer AS hash_keys
+        (hashtext(string_agg(objtype || '|' || id || '|' || version || '|' || deleted, ',' ORDER BY objtype, id)))::integer AS hash_keys
     FROM
         locha_split
     GROUP BY
