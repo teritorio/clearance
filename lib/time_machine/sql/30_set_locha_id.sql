@@ -148,11 +148,11 @@ UPDATE
 SET
     locha_id = hash_keys
 FROM
-    locha_split
+    locha_split AS locha
     JOIN g ON
-        g.snap_geom = locha_split.snap_geom AND
-        g.locha_id = locha_split.locha_id
+        g.snap_geom = locha.snap_geom AND
+        g.locha_id = locha.locha_id
 WHERE
-    osm_changes.objtype = locha_split.objtype AND
-    osm_changes.id = locha_split.id
+    osm_changes.objtype = locha.objtype AND
+    osm_changes.id = locha.id
 ;
