@@ -143,6 +143,12 @@ locha_split AS (
     SELECT snap_geom, locha_id, objtype, id, version, deleted, no_tags, nodes, geom
     FROM locha JOIN locha_final_size USING (snap_geom, locha_id)
     WHERE (it > 0 AND locha_final_size.size <= 99) OR it >= 5
+
+    UNION ALL
+
+    SELECT snap_geom, locha_id, objtype, id, version, deleted, no_tags, nodes, geom
+    FROM locha
+    WHERE snap_geom IS NULL AND it = 0
 ),
 locha_renum AS (
     SELECT
