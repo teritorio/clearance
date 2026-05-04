@@ -320,3 +320,8 @@ WHERE
     osm_changes.objtype = locha.objtype AND
     osm_changes.id = locha.id
 ;
+
+DO $$ BEGIN
+    RAISE NOTICE '30_set_locha_id - locha: %', (SELECT count(DISTINCT locha_id) FROM osm_changes);
+    RAISE NOTICE '30_set_locha_id - largest locha size: %', (SELECT array_agg(n) FROM (SELECT count(*) FROM osm_changes GROUP BY locha_id ORDER BY count(*) DESC LIMIT 10) AS t(n));
+END; $$ LANGUAGE plpgsql;
