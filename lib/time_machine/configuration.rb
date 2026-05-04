@@ -146,10 +146,10 @@ module Configuration
       description: config.description,
       validators: validators,
       osm_tags_matches: osm_tags_matches,
-      main_contacts: config.main_contacts,
+      main_contacts: config.main_contacts || raise('main_contacts is required in configuration'),
       user_groups: user_groups,
-      project_tags: config.project_tags,
-      local_srid: config.local_srid,
+      project_tags: config.project_tags || [],
+      local_srid: config.local_srid || raise('local_srid is required in configuration'),
       locha_cluster_distance: config.locha_cluster_distance,
     )
   end
