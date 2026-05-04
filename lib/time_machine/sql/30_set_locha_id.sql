@@ -7,7 +7,7 @@ CREATE AGGREGATE array_concat(anycompatiblearray) (
 
 WITH
 objects AS (
-    SELECT *, true AS is_change FROM osm_changes_geom
+    SELECT *, tags = '{}'::jsonb AS no_tags, true AS is_change FROM osm_changes_geom
     UNION ALL
     SELECT
         base.objtype,
@@ -26,6 +26,7 @@ objects AS (
         base.geom,
         false AS cibled,
         NULL AS locha_id,
+        base.tags = '{}'::jsonb AS no_tags,
         false AS is_change
     FROM
         osm_base AS base
@@ -39,6 +40,7 @@ rings AS (
         id,
         version,
         deleted,
+        no_tags,
         is_change,
         nodes,
         ST_Transform(
@@ -59,6 +61,7 @@ ring_snap AS (
         id,
         max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
+        bool_and(no_tags) AS no_tags,
         array_concat(DISTINCT nodes) AS nodes,
         ST_Union(geom) AS geom,
         ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
@@ -78,6 +81,7 @@ locha AS (
             id,
             version,
             deleted,
+            no_tags,
             nodes,
             geom,
             snap_geom,
@@ -102,6 +106,7 @@ locha AS (
             id,
             version,
             deleted,
+            no_tags,
             nodes,
             geom,
             snap_geom,
@@ -128,7 +133,7 @@ locha_final_size AS (
     SELECT snap_geom, locha_id, count(*) AS size FROM locha GROUP BY snap_geom, locha_id
 ),
 locha_split AS (
-    SELECT snap_geom, locha_id, objtype, id, version, deleted, nodes, geom
+    SELECT snap_geom, locha_id, objtype, id, version, deleted, no_tags, nodes, geom
     FROM locha JOIN locha_final_size USING (snap_geom, locha_id)
     WHERE (it > 0 AND locha_final_size.size <= 200) OR it >= 5
 ),
