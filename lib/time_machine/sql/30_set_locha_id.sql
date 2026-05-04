@@ -5,6 +5,11 @@ CREATE AGGREGATE array_concat(anycompatiblearray) (
     initcond = '{}'
 );
 
+DROP FUNCTION IF EXISTS array_unique(anycompatiblearray);
+CREATE FUNCTION array_unique(anycompatiblearray) RETURNS anycompatiblearray AS $$
+SELECT array_agg(DISTINCT x) FROM unnest($1) AS x
+$$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
+
 WITH
 objects AS (
     SELECT *, tags = '{}'::jsonb AS no_tags, true AS is_change FROM osm_changes_geom
@@ -62,7 +67,7 @@ ring_snap AS (
         max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
         bool_and(no_tags) AS no_tags,
-        array_concat(DISTINCT nodes) AS nodes,
+        array_unique(array_concat(DISTINCT nodes)) AS nodes,
         ST_Union(geom) AS geom,
         ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
     FROM
