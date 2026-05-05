@@ -146,11 +146,19 @@ module Validation
   def self.time_machine(conn, config)
     accept_all_validators = [Validators::All.new(id: 'no_matching_user_groups', osm_tags_matches: Osm::TagsMatches.new([]), action: 'accept')]
     Enumerator.new { |yielder|
+      index = 0
+      objects = 0
       fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |lo_cha|
         time_machine_locha_propagate_rejection(config, lo_cha, accept_all_validators).each { |locha_id, matches, validation|
+          index += 1
+          objects += lo_cha.size
+          if index % 100 == 0
+            puts "  Processing locha ##{index}, objects processed: #{objects}..."
+          end
           yielder << [locha_id, matches, validation]
         }
       }
+      puts "  Finished processing #{index} locha, total objects processed: #{objects}."
     }
   end
 
