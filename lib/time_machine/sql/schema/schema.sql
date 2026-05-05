@@ -100,6 +100,7 @@ CREATE TABLE validations_log (
     before_object JSONB,
     after_object JSONB
 );
+CREATE INDEX IF NOT EXISTS validations_log_idx_action ON validations_log(action);
 
 DROP TABLE IF EXISTS osm_changes_applyed CASCADE;
 CREATE TABLE osm_changes_applyed AS
