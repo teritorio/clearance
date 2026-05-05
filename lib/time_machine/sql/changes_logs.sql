@@ -44,7 +44,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                     osm_changesets
                 WHERE
                     osm_changesets.id = osm_base.changeset_id OR
-                    osm_changesets.id = ANY(validations_log.changeset_ids)
+                    osm_changesets.id = osm_changes.changeset_id
                 ORDER BY
                     osm_changesets.created_at
             ) AS t
