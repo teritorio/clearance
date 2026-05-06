@@ -74,7 +74,6 @@ SELECT
         coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
     ) AS geom
 FROM
-    clip,
     changes_base AS base
     JOIN changes_ AS changes USING (objtype, id)
 ;
@@ -173,8 +172,8 @@ SELECT
 FROM c
 ;
 ALTER TABLE changes_cluster ADD PRIMARY KEY (objtype, id);
-CREATE INDEX cibled_changes_cluster_idx_nodes ON changes_cluster USING GIN (nodes);
-CREATE INDEX cibled_changes_cluster_idx_snap_grid_id_cluster_id ON changes_cluster (snap_grid_id, cluster_id);
+CREATE INDEX changes_cluster_idx_nodes ON changes_cluster USING GIN (nodes);
+CREATE INDEX changes_cluster_idx_snap_grid_id_cluster_id ON changes_cluster (snap_grid_id, cluster_id);
 
 DROP TABLE changes;
 
@@ -340,7 +339,7 @@ END; $$ LANGUAGE plpgsql;
 -- Select only changes not related to objects and area of interest, and not transitively related to them
 DROP TABLE IF EXISTS changes_update;
 CREATE TEMP TABLE changes_update AS
-SELECT DISTINCT ON (osm_changes.id, osm_changes.objtype)
+SELECT DISTINCT ON (osm_changes.objtype, osm_changes.id)
     osm_changes.*
 FROM
     osm_changes
@@ -350,8 +349,8 @@ FROM
 WHERE
     cibled.objtype IS NULL
 ORDER BY
-    osm_changes.id,
-    osm_changes.objtype
+    osm_changes.objtype,
+    osm_changes.id
 ;
 
 DROP TABLE cibled_changes_cluster CASCADE;
