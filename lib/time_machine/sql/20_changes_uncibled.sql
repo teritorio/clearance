@@ -19,11 +19,31 @@ DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - persist osm_changes_geom: %', (SELECT COUNT(*) FROM osm_changes_geom_);
 END; $$ LANGUAGE plpgsql;
 
+CREATE TEMP TABLE changes_ AS
+    SELECT
+        _.objtype,
+        _.id,
+        coalesce(:osm_filter_tags, false) AND
+        (
+            _.geom IS NULL
+            OR
+            (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
+        ) AS cibled,
+        _.nodes,
+        _.members,
+        _.geom
+    FROM
+        clip,
+        osm_changes_geom_ AS _
+;
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - changes_: %', (SELECT COUNT(*) FROM changes_);
+END; $$ LANGUAGE plpgsql;
 
 CREATE TEMP TABLE changes AS
--- base_with_changes
 WITH
-base AS (
+changes_base AS (
     SELECT
         _.objtype,
         _.id,
@@ -42,23 +62,6 @@ base AS (
     WHERE
         _.geom IS NOT NULL AND
         (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
-),
-changes AS (
-    SELECT
-        _.objtype,
-        _.id,
-        coalesce(:osm_filter_tags, false) AND
-        (
-            _.geom IS NULL
-            OR
-            (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
-        ) AS cibled,
-        _.nodes,
-        _.members,
-        _.geom
-    FROM
-        clip,
-        osm_changes_geom_ AS _
 )
 SELECT
     objtype,
@@ -72,10 +75,16 @@ SELECT
     ) AS geom
 FROM
     clip,
-    base
-    JOIN changes USING (objtype, id)
+    changes_base AS base
+    JOIN changes_ AS changes USING (objtype, id)
 ;
 ALTER TABLE changes ADD PRIMARY KEY (objtype, id);
+
+DROP TABLE changes_ CASCADE;
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - changes: %', (SELECT COUNT(*) FROM changes);
+END; $$ LANGUAGE plpgsql;
 
 INSERT INTO changes
 -- changes_with_base
