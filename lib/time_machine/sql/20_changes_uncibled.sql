@@ -190,41 +190,33 @@ END; $$ LANGUAGE plpgsql;
 
 INSERT INTO cibled_changes_cluster
 WITH RECURSIVE a AS (
-    SELECT * FROM cibled_changes_cluster
+    SELECT objtype, id FROM cibled_changes_cluster
     UNION
     (
         WITH
         -- Recursive term should be referenced only once time
-        b AS (SELECT * FROM a),
+        b AS (
+            SELECT
+                changes_cluster.*
+            FROM a
+                JOIN changes_cluster USING (objtype, id)
+        ),
 
         by_geom AS (
         SELECT
             other.objtype,
-            other.id,
-            other.cibled,
-            other.nodes,
-            other.members,
-            other.snap_grid_id,
-            other.cluster_id
+            other.id
         FROM
             (SELECT snap_grid_id, cluster_id FROM b GROUP BY snap_grid_id, cluster_id) AS cluster_ids
             JOIN changes_cluster AS other ON
                 other.snap_grid_id = cluster_ids.snap_grid_id AND
                 other.cluster_id = cluster_ids.cluster_id
-        ORDER BY
-            other.objtype,
-            other.id
         ),
 
         nodes_to_ways AS (
         SELECT
             ways.objtype,
-            ways.id,
-            ways.cibled,
-            ways.nodes,
-            ways.members,
-            ways.snap_grid_id,
-            ways.cluster_id
+            ways.id
         FROM
             b AS nodes
             JOIN changes_cluster AS ways ON
@@ -236,17 +228,13 @@ WITH RECURSIVE a AS (
         ways_to_nodes AS (
         SELECT
             nodes.objtype,
-            nodes.id,
-            nodes.cibled,
-            nodes.nodes,
-            nodes.members,
-            nodes.snap_grid_id,
-            nodes.cluster_id
+            nodes.id
         FROM
             b AS ways
+            JOIN LATERAL unnest(ways.nodes) AS node_id ON true
             JOIN changes_cluster AS nodes ON
                 nodes.objtype = 'n' AND
-                ways.nodes @> ARRAY[nodes.id]
+                nodes.id = node_id
         WHERE
             ways.objtype = 'w'
         ),
@@ -254,12 +242,7 @@ WITH RECURSIVE a AS (
         relations_to_nodes AS (
         SELECT
             nodes.objtype,
-            nodes.id,
-            nodes.cibled,
-            nodes.nodes,
-            nodes.members,
-            nodes.snap_grid_id,
-            nodes.cluster_id
+            nodes.id
         FROM
             b AS relations
             JOIN osm_changes_members AS m ON
@@ -274,12 +257,7 @@ WITH RECURSIVE a AS (
         relations_to_ways AS (
         SELECT
             ways.objtype,
-            ways.id,
-            ways.cibled,
-            ways.nodes,
-            ways.members,
-            ways.snap_grid_id,
-            ways.cluster_id
+            ways.id
         FROM
             b AS relations
             JOIN osm_changes_members AS m ON
@@ -294,12 +272,7 @@ WITH RECURSIVE a AS (
         nodes_or_ways_to_relations AS (
         SELECT
             relations.objtype,
-            relations.id,
-            relations.cibled,
-            relations.nodes,
-            relations.members,
-            relations.snap_grid_id,
-            relations.cluster_id
+            relations.id
         FROM
             b AS nodes_or_ways
             JOIN osm_changes_members AS m ON
@@ -325,7 +298,11 @@ WITH RECURSIVE a AS (
         SELECT * FROM nodes_or_ways_to_relations
     )
 )
-SELECT DISTINCT * FROM a
+SELECT
+    changes_cluster.*
+FROM
+    a
+    JOIN changes_cluster USING (objtype, id)
 ON CONFLICT DO NOTHING
 ;
 
