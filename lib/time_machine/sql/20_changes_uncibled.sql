@@ -11,14 +11,6 @@ CREATE TEMP TABLE clip AS
 ;
 ANALYZE clip;
 
-CREATE TEMP TABLE osm_changes_geom_ AS
-SELECT objtype, id, nodes, members, tags, geom FROM osm_changes_geom;
-CREATE INDEX osm_changes_geom_idx_objtype_id ON osm_changes_geom_ (objtype, id);
-
-DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - persist osm_changes_geom: %', (SELECT COUNT(*) FROM osm_changes_geom_);
-END; $$ LANGUAGE plpgsql;
-
 CREATE TEMP TABLE changes_ AS
     SELECT
         _.objtype,
@@ -31,15 +23,18 @@ CREATE TEMP TABLE changes_ AS
         ) AS cibled,
         _.nodes,
         _.members,
+        _.tags,
         _.geom
     FROM
         clip,
-        osm_changes_geom_ AS _
+        osm_changes_geom AS _
 ;
+CREATE INDEX changes__idx_objtype_id ON changes_ (objtype, id);
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - changes_: %', (SELECT COUNT(*) FROM changes_);
 END; $$ LANGUAGE plpgsql;
+
 
 CREATE TEMP TABLE changes AS
 WITH
@@ -79,11 +74,10 @@ FROM
 ;
 ALTER TABLE changes ADD PRIMARY KEY (objtype, id);
 
-DROP TABLE changes_ CASCADE;
-
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - changes: %', (SELECT COUNT(*) FROM changes);
 END; $$ LANGUAGE plpgsql;
+
 
 INSERT INTO changes
 -- changes_with_base
@@ -101,7 +95,7 @@ SELECT
     CASE WHEN base.geom IS NOT NULL THEN ST_Union(_.geom, base.geom) ELSE _.geom END AS geom
 FROM
     clip,
-    osm_changes_geom_ AS _
+    changes_ AS _
     LEFT JOIN osm_base AS base USING (objtype, id)
     LEFT JOIN changes USING (objtype, id)
 WHERE
@@ -109,7 +103,7 @@ WHERE
 ;
 
 DROP TABLE clip CASCADE;
-DROP TABLE osm_changes_geom_ CASCADE;
+DROP TABLE changes_ CASCADE;
 
 UPDATE osm_changes
 SET cibled = changes.cibled
