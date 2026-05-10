@@ -38,6 +38,7 @@ CREATE TEMP TABLE changes_ AS
 CREATE INDEX changes__idx_objtype_id ON changes_ (objtype, id);
 
 DO $$ BEGIN
+    assert (SELECT COUNT(*) FROM changes_) = (SELECT COUNT(*) FROM osm_changes), 'changes_ should have the same number of rows as osm_changes';
     RAISE NOTICE '20_changes_uncibled - changes_: %', (SELECT COUNT(*) FROM changes_);
 END; $$ LANGUAGE plpgsql;
 
