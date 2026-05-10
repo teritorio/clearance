@@ -29,7 +29,7 @@ END; $$ LANGUAGE plpgsql;
 -- Change node location
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
@@ -51,7 +51,7 @@ INSERT INTO osm_base_n VALUES
 ;
 
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 3, 3, NULL, NULL, true)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 3, 3, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
@@ -127,11 +127,11 @@ TRUNCATE osm_changes;
 -- From ways change, we should get the nodes change
 INSERT INTO osm_changes VALUES
   -- cibled
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true),
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1),
   -- included by transity
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true),
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true, NULL, 2),
   -- not cibled
-  ('n', 9, 2, false, 1, NULL, NULL, NULL, NULL, 9, 9, NULL, NULL, true)
+  ('n', 9, 2, false, 1, NULL, NULL, NULL, NULL, 9, 9, NULL, NULL, true, NULL, 3)
 ;
 \set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
@@ -146,8 +146,8 @@ TRUNCATE osm_changes;
 -- Remove node from way, and delete node
 INSERT INTO osm_changes VALUES
   -- cibled
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 9], NULL, true),
-  ('n', 2, 1, true, 1, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, true)
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 9], NULL, true, NULL, 100),
+  ('n', 2, 1, true, 1, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, true, NULL, 2)
 ;
 \set osm_filter_tags '_.tags?\'w\''
 \i lib/time_machine/sql/20_changes_uncibled.sql

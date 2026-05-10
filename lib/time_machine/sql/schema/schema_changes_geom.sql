@@ -1,7 +1,9 @@
 SET search_path TO :"schema", public;
 
+DROP VIEW IF EXISTS osm_changes_geom_nodes CASCADE;
 CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
   SELECT
+    cc_id,
     objtype,
     id,
     version,
@@ -24,16 +26,19 @@ CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
     objtype = 'n'
 ;
 
+DROP VIEW IF EXISTS osm_changes_geom_ways CASCADE;
 CREATE OR REPLACE VIEW osm_changes_geom_ways AS
 WITH
 t AS (
   SELECT DISTINCT ON (
+    osm_changes.cc_id,
     osm_changes.objtype,
     osm_changes.id,
     osm_changes.version,
     osm_changes.deleted,
     way_nodes.index
   )
+    osm_changes.cc_id,
     osm_changes.objtype,
     osm_changes.id,
     osm_changes.version,
@@ -62,6 +67,7 @@ t AS (
   WHERE
     osm_changes.objtype = 'w'
   ORDER BY
+    osm_changes.cc_id,
     osm_changes.objtype,
     osm_changes.id,
     osm_changes.version,
@@ -72,6 +78,7 @@ t AS (
 ),
 with_geom AS (
   SELECT
+    cc_id,
     objtype,
     id,
     version,
@@ -97,6 +104,7 @@ with_geom AS (
     lon IS NOT NULL AND
     lat IS NOT NULL
   GROUP BY
+    cc_id,
     objtype,
     id,
     version,
@@ -113,6 +121,7 @@ with_geom AS (
     locha_id
 )
 SELECT
+  cc_id,
   objtype,
   id,
   version,
@@ -139,8 +148,10 @@ FROM
   with_geom
 ;
 
+DROP VIEW IF EXISTS osm_changes_geom_relations CASCADE;
 CREATE OR REPLACE VIEW osm_changes_geom_relations AS
   SELECT
+    osm_changes.cc_id,
     osm_changes.objtype,
     osm_changes.id,
     osm_changes.version,
@@ -184,6 +195,7 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
   WHERE
     osm_changes.objtype = 'r'
   GROUP BY
+    osm_changes.cc_id,
     osm_changes.objtype,
     osm_changes.id,
     osm_changes.version,
@@ -201,6 +213,7 @@ CREATE OR REPLACE VIEW osm_changes_geom_relations AS
     osm_changes.locha_id
 ;
 
+DROP VIEW IF EXISTS osm_changes_geom CASCADE;
 CREATE OR REPLACE VIEW osm_changes_geom AS
 SELECT * FROM osm_changes_geom_nodes
 UNION ALL

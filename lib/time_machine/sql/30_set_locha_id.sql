@@ -10,13 +10,14 @@ CREATE FUNCTION array_unique(anycompatiblearray) RETURNS anycompatiblearray AS $
 SELECT array_agg(DISTINCT x) FROM unnest($1) AS x
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
-DROP TABLE IF EXISTS locha_renum CASCADE;
-CREATE TEMP TABLE locha_renum AS
+DROP TABLE IF EXISTS ring_snap CASCADE;
+CREATE TEMP TABLE ring_snap AS
 WITH
 objects AS (
     SELECT *, tags = '{}'::jsonb AS no_tags, true AS is_change FROM osm_changes_geom
     UNION ALL
     SELECT
+        NULL::bigint AS cc_id,
         base.objtype,
         base.id,
         base.version,
@@ -43,6 +44,7 @@ objects AS (
 ),
 rings AS (
     SELECT
+        cc_id,
         objtype,
         id,
         version,
@@ -64,19 +66,36 @@ rings AS (
 ),
 ring_snap AS (
     SELECT
+        max(cc_id) FILTER (WHERE is_change) AS cc_id, -- there is only one version for non change
         objtype,
         id,
         max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
         bool_and(no_tags) AS no_tags,
         array_unique(array_concat(DISTINCT nodes)) AS nodes,
-        ST_Union(geom) AS geom,
-        ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
+        ST_Union(geom) AS geom
     FROM
         rings
     GROUP BY
         objtype,
         id
+)
+SELECT * FROM ring_snap
+;
+CREATE INDEX ring_snap_idx_cc_id ON ring_snap (cc_id);
+
+DROP TABLE IF EXISTS locha_renum CASCADE;
+CREATE TEMP TABLE locha_renum AS
+WITH
+cc AS (
+    SELECT
+        cc_id,
+        ST_Union(geom) AS geom,
+        ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
+    FROM
+        ring_snap
+    GROUP BY
+        cc_id
 ),
 locha AS (
     WITH RECURSIVE
@@ -84,12 +103,7 @@ locha AS (
         SELECT
             NULL::bigint AS size,
             0 AS it,
-            objtype,
-            id,
-            version,
-            deleted,
-            no_tags,
-            nodes,
+            cc_id,
             geom,
             snap_geom,
             array[coalesce(
@@ -99,7 +113,7 @@ locha AS (
                 -1 * row_number() OVER ()
             )] AS locha_id
         FROM
-            ring_snap
+            cc
     )
     UNION ALL
     (
@@ -109,12 +123,7 @@ locha AS (
         SELECT
             locha_size.size,
             it + 1 AS it,
-            objtype,
-            id,
-            version,
-            deleted,
-            no_tags,
-            nodes,
+            cc_id,
             geom,
             snap_geom,
             -- Max 99 objects (think about nodes), max radius
@@ -140,22 +149,23 @@ locha_final_size AS (
     SELECT snap_geom, locha_id, count(*) AS size FROM locha GROUP BY snap_geom, locha_id
 ),
 locha_split AS (
-    SELECT snap_geom, locha_id, objtype, id, version, deleted, no_tags, nodes, geom
+    SELECT snap_geom, locha_id, cc_id
     FROM locha JOIN locha_final_size USING (snap_geom, locha_id)
     WHERE (it > 0 AND locha_final_size.size <= 99) OR it >= 5
 
     UNION ALL
 
-    SELECT snap_geom, locha_id, objtype, id, version, deleted, no_tags, nodes, geom
+    SELECT snap_geom, locha_id, cc_id
     FROM locha
     WHERE snap_geom IS NULL AND it = 0
 ),
 locha_renum AS (
     SELECT
-        objtype, id, version, deleted, no_tags, nodes, geom, snap_geom,
+        cc_id, objtype, id, version, deleted, no_tags, nodes, geom, snap_geom,
         dense_rank() OVER (ORDER BY snap_geom, locha_id) AS locha_id
     FROM
         locha_split
+        JOIN ring_snap USING (cc_id)
 )
 SELECT * FROM locha_renum
 ;
@@ -288,6 +298,7 @@ CREATE INDEX ON locha_merge_ids USING GIN (locha_ids);
 WITH
 locha_merge AS (
     SELECT
+        locha_renum.cc_id,
         locha_renum.objtype,
         locha_renum.id,
         locha_renum.version,
@@ -311,10 +322,10 @@ g AS(
 UPDATE
     osm_changes
 SET
-    locha_id = hash_keys
+    locha_id = g.hash_keys
 FROM
     locha_merge AS locha
-    JOIN g ON
+    LEFT JOIN g ON
         g.locha_id = locha.locha_id
 WHERE
     osm_changes.objtype = locha.objtype AND

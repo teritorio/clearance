@@ -19,6 +19,7 @@ objects AS (
     SELECT *, true AS is_change FROM osm_changes_geom
     UNION ALL
     SELECT
+        NULL::bigint AS cc_id,
         base.objtype,
         base.id,
         base.version,

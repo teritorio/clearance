@@ -36,7 +36,7 @@ END; $$ LANGUAGE plpgsql;
 -- Change node location
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
+  ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
@@ -84,7 +84,7 @@ END; $$ LANGUAGE plpgsql;
 BEGIN;
 TRUNCATE osm_changes;
 INSERT INTO osm_changes VALUES
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL, true)
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL, true, NULL, 100)
 ;
 COMMIT;
 
