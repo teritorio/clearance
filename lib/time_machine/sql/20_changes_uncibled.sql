@@ -335,9 +335,13 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 
-UPDATE osm_changes
-SET cibled = changes.cibled
-FROM changes
+UPDATE
+    osm_changes
+SET
+    cibled = changes.cibled,
+    cc_id = changes.cc_id
+FROM
+    changes
 WHERE
     osm_changes.objtype = changes.objtype AND
     osm_changes.id = changes.id AND
