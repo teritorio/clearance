@@ -336,6 +336,7 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 
+UPDATE osm_changes SET cc_id = NULL;
 UPDATE
     osm_changes
 SET
@@ -345,12 +346,13 @@ FROM
     changes
 WHERE
     osm_changes.objtype = changes.objtype AND
-    osm_changes.id = changes.id AND
-    osm_changes.cibled IS DISTINCT FROM changes.cibled
+    osm_changes.id = changes.id
 ;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - cibled changes: % / %', (SELECT COUNT(*) FROM changes WHERE cibled), (SELECT COUNT(*) FROM changes);
+    assert (SELECT COUNT(*) FROM osm_changes WHERE cc_id IS NULL) = 0, 'cc_id should not be null';
+    RAISE NOTICE '20_changes_uncibled - largest connex components size: %', (SELECT array_agg(n) FROM (SELECT count(*) FROM osm_changes GROUP BY cc_id ORDER BY count(*) DESC LIMIT 10) AS t(n));
 END; $$ LANGUAGE plpgsql;
 
 
