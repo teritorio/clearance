@@ -322,6 +322,7 @@ WHERE
 ;
 
 DO $$ BEGIN
+    assert (SELECT COUNT(*) FROM osm_changes WHERE locha_id IS NULL) = 0, 'locha_id should not be null';
     RAISE NOTICE '30_set_locha_id - locha: %', (SELECT count(DISTINCT locha_id) FROM osm_changes);
     RAISE NOTICE '30_set_locha_id - largest locha size: %', (SELECT array_agg(n) FROM (SELECT count(*) FROM osm_changes GROUP BY locha_id ORDER BY count(*) DESC LIMIT 10) AS t(n));
 END; $$ LANGUAGE plpgsql;

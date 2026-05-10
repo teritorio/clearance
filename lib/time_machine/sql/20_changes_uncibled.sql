@@ -115,6 +115,7 @@ DROP TABLE clip CASCADE;
 DROP TABLE changes_ CASCADE;
 
 DO $$ BEGIN
+    assert (SELECT COUNT(*) FROM changes) = (SELECT COUNT(*) FROM osm_changes), 'changes should have the same number of rows as osm_changes';
     RAISE NOTICE '20_changes_uncibled - changes: %', (SELECT COUNT(*) FROM changes);
 END; $$ LANGUAGE plpgsql;
 
