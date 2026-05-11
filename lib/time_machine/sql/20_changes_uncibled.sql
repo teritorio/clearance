@@ -131,7 +131,7 @@ deps AS (
         array_agg(nodes.id) FILTER (WHERE nodes.id IS NOT NULL) AS nodes
     FROM
         changes AS contact
-        LEFT JOIN LATERAL unnest_unique(contact.nodes) AS contact_nodes(id) ON true
+        JOIN LATERAL unnest_unique(contact.nodes) AS contact_nodes(id) ON true
         LEFT JOIN changes AS nodes ON
             nodes.objtype = 'n' AND
             nodes.id = contact_nodes.id
@@ -145,37 +145,9 @@ UPDATE changes
 SET nodes = deps.nodes
 FROM deps
 WHERE
-    changes.objtype = deps.objtype AND
+    changes.objtype = 'w' AND
     changes.id = deps.id AND
     changes.nodes IS DISTINCT FROM deps.nodes
-;
-
--- Only keeps members that are in changes
-WITH
-deps AS (
-    SELECT
-        contact.objtype,
-        contact.id,
-        jsonb_agg(json_build_object('ref', contact_m.ref, 'role', contact_m.role, 'type', contact_m.type) ORDER BY contact_m.ref, contact_m.type) FILTER (WHERE members.id IS NOT NULL) AS members
-    FROM
-        changes AS contact
-        LEFT JOIN LATERAL jsonb_to_recordset(contact.members) AS contact_m(ref bigint, role text, type text) ON true
-        LEFT JOIN changes AS members ON
-            members.objtype = contact_m.type AND
-            members.id = contact_m.ref
-    WHERE
-        contact.objtype = 'r'
-    GROUP BY
-        contact.objtype,
-        contact.id
-)
-UPDATE changes
-SET members = deps.members
-FROM deps
-WHERE
-    changes.objtype = deps.objtype AND
-    changes.id = deps.id AND
-    changes.members IS DISTINCT FROM deps.members
 ;
 
 DO $$ BEGIN
@@ -191,12 +163,12 @@ SELECT
 FROM
     changes AS relations
     JOIN LATERAL jsonb_to_recordset(relations.members) AS m(ref bigint, role text, type text) ON true
+    -- Only keeps members that are in changes
+    JOIN changes AS members ON
+        members.objtype = m.type AND
+        members.id = m.ref
 WHERE
     relations.objtype = 'r'
-GROUP BY
-    relations.id,
-    m.ref,
-    m.type
 ;
 CREATE INDEX osm_changes_members_idx ON osm_changes_members (type, ref) WHERE type IN ('n', 'w');
 CREATE INDEX osm_changes_members_relation_idx_n ON osm_changes_members (relation_id) WHERE type = 'n';
