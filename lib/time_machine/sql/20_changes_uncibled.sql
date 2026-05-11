@@ -111,6 +111,8 @@ WHERE
     changes.objtype IS NULL
 ;
 
+CREATE INDEX changes_idx_objtype_id ON changes (objtype, id);
+
 DROP TABLE clip CASCADE;
 DROP TABLE changes_ CASCADE;
 
@@ -120,44 +122,60 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 
--- Only keeps nodes and members that are in changes
+-- Only keeps nodes that are in changes
 WITH
 deps AS (
     SELECT
         contact.objtype,
         contact.id,
-        array_agg(nodes.id) FILTER (WHERE nodes.id IS NOT NULL) AS nodes,
-        jsonb_agg(json_build_object('ref', contact_m.ref, 'role', contact_m.role, 'type', contact_m.type) ORDER BY contact_m.ref, contact_m.type) FILTER (WHERE members.id IS NOT NULL) AS members
+        array_agg(nodes.id) FILTER (WHERE nodes.id IS NOT NULL) AS nodes
     FROM
         changes AS contact
-        LEFT JOIN LATERAL unnest_unique(contact.nodes) AS contact_nodes(id) ON
-            contact.objtype = 'w'
+        LEFT JOIN LATERAL unnest_unique(contact.nodes) AS contact_nodes(id) ON true
         LEFT JOIN changes AS nodes ON
             nodes.objtype = 'n' AND
             nodes.id = contact_nodes.id
-        LEFT JOIN LATERAL jsonb_to_recordset(contact.members) AS contact_m(ref bigint, role text, type text) ON
-            contact.objtype = 'r'
-        LEFT JOIN changes AS members ON
-            members.objtype = contact_m.type AND
-            members.id = contact_m.ref
+    WHERE
+        contact.objtype = 'w'
     GROUP BY
         contact.objtype,
         contact.id
 )
-UPDATE
-    changes
-SET
-    nodes = deps.nodes,
-    members = deps.members
-FROM
-    deps
+UPDATE changes
+SET nodes = deps.nodes
+FROM deps
 WHERE
     changes.objtype = deps.objtype AND
     changes.id = deps.id AND
-    (
-        changes.nodes IS DISTINCT FROM deps.nodes OR
-        changes.members IS DISTINCT FROM deps.members
-    )
+    changes.nodes IS DISTINCT FROM deps.nodes
+;
+
+-- Only keeps members that are in changes
+WITH
+deps AS (
+    SELECT
+        contact.objtype,
+        contact.id,
+        jsonb_agg(json_build_object('ref', contact_m.ref, 'role', contact_m.role, 'type', contact_m.type) ORDER BY contact_m.ref, contact_m.type) FILTER (WHERE members.id IS NOT NULL) AS members
+    FROM
+        changes AS contact
+        LEFT JOIN LATERAL jsonb_to_recordset(contact.members) AS contact_m(ref bigint, role text, type text) ON true
+        LEFT JOIN changes AS members ON
+            members.objtype = contact_m.type AND
+            members.id = contact_m.ref
+    WHERE
+        contact.objtype = 'r'
+    GROUP BY
+        contact.objtype,
+        contact.id
+)
+UPDATE changes
+SET members = deps.members
+FROM deps
+WHERE
+    changes.objtype = deps.objtype AND
+    changes.id = deps.id AND
+    changes.members IS DISTINCT FROM deps.members
 ;
 
 DO $$ BEGIN
