@@ -223,6 +223,8 @@ WITH RECURSIVE a AS (
             ways.cc_id,
             ways.objtype,
             ways.id
+        HAVING
+            min(nodes.cc_id) < ways.cc_id
         ),
         ways_to_nodes AS (
         SELECT
@@ -241,6 +243,8 @@ WITH RECURSIVE a AS (
             nodes.cc_id,
             nodes.objtype,
             nodes.id
+        HAVING
+            min(ways.cc_id) < nodes.cc_id
         ),
 
         relations_to_nodes AS (
@@ -262,6 +266,8 @@ WITH RECURSIVE a AS (
             nodes.cc_id,
             nodes.objtype,
             nodes.id
+        HAVING
+            min(relations.cc_id) < nodes.cc_id
         ),
         relations_to_ways AS (
         SELECT
@@ -282,6 +288,8 @@ WITH RECURSIVE a AS (
             ways.cc_id,
             ways.objtype,
             ways.id
+        HAVING
+            min(r.cc_id) < w.cc_id
         ),
         nodes_or_ways_to_relations AS (
         SELECT
@@ -303,6 +311,8 @@ WITH RECURSIVE a AS (
             relations.cc_id,
             relations.objtype,
             relations.id
+        HAVING
+            min(nodes_or_ways.cc_id) < relations.cc_id
         )
         -- TODO relations to relations
         SELECT * FROM nodes_to_ways
