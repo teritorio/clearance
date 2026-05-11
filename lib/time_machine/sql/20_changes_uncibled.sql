@@ -151,7 +151,7 @@ WHERE
 ;
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - filter nodes and members changes: %', (SELECT COUNT(*) FROM changes);
+    RAISE NOTICE '20_changes_uncibled - filter nodes changes: %', (SELECT COUNT(*) FROM changes);
 END; $$ LANGUAGE plpgsql;
 
 
@@ -186,7 +186,7 @@ ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
 UPDATE changes SET initial_cc_id = cc_id;
 CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
 CREATE INDEX changes_idx_cc_id ON changes (cc_id);
-CREATE INDEX changes_idx_nodes_gin ON changes USING GIN (nodes);
+ANALYZE changes;
 
 -- Propagate cc_id to all connex components by topology
 DO $$
@@ -201,12 +201,13 @@ BEGIN
             ways.objtype,
             ways.id
         FROM
-            changes AS nodes
-            JOIN changes AS ways ON
-                ways.objtype = 'w' AND
-                ways.nodes @> ARRAY[nodes.id]
+            changes AS ways
+            JOIN LATERAL unnest(ways.nodes) AS node_id ON true
+            JOIN changes AS nodes ON
+                nodes.objtype = 'n' AND
+                nodes.id = node_id
         WHERE
-            nodes.objtype = 'n'
+            ways.objtype = 'w'
         GROUP BY
             ways.cc_id,
             ways.objtype,
