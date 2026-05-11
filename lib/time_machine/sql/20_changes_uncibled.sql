@@ -21,6 +21,7 @@ CREATE TEMP TABLE changes_ AS
     SELECT
         _.objtype,
         _.id,
+        _.deleted,
         coalesce(:osm_filter_tags, false) AND
         (
             _.geom IS NULL
@@ -35,6 +36,7 @@ CREATE TEMP TABLE changes_ AS
         clip,
         osm_changes_geom AS _
 ;
+ANALYZE changes_;
 CREATE INDEX changes__idx_objtype_id ON changes_ (objtype, id);
 
 DO $$ BEGIN
@@ -72,6 +74,7 @@ SELECT
     base.cibled OR changes.cibled AS cibled,
     base.nodes || changes.nodes AS nodes,
     base.members || changes.members AS members,
+    changes.deleted AS cc_propa,
     ST_Union(
         coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
         coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
@@ -88,7 +91,7 @@ END; $$ LANGUAGE plpgsql;
 
 
 INSERT INTO changes
--- changes_with_base
+-- changes without base
 SELECT
     coalesce((SELECT max(cc_id) FROM changes), 0) + row_number() OVER () AS cc_id,
     objtype,
@@ -101,6 +104,7 @@ SELECT
     ) AS cibled,
     CASE WHEN base.nodes IS NOT NULL THEN _.nodes || base.nodes ELSE _.nodes END AS nodes,
     CASE WHEN base.members IS NOT NULL THEN _.members || base.members ELSE _.members END AS members,
+    true AS cc_propa,
     CASE WHEN base.geom IS NOT NULL THEN ST_Union(_.geom, base.geom) ELSE _.geom END AS geom
 FROM
     clip,
@@ -111,47 +115,12 @@ WHERE
     changes.objtype IS NULL
 ;
 
-CREATE INDEX changes_idx_objtype_id ON changes (objtype, id);
-
 DROP TABLE clip CASCADE;
 DROP TABLE changes_ CASCADE;
 
 DO $$ BEGIN
     assert (SELECT COUNT(*) FROM changes) = (SELECT COUNT(*) FROM osm_changes), 'changes should have the same number of rows as osm_changes';
     RAISE NOTICE '20_changes_uncibled - changes: %', (SELECT COUNT(*) FROM changes);
-END; $$ LANGUAGE plpgsql;
-
-
--- Only keeps nodes that are in changes
-WITH
-deps AS (
-    SELECT
-        contact.objtype,
-        contact.id,
-        array_agg(nodes.id) FILTER (WHERE nodes.id IS NOT NULL) AS nodes
-    FROM
-        changes AS contact
-        JOIN LATERAL unnest_unique(contact.nodes) AS contact_nodes(id) ON true
-        LEFT JOIN changes AS nodes ON
-            nodes.objtype = 'n' AND
-            nodes.id = contact_nodes.id
-    WHERE
-        contact.objtype = 'w'
-    GROUP BY
-        contact.objtype,
-        contact.id
-)
-UPDATE changes
-SET nodes = deps.nodes
-FROM deps
-WHERE
-    changes.objtype = 'w' AND
-    changes.id = deps.id AND
-    changes.nodes IS DISTINCT FROM deps.nodes
-;
-
-DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - filter nodes changes: %', (SELECT COUNT(*) FROM changes);
 END; $$ LANGUAGE plpgsql;
 
 
@@ -163,7 +132,6 @@ SELECT
 FROM
     changes AS relations
     JOIN LATERAL jsonb_to_recordset(relations.members) AS m(ref bigint, role text, type text) ON true
-    -- Only keeps members that are in changes
     JOIN changes AS members ON
         members.objtype = m.type AND
         members.id = m.ref
@@ -178,10 +146,63 @@ DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - index relation members: %', (SELECT COUNT(*) FROM osm_changes_members);
 END; $$ LANGUAGE plpgsql;
 
+
+-- Forward cc_propa from nodes up to ways
+WITH
+nodes_ids AS (
+    SELECT
+        changes.id,
+        unnest_unique(changes.nodes) AS nid
+    FROM
+        changes
+    WHERE
+        objtype = 'w' AND
+        NOT cc_propa
+)
+UPDATE
+    changes
+SET
+    cc_propa = true
+FROM
+    nodes_ids
+    JOIN changes AS nodes ON
+        nodes.objtype = 'n' AND
+        nodes.id = nodes_ids.nid AND
+        nodes.cc_propa
+WHERE
+    changes.objtype = 'w' AND
+    NOT changes.cc_propa AND
+    changes.id = nodes_ids.id
+;
+
+-- Forward cc_propa from any objects up to relations
+UPDATE
+    changes
+SET
+    cc_propa = true
+FROM
+    osm_changes_members AS m
+    JOIN changes AS deps ON
+        deps.objtype = m.type AND
+        deps.id = m.ref AND
+        deps.cc_propa
+WHERE
+    changes.objtype = 'r' AND
+    NOT changes.cc_propa AND
+    m.relation_id = changes.id
+;
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - forward cc_propa w: %', (SELECT COUNT(*) FROM changes WHERE cc_propa AND objtype = 'w');
+    RAISE NOTICE '20_changes_uncibled - forward cc_propa r: %', (SELECT COUNT(*) FROM changes WHERE cc_propa AND objtype = 'r');
+END; $$ LANGUAGE plpgsql;
+
+
 -- initial_cc_id is used as a "pointer" for path compression.
 -- cc_id decreases monotonically; for any X with cc_id=C, the object Z that
 -- originally had cc_id=C (Z.initial_cc_id=C) may have since been merged to
 -- a lower value, letting X skip ahead in O(log D) steps instead of O(D).
+UPDATE changes SET cc_id = cc_id * CASE WHEN cc_propa THEN 1 ELSE -1 END;
 ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
 UPDATE changes SET initial_cc_id = cc_id;
 CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
@@ -190,26 +211,27 @@ ANALYZE changes;
 
 -- Propagate cc_id to all connex components by topology
 DO $$
-DECLARE cnt int := 1;
+DECLARE cnt int := (SELECT COUNT(*) FROM changes WHERE cc_id >= 0);
 BEGIN
   WHILE cnt > 0 LOOP
     -- One hop: propagate the minimum cc_id through all connection types
     WITH updates AS (
         -- nodes_to_ways: update ways based on member nodes
         SELECT
-            least(min(nodes.cc_id), ways.cc_id) AS new_cc_id,
+            min(nodes.cc_id) AS min_cc_id,
             ways.objtype,
             ways.id
         FROM
             changes AS ways
-            JOIN LATERAL unnest(ways.nodes) AS node_id ON true
+            JOIN LATERAL unnest_unique(ways.nodes) AS node_id ON true
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = node_id
+                nodes.id = node_id AND
+                nodes.cc_id >= 0
         WHERE
-            ways.objtype = 'w'
+            ways.objtype = 'w' AND
+            ways.cc_id >= 0
         GROUP BY
-            ways.cc_id,
             ways.objtype,
             ways.id
         HAVING
@@ -219,19 +241,20 @@ BEGIN
 
         -- ways_to_nodes: update nodes based on containing ways
         SELECT
-            least(min(ways.cc_id), nodes.cc_id),
+            min(ways.cc_id) AS min_cc_id,
             nodes.objtype,
             nodes.id
         FROM
             changes AS ways
-            JOIN LATERAL unnest(ways.nodes) AS node_id ON true
+            JOIN LATERAL unnest_unique(ways.nodes) AS node_id ON true
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = node_id
+                nodes.id = node_id AND
+                nodes.cc_id >= 0
         WHERE
-            ways.objtype = 'w'
+            ways.objtype = 'w' AND
+            ways.cc_id >= 0
         GROUP BY
-            nodes.cc_id,
             nodes.objtype,
             nodes.id
         HAVING
@@ -241,7 +264,7 @@ BEGIN
 
         -- relations_to_nodes: update nodes based on containing relations
         SELECT
-            least(min(relations.cc_id), nodes.cc_id),
+            min(relations.cc_id) AS min_cc_id,
             nodes.objtype,
             nodes.id
         FROM
@@ -251,11 +274,12 @@ BEGIN
                 m.type = 'n'
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = m.ref
+                nodes.id = m.ref AND
+                nodes.cc_id >= 0
         WHERE
-            relations.objtype = 'r'
+            relations.objtype = 'r' AND
+            relations.cc_id >= 0
         GROUP BY
-            nodes.cc_id,
             nodes.objtype,
             nodes.id
         HAVING
@@ -265,7 +289,7 @@ BEGIN
 
         -- relations_to_ways: update ways based on containing relations
         SELECT
-            least(min(relations.cc_id), ways.cc_id),
+            min(relations.cc_id) AS min_cc_id,
             ways.objtype,
             ways.id
         FROM
@@ -275,11 +299,12 @@ BEGIN
                 m.type = 'w'
             JOIN changes AS ways ON
                 ways.objtype = 'w' AND
-                ways.id = m.ref
+                ways.id = m.ref AND
+                ways.cc_id >= 0
         WHERE
-            relations.objtype = 'r'
+            relations.objtype = 'r' AND
+            relations.cc_id >= 0
         GROUP BY
-            ways.cc_id,
             ways.objtype,
             ways.id
         HAVING
@@ -289,7 +314,7 @@ BEGIN
 
         -- nodes_or_ways_to_relations: update relations based on contained nodes/ways
         SELECT
-            least(min(nodes_or_ways.cc_id), relations.cc_id),
+            min(nodes_or_ways.cc_id) AS min_cc_id,
             relations.objtype,
             relations.id
         FROM
@@ -300,11 +325,12 @@ BEGIN
                 m.ref = nodes_or_ways.id
             JOIN changes AS relations ON
                 relations.objtype = 'r' AND
-                relations.id = m.relation_id
+                relations.id = m.relation_id AND
+                relations.cc_id >= 0
         WHERE
-            nodes_or_ways.objtype IN ('n', 'w')
+            nodes_or_ways.objtype IN ('n', 'w') AND
+            nodes_or_ways.cc_id >= 0
         GROUP BY
-            relations.cc_id,
             relations.objtype,
             relations.id
         HAVING
@@ -313,29 +339,59 @@ BEGIN
         -- TODO relations to relations
     ),
     best AS (
-        SELECT objtype, id, MIN(new_cc_id) AS new_cc_id FROM updates GROUP BY objtype, id
+        SELECT objtype, id, MIN(min_cc_id) AS min_cc_id FROM updates GROUP BY objtype, id
     )
     UPDATE changes
-    SET cc_id = best.new_cc_id
+    SET cc_id = best.min_cc_id
     FROM best
     WHERE
         changes.objtype = best.objtype AND
         changes.id = best.id AND
-        best.new_cc_id < changes.cc_id
+        best.min_cc_id < changes.cc_id
     ;
 
     GET DIAGNOSTICS cnt = ROW_COUNT;
 
-    -- Path compression: if X.cc_id = C, and the object Z that originally had
-    -- cc_id = C has since been merged lower to C', X jumps to C' immediately,
-    -- collapsing O(D) pointer chains to O(log D) total iterations.
+    -- Full path compression: for each cc_id value C that objects point to,
+    -- follow the chain initial_cc_id=C → cc_id → ... recursively until the
+    -- minimum is reached, then update all pointers in one shot.
+    -- Termination is guaranteed because cc_id strictly decreases and is
+    -- bounded below by 1.
+    WITH RECURSIVE
+    chase AS (
+        SELECT
+            cc_id AS target,
+            cc_id AS root
+        FROM
+            changes
+        WHERE
+            cc_id >= 0
+        UNION ALL
+        SELECT
+            c.target,
+            z.cc_id
+        FROM
+            chase AS c
+            JOIN changes AS z ON
+                z.initial_cc_id = c.root AND
+                z.cc_id < c.root AND
+                z.cc_id >= 0
+    ),
+    compressed AS (
+        SELECT target, MIN(root) AS root FROM chase GROUP BY target
+    )
     UPDATE changes AS x
-    SET cc_id = z.cc_id
-    FROM changes AS z
+    SET cc_id = compressed.root
+    FROM compressed
     WHERE
-        z.initial_cc_id = x.cc_id AND
-        z.cc_id < x.cc_id
+        x.cc_id = compressed.target AND
+        x.cc_id >= 0 AND
+        compressed.root < x.cc_id
     ;
+
+    -- Keep initial_cc_id in sync so the next iteration's chase starts from
+    -- up-to-date pointers, not stale intermediate chain nodes.
+    UPDATE changes SET initial_cc_id = cc_id WHERE initial_cc_id != cc_id AND cc_id >= 0;
 
     RAISE NOTICE '20_changes_uncibled - connex components propagation iteration, updated % rows', cnt;
   END LOOP;
