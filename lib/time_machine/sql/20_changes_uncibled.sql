@@ -188,32 +188,30 @@ DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - index relation members: %', (SELECT COUNT(*) FROM osm_changes_members);
 END; $$ LANGUAGE plpgsql;
 
+-- initial_cc_id is used as a "pointer" for path compression.
+-- cc_id decreases monotonically; for any X with cc_id=C, the object Z that
+-- originally had cc_id=C (Z.initial_cc_id=C) may have since been merged to
+-- a lower value, letting X skip ahead in O(log D) steps instead of O(D).
+ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
+UPDATE changes SET initial_cc_id = cc_id;
+CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
+CREATE INDEX changes_idx_cc_id ON changes (cc_id);
+CREATE INDEX changes_idx_nodes_gin ON changes USING GIN (nodes);
 
 -- Propagate cc_id to all connex components by topology
-WITH RECURSIVE a AS (
-    SELECT cc_id, objtype, id FROM changes
-    UNION
-    (
-        WITH
-        -- Recursive term should be referenced only once time
-        b AS (
-            SELECT
-                a.cc_id,
-                changes.objtype,
-                changes.id,
-                changes.nodes,
-                changes.members
-            FROM a
-                JOIN changes USING (objtype, id)
-        ),
-
-        nodes_to_ways AS (
+DO $$
+DECLARE cnt int := 1;
+BEGIN
+  WHILE cnt > 0 LOOP
+    -- One hop: propagate the minimum cc_id through all connection types
+    WITH updates AS (
+        -- nodes_to_ways: update ways based on member nodes
         SELECT
-            least(min(nodes.cc_id), ways.cc_id) AS cc_id,
+            least(min(nodes.cc_id), ways.cc_id) AS new_cc_id,
             ways.objtype,
             ways.id
         FROM
-            b AS nodes
+            changes AS nodes
             JOIN changes AS ways ON
                 ways.objtype = 'w' AND
                 ways.nodes @> ARRAY[nodes.id]
@@ -225,14 +223,16 @@ WITH RECURSIVE a AS (
             ways.id
         HAVING
             min(nodes.cc_id) < ways.cc_id
-        ),
-        ways_to_nodes AS (
+
+        UNION ALL
+
+        -- ways_to_nodes: update nodes based on containing ways
         SELECT
-            least(min(ways.cc_id), nodes.cc_id) AS cc_id,
+            least(min(ways.cc_id), nodes.cc_id),
             nodes.objtype,
             nodes.id
         FROM
-            b AS ways
+            changes AS ways
             JOIN LATERAL unnest(ways.nodes) AS node_id ON true
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
@@ -245,16 +245,17 @@ WITH RECURSIVE a AS (
             nodes.id
         HAVING
             min(ways.cc_id) < nodes.cc_id
-        ),
 
-        relations_to_nodes AS (
+        UNION ALL
+
+        -- relations_to_nodes: update nodes based on containing relations
         SELECT
-            least(min(relations.cc_id), nodes.cc_id) AS cc_id,
+            least(min(relations.cc_id), nodes.cc_id),
             nodes.objtype,
             nodes.id
         FROM
-            b AS relations
-            JOIN osm_changes_members AS m ON
+            changes relations
+            JOIN osm_changes_members m ON
                 m.relation_id = relations.id AND
                 m.type = 'n'
             JOIN changes AS nodes ON
@@ -268,14 +269,16 @@ WITH RECURSIVE a AS (
             nodes.id
         HAVING
             min(relations.cc_id) < nodes.cc_id
-        ),
-        relations_to_ways AS (
+
+        UNION ALL
+
+        -- relations_to_ways: update ways based on containing relations
         SELECT
-            least(min(relations.cc_id), ways.cc_id) AS cc_id,
+            least(min(relations.cc_id), ways.cc_id),
             ways.objtype,
             ways.id
         FROM
-            b AS relations
+            changes AS relations
             JOIN osm_changes_members AS m ON
                 m.relation_id = relations.id AND
                 m.type = 'w'
@@ -289,15 +292,17 @@ WITH RECURSIVE a AS (
             ways.objtype,
             ways.id
         HAVING
-            min(r.cc_id) < w.cc_id
-        ),
-        nodes_or_ways_to_relations AS (
+            min(relations.cc_id) < ways.cc_id
+
+        UNION ALL
+
+        -- nodes_or_ways_to_relations: update relations based on contained nodes/ways
         SELECT
-            least(min(nodes_or_ways.cc_id), relations.cc_id) AS cc_id,
+            least(min(nodes_or_ways.cc_id), relations.cc_id),
             relations.objtype,
             relations.id
         FROM
-            b AS nodes_or_ways
+            changes AS nodes_or_ways
             JOIN osm_changes_members AS m ON
                 m.type IN ('n', 'w') AND
                 m.type = nodes_or_ways.objtype AND
@@ -313,34 +318,40 @@ WITH RECURSIVE a AS (
             relations.id
         HAVING
             min(nodes_or_ways.cc_id) < relations.cc_id
-        )
+
         -- TODO relations to relations
-        SELECT * FROM nodes_to_ways
-        UNION ALL
-        SELECT * FROM ways_to_nodes
-        UNION ALL
-        SELECT * FROM relations_to_nodes
-        UNION ALL
-        SELECT * FROM relations_to_ways
-        UNION ALL
-        SELECT * FROM nodes_or_ways_to_relations
+    ),
+    best AS (
+        SELECT objtype, id, MIN(new_cc_id) AS new_cc_id FROM updates GROUP BY objtype, id
     )
-),
-min_cc_id AS (
-    SELECT objtype, id, min(cc_id) AS cc_id FROM a GROUP BY objtype, id
-)
-UPDATE
-    changes
-SET
-    cc_id = min_cc_id.cc_id
-FROM
-    min_cc_id
-WHERE
-    changes.objtype = min_cc_id.objtype AND
-    changes.id = min_cc_id.id
-;
+    UPDATE changes
+    SET cc_id = best.new_cc_id
+    FROM best
+    WHERE
+        changes.objtype = best.objtype AND
+        changes.id = best.id AND
+        best.new_cc_id < changes.cc_id
+    ;
+
+    GET DIAGNOSTICS cnt = ROW_COUNT;
+
+    -- Path compression: if X.cc_id = C, and the object Z that originally had
+    -- cc_id = C has since been merged lower to C', X jumps to C' immediately,
+    -- collapsing O(D) pointer chains to O(log D) total iterations.
+    UPDATE changes AS x
+    SET cc_id = z.cc_id
+    FROM changes AS z
+    WHERE
+        z.initial_cc_id = x.cc_id AND
+        z.cc_id < x.cc_id
+    ;
+
+    RAISE NOTICE '20_changes_uncibled - connex components propagation iteration, updated % rows', cnt;
+  END LOOP;
+END $$ LANGUAGE plpgsql;
 
 DROP TABLE osm_changes_members CASCADE;
+ALTER TABLE changes DROP COLUMN initial_cc_id;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - connex components: %', (SELECT COUNT(DISTINCT cc_id) FROM changes);
