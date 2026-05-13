@@ -26,99 +26,68 @@ CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
     objtype = 'n'
 ;
 
+-- Returns the nodes from changes with fallback to base table for non-deleted nodes
+-- Get nodes from changes with fallback to base table for non-deleted nodes
+DROP VIEW IF EXISTS osm_fallback_geom_nodes CASCADE;
+CREATE OR REPLACE VIEW osm_fallback_geom_nodes AS
+  SELECT
+    osm_changes_geom_nodes.cc_id AS cc_id,
+    'n' AS objtype,
+    coalesce(osm_changes_geom_nodes.id, base.id) AS id,
+    coalesce(osm_changes_geom_nodes.version, base.version) AS version,
+    osm_changes_geom_nodes.deleted IS NOT DISTINCT FROM true AS deleted,
+    coalesce(osm_changes_geom_nodes.changeset_id, base.changeset_id) AS changeset_id,
+    coalesce(osm_changes_geom_nodes.created, base.created) AS created,
+    coalesce(osm_changes_geom_nodes.uid, base.uid) AS uid,
+    coalesce(osm_changes_geom_nodes.username, base.username) AS username,
+    coalesce(osm_changes_geom_nodes.tags, base.tags) AS tags,
+    coalesce(osm_changes_geom_nodes.lon, base.lon) AS lon,
+    coalesce(osm_changes_geom_nodes.lat, base.lat) AS lat,
+    coalesce(osm_changes_geom_nodes.geom, base.geom) AS geom,
+    osm_changes_geom_nodes.cibled,
+    osm_changes_geom_nodes.locha_id
+  FROM
+    osm_changes_geom_nodes
+    FULL JOIN osm_base_n AS base USING (id)
+  WHERE
+    osm_changes_geom_nodes.deleted IS DISTINCT FROM true
+;
+
 DROP VIEW IF EXISTS osm_changes_geom_ways CASCADE;
 CREATE OR REPLACE VIEW osm_changes_geom_ways AS
 WITH
-t AS (
-  SELECT DISTINCT ON (
-    osm_changes.cc_id,
-    osm_changes.objtype,
-    osm_changes.id,
-    osm_changes.version,
-    osm_changes.deleted,
-    way_nodes.index
-  )
-    osm_changes.cc_id,
-    osm_changes.objtype,
-    osm_changes.id,
-    osm_changes.version,
-    osm_changes.deleted,
-    osm_changes.changeset_id,
-    osm_changes.created,
-    osm_changes.uid,
-    osm_changes.username,
-    osm_changes.tags,
-    osm_changes.nodes,
-    osm_changes.members,
-    osm_changes.cibled,
-    way_nodes.index,
-    coalesce(nodes_change.lon, nodes.lon) AS lon,
-    coalesce(nodes_change.lat, nodes.lat) AS lat,
-    osm_changes.nodes[1] = osm_changes.nodes[array_length(osm_changes.nodes, 1)] AS is_closed,
-    osm_changes.locha_id
-  FROM
-    osm_changes
-    LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-    LEFT JOIN osm_base_n AS nodes ON
-      nodes.id = way_nodes.node_id
-    LEFT JOIN osm_changes AS nodes_change ON
-      nodes_change.objtype = 'n' AND
-      nodes_change.id = way_nodes.node_id
-  WHERE
-    osm_changes.objtype = 'w'
-  ORDER BY
-    osm_changes.cc_id,
-    osm_changes.objtype,
-    osm_changes.id,
-    osm_changes.version,
-    osm_changes.deleted,
-    way_nodes.index,
-    coalesce(nodes_change.version, nodes.version) ASC NULLS LAST,
-    nodes_change.deleted DESC
-),
 with_geom AS (
   SELECT
-    cc_id,
-    objtype,
-    id,
-    version,
-    deleted,
-    changeset_id,
-    created,
-    uid,
-    username,
-    tags,
-    NULL::real as lon,
-    NULL::real as lat,
-    nodes,
-    members,
-    ST_SetSRID(ST_MakeLine(
-      ST_MakePoint(lon, lat) ORDER BY index
-    ), 4326) AS geom,
-    cibled,
-    is_closed,
-    locha_id
+    ways.cc_id,
+    ways.objtype,
+    ways.id,
+    ways.version,
+    ways.deleted,
+    ways.changeset_id,
+    ways.created,
+    ways.uid,
+    ways.username,
+    ways.tags,
+    ways.lon,
+    ways.lat,
+    ways.nodes,
+    ways.members,
+    CASE WHEN array_length(array_agg(nodes.geom ORDER BY index) FILTER (WHERE nodes.geom IS NOT NULL), 1) > 0 THEN
+      ST_SetSRID(ST_RemoveRepeatedPoints(ST_MakeLine(array_agg(nodes.geom ORDER BY index) FILTER (WHERE nodes.geom IS NOT NULL))), 4326)
+    END AS geom,
+    ways.cibled,
+    ways.nodes[1] = ways.nodes[array_length(ways.nodes, 1)] AS is_closed,
+    ways.locha_id
   FROM
-    t
+    osm_changes AS ways
+    LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
+    LEFT JOIN osm_fallback_geom_nodes AS nodes ON
+      nodes.id = way_nodes.node_id
   WHERE
-    lon IS NOT NULL AND
-    lat IS NOT NULL
+    ways.objtype = 'w'
   GROUP BY
-    cc_id,
-    objtype,
-    id,
-    version,
-    deleted,
-    changeset_id,
-    created,
-    uid,
-    username,
-    tags,
-    nodes,
-    members,
-    cibled,
-    is_closed,
-    locha_id
+    ways.objtype,
+    ways.id
 )
 SELECT
   cc_id,
@@ -136,8 +105,11 @@ SELECT
   nodes,
   members,
   CASE
-    -- Force initialy closed ways to be closed
+    WHEN ST_NPoints(geom) = 1 OR ST_Length(geom) = 0 THEN
+      -- Force ways with only one node to be a point
+      ST_PointN(geom, 1)
     WHEN is_closed AND NOT ST_IsClosed(geom) THEN
+      -- Force initialy closed ways to be closed
       ST_AddPoint(geom, ST_PointN(geom, 1))
     ELSE
       geom
