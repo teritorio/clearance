@@ -11,17 +11,17 @@ module Osm
 
   sig{
     params(
-      id: Integer,
-    ).returns(T.nilable(Changeset))
+      ids: T::Array[Integer],
+    ).returns(T::Array[Changeset])
   }
-  def self.fetch_changeset_by_id(id)
-    return nil if id == 0
-
+  def self.fetch_changeset_by_ids(ids)
     cache = WebCache.new(dir: '/cache/changesets/', life: '1d')
-    url = "https://www.openstreetmap.org/api/0.6/changeset/#{id}.json"
-    response = cache.get(url)
-    raise [response.error, url].join(' ') if !response.success?
+    ids.uniq.sort.each_slice(100).flat_map{ |ids_batch|
+      url = "https://www.openstreetmap.org/api/0.6/changesets.json?changesets=#{ids_batch.join(',')}"
+      response = cache.get(url)
+      raise [response.error, url].join(' ') if !response.success?
 
-    JSON.parse(response.content)['changeset']
+      JSON.parse(response.content)['changesets']
+    }
   end
 end

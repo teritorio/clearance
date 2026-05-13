@@ -45,9 +45,8 @@ module Db
       osm_changesets.id IS NULL
     "
 
-    i = conn.exec(sql).collect{ |row|
-      Osm.fetch_changeset_by_id(row['id'])
-    }.compact.collect{ |changeset|
+    changeset_ids = conn.exec(sql).pluck('id').compact
+    i = Osm.fetch_changeset_by_ids(changeset_ids).each{ |changeset|
       conn.exec_prepared('changeset_insert', [
           changeset['id'],
           changeset['created_at'],
