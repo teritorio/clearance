@@ -9,7 +9,7 @@
   },
   {
     "select": [
-      "[amenity=hospital]"
+      "[amenity~'^(hospital|clinic)$']"
     ],
     "interest": {
       "name": null,
