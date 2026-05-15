@@ -14,6 +14,7 @@ RUN apt update -y && apt install -y \
     libpq-dev \
     libproj-dev \
     libprotozero-dev \
+    osmium-tool \
     postgresql-client \
     pyosmium \
     python-is-python3 \
@@ -28,17 +29,6 @@ WORKDIR /srv/
 RUN git clone https://github.com/osmcode/osm-postgresql-experiments.git && \
     cd osm-postgresql-experiments && \
     git checkout 3ddc1ca && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make install
-
-WORKDIR /srv/
-
-# TODO: install as system package
-RUN git clone https://github.com/osmcode/osmium-tool.git && \
-    cd osmium-tool && \
-    git checkout v1.13.0 && \
     mkdir build && \
     cd build && \
     cmake .. && \
