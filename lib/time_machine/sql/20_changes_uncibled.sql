@@ -4,6 +4,8 @@ SELECT DISTINCT x FROM unnest($1) AS x
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
 
+ANALYZE osm_changes;
+
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - osm_changes: %', (SELECT COUNT(*) FROM osm_changes);
 END; $$ LANGUAGE plpgsql;
