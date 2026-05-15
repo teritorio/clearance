@@ -26,32 +26,6 @@ CREATE OR REPLACE VIEW osm_changes_geom_nodes AS
     objtype = 'n'
 ;
 
--- Returns the nodes from changes with fallback to base table for non-deleted nodes
--- Get nodes from changes with fallback to base table for non-deleted nodes
-DROP VIEW IF EXISTS osm_fallback_geom_nodes CASCADE;
-CREATE OR REPLACE VIEW osm_fallback_geom_nodes AS
-  SELECT
-    osm_changes_geom_nodes.cc_id AS cc_id,
-    'n' AS objtype,
-    coalesce(osm_changes_geom_nodes.id, base.id) AS id,
-    coalesce(osm_changes_geom_nodes.version, base.version) AS version,
-    osm_changes_geom_nodes.deleted IS NOT DISTINCT FROM true AS deleted,
-    coalesce(osm_changes_geom_nodes.changeset_id, base.changeset_id) AS changeset_id,
-    coalesce(osm_changes_geom_nodes.created, base.created) AS created,
-    coalesce(osm_changes_geom_nodes.uid, base.uid) AS uid,
-    coalesce(osm_changes_geom_nodes.username, base.username) AS username,
-    coalesce(osm_changes_geom_nodes.tags, base.tags) AS tags,
-    coalesce(osm_changes_geom_nodes.lon, base.lon) AS lon,
-    coalesce(osm_changes_geom_nodes.lat, base.lat) AS lat,
-    coalesce(osm_changes_geom_nodes.geom, base.geom) AS geom,
-    osm_changes_geom_nodes.cibled,
-    osm_changes_geom_nodes.locha_id
-  FROM
-    osm_changes_geom_nodes
-    FULL JOIN osm_base_n AS base USING (id)
-  WHERE
-    osm_changes_geom_nodes.deleted IS DISTINCT FROM true
-;
 
 DROP VIEW IF EXISTS osm_changes_geom_ways CASCADE;
 CREATE OR REPLACE VIEW osm_changes_geom_ways AS
@@ -72,17 +46,22 @@ with_geom AS (
     ways.lat,
     ways.nodes,
     ways.members,
-    CASE WHEN array_length(array_agg(nodes.geom ORDER BY index) FILTER (WHERE nodes.geom IS NOT NULL), 1) > 0 THEN
-      ST_SetSRID(ST_RemoveRepeatedPoints(ST_MakeLine(array_agg(nodes.geom ORDER BY index) FILTER (WHERE nodes.geom IS NOT NULL))), 4326)
+    CASE WHEN array_length(array_agg(coalesce(c_nodes.geom, b_nodes.geom) ORDER BY index) FILTER (WHERE coalesce(c_nodes.geom, b_nodes.geom) IS NOT NULL), 1) > 0 THEN
+      ST_SetSRID(ST_RemoveRepeatedPoints(ST_MakeLine(array_agg(coalesce(c_nodes.geom, b_nodes.geom) ORDER BY index) FILTER (WHERE coalesce(c_nodes.geom, b_nodes.geom) IS NOT NULL))), 4326)
     END AS geom,
     ways.cibled,
     ways.nodes[1] = ways.nodes[array_length(ways.nodes, 1)] AS is_closed,
     ways.locha_id
   FROM
     osm_changes AS ways
-    LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-    LEFT JOIN osm_fallback_geom_nodes AS nodes ON
-      nodes.id = way_nodes.node_id
+    LEFT JOIN unnest(nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON
+      ways.deleted = false
+    LEFT JOIN osm_changes_geom_nodes AS c_nodes ON
+      c_nodes.objtype = 'n' AND
+      c_nodes.id = way_nodes.node_id
+    LEFT JOIN osm_base_n AS b_nodes ON
+      c_nodes.id IS NULL AND
+      b_nodes.id = way_nodes.node_id
   WHERE
     ways.objtype = 'w'
   GROUP BY
