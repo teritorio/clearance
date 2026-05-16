@@ -55,6 +55,38 @@ If required, you can enter into the Postgres shell with:
 docker compose exec -u postgres postgres psql
 ```
 
+### Update from < 0.4.20
+
+Clearance version 0.4.20 come with Postgres 18 and Postgis 3.6 as default.
+
+Migration is optional, but advisable to avoid a specific bug from the previous version.
+
+To stay with the previous Postgres version, set it in `.env`.
+```.env
+POSTGIS_VERSION=15-3.4
+```
+
+In order to migrate, check you have sufficient disk free space. It should be at least the current postgres volume size.
+```
+docker system df -v | grep clearance_pgdata
+```
+
+Run the migration.
+```
+# Stop Clearance
+docker compose down
+
+# Optionally remove Postgres 18 from a previous failed migration
+# docker volume rm clearance_pgdata18
+
+# Migration to Postgres 18
+docker compose --profile=postgres-upgrade run --rm postgres-update
+
+# Only when the new version works,
+# remove the data from the old Postgres 15 volume.
+# docker volume rm clearance_pgdata
+```
+
 ### Update
 After code update, update the database schema:
 ```

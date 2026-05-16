@@ -1,6 +1,26 @@
 services:
+  postgres-update:
+    profiles:
+      - postgres-upgrade
+    image: ghcr.io/teritorio/clearance-postgres-upgrade:15-to-18
+    build:
+      # Point context ot minimal random directory to avoid caching withing docker
+      context: docker/postgres
+      dockerfile_inline: |
+        FROM tianon/postgres-upgrade:15-to-18
+        RUN apt update -y && apt install -y \
+              postgresql-15-postgis-3 \
+              postgresql-18-postgis-3
+    volumes:
+      - pgdata:/var/lib/postgresql/15/data
+      - pgdata18:/var/lib/postgresql/18/docker
+    command: bash -c "
+      gosu postgres /usr/lib/postgresql/18/bin/initdb --no-data-checksums --username=postgres -D /var/lib/postgresql/18/docker &&
+      echo 'host all all 0.0.0.0/0 trust' >> /var/lib/postgresql/18/docker/pg_hba.conf &&
+      gosu postgres pg_upgrade"
+
   postgres:
-    image: postgis/postgis:${POSTGIS_VERSION:-15-3.4}
+    image: postgis/postgis:${POSTGIS_VERSION:-18-3.6}
     shm_size: 1g
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
@@ -10,6 +30,7 @@ services:
       - projects_config:/projects_config
       - projects_data:/projects_data
       - pgdata:/var/lib/postgresql/data
+      - pgdata18:/var/lib/postgresql/18/docker
     healthcheck:
       test: pg_isready
       start_interval: 1s
@@ -102,6 +123,7 @@ services:
 
 volumes:
   pgdata:
+  pgdata18:
   projects_config:
     driver: local
     driver_opts:
