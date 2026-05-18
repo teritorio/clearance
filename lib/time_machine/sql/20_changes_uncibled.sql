@@ -217,7 +217,8 @@ DECLARE cnt int := (SELECT COUNT(*) FROM changes WHERE cc_id >= 0);
 BEGIN
   WHILE cnt > 0 LOOP
     -- One hop: propagate the minimum cc_id through all connection types
-    WITH updates AS (
+    WITH
+    updates AS (
         -- nodes_to_ways: update ways based on member nodes
         SELECT
             min(nodes.cc_id) AS min_cc_id,
@@ -361,14 +362,15 @@ BEGIN
     -- bounded below by 1.
     WITH RECURSIVE
     chase AS (
-        SELECT
+        SELECT DISTINCT
             cc_id AS target,
             cc_id AS root
         FROM
             changes
         WHERE
-            cc_id >= 0
-        UNION ALL
+            cc_id >= 0 AND
+            initial_cc_id != cc_id
+        UNION
         SELECT
             c.target,
             z.cc_id
