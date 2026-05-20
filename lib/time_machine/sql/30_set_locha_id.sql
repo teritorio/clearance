@@ -223,6 +223,7 @@ t AS (
 )
 SELECT DISTINCT ON (locha_ids)
     row_number() OVER () AS id, -- no need to be stable, just need to be unique
+    row_number() OVER () AS main_id,
     locha_ids
 FROM
     t
@@ -230,75 +231,87 @@ ORDER BY
     locha_ids
 ;
 CREATE INDEX ON object_locha_ids (id);
+CREATE INDEX ON object_locha_ids (main_id);
 CREATE INDEX ON object_locha_ids USING GIN (locha_ids);
 
-
-
-DROP TABLE IF EXISTS comp;
-CREATE TEMP TABLE comp AS SELECT id, id AS main_id FROM object_locha_ids;
-CREATE INDEX ON comp (id);
+-- Pre-compute the neighbor graph once: the locha_ids overlaps never change,
+-- only main_id does. Replacing the GIN && join inside the loop with a plain
+-- integer equi-join on this table is much cheaper per iteration.
+-- Store both directions so the loop needs only one join side.
+CREATE TEMP TABLE object_locha_neighbors AS
+SELECT DISTINCT
+    o1.id AS id1,
+    o2.id AS id2
+FROM
+    object_locha_ids AS o1
+    JOIN object_locha_ids AS o2 ON
+        o2.locha_ids && o1.locha_ids AND
+        o2.id != o1.id
+;
+CREATE INDEX ON object_locha_neighbors (id1);
 
 DO $$
-DECLARE changed boolean := true;
+DECLARE
+    changed int := 1;
 BEGIN
-  WHILE changed LOOP
-    -- Each node jumps to the minimum comp of all its neighbors
+  WHILE changed > 0 LOOP
+    -- Each row jumps to the minimum main_id of all its neighbours
     UPDATE
-        comp
+        object_locha_ids
     SET
         main_id = sub.new_main_id
     FROM (
-        SELECT c.id, MIN(c2.main_id) AS new_main_id
+        SELECT
+            o1.id,
+            min(o2.main_id) AS new_main_id
         FROM
-            comp AS c
-            JOIN object_locha_ids AS o1 ON
-                o1.id = c.id
+            object_locha_ids AS o1
+            JOIN object_locha_neighbors AS n ON
+                n.id1 = o1.id
             JOIN object_locha_ids AS o2 ON
-                o2.locha_ids && o1.locha_ids
-            JOIN comp AS c2 ON
-                c2.id = o2.id
-        WHERE
-            c2.main_id < c.main_id
+                o2.id = n.id2 AND
+                o2.main_id < o1.main_id
         GROUP BY
-            c.id
+            o1.id
     ) AS sub
     WHERE
-        comp.id = sub.id AND
-        sub.new_main_id < comp.main_id
+        object_locha_ids.id = sub.id AND
+        sub.new_main_id < object_locha_ids.main_id
     ;
 
-    changed := FOUND;  -- true if UPDATE modified at least one row
+    GET DIAGNOSTICS changed = ROW_COUNT;
 
-    -- Pointer jump: each node skips to its comp's main_id (halves remaining depth)
+    RAISE NOTICE '30_set_locha_id - comp: %', changed;
+
+    -- Pointer jump: skip to the representative's main_id
     UPDATE
-        comp AS c
+        object_locha_ids
     SET
-        main_id = c2.main_id
+        main_id = o2.main_id
     FROM
-        comp AS c2
+        object_locha_ids AS o2
     WHERE
-        c2.id = c.main_id AND
-        c2.main_id < c.main_id
+        o2.id = object_locha_ids.main_id AND
+        o2.main_id < object_locha_ids.main_id
     ;
   END LOOP;
 END $$;
+
+DROP TABLE object_locha_neighbors;
 
 
 DROP TABLE IF EXISTS locha_merge_ids CASCADE;
 CREATE TEMP TABLE locha_merge_ids AS
 SELECT
-    comp.main_id AS id,
-    array_unique(array_concat(object_locha_ids.locha_ids)) AS locha_ids
+    main_id AS id,
+    array_unique(array_concat(locha_ids)) AS locha_ids
 FROM
-    comp
-    JOIN object_locha_ids ON
-        object_locha_ids.id = comp.id
+    object_locha_ids
 GROUP BY
-    comp.main_id
+    main_id
 ;
 CREATE INDEX ON locha_merge_ids USING GIN (locha_ids);
 DROP TABLE object_locha_ids CASCADE;
-DROP TABLE comp CASCADE;
 
 WITH
 locha_merge AS (
