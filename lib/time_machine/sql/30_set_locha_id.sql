@@ -14,7 +14,17 @@ DROP TABLE IF EXISTS ring_snap CASCADE;
 CREATE TEMP TABLE ring_snap AS
 WITH
 objects AS (
-    SELECT *, tags = '{}'::jsonb AS no_tags, true AS is_change FROM osm_changes_geom
+    SELECT
+        cc_id,
+        objtype,
+        id,
+        version,
+        deleted,
+        tags = '{}'::jsonb AS no_tags,
+        nodes,
+        geom,
+        true AS is_change
+    FROM osm_changes_geom
     UNION ALL
     SELECT
         NULL::bigint AS cc_id,
@@ -22,19 +32,9 @@ objects AS (
         base.id,
         base.version,
         false AS deleted,
-        base.changeset_id,
-        base.created,
-        base.uid,
-        base.username,
-        base.tags,
-        base.lon,
-        base.lat,
-        base.nodes,
-        base.members,
-        base.geom,
-        false AS cibled,
-        NULL AS locha_id,
         base.tags = '{}'::jsonb AS no_tags,
+        base.nodes,
+        base.geom,
         false AS is_change
     FROM
         osm_base AS base
@@ -161,7 +161,7 @@ locha_split AS (
 ),
 locha_renum AS (
     SELECT
-        cc_id, objtype, id, version, deleted, no_tags, nodes, geom, snap_geom,
+        cc_id, objtype, id, version, deleted, no_tags, nodes, geom,
         dense_rank() OVER (ORDER BY snap_geom, locha_id) AS locha_id
     FROM
         locha_split
@@ -169,6 +169,8 @@ locha_renum AS (
 )
 SELECT * FROM locha_renum
 ;
+
+DROP TABLE ring_snap CASCADE;
 
 
 DROP TABLE IF EXISTS object_locha_ids CASCADE;
@@ -227,6 +229,7 @@ FROM
 ORDER BY
     locha_ids
 ;
+CREATE INDEX ON object_locha_ids (id);
 CREATE INDEX ON object_locha_ids USING GIN (locha_ids);
 
 
@@ -294,16 +297,16 @@ GROUP BY
     comp.main_id
 ;
 CREATE INDEX ON locha_merge_ids USING GIN (locha_ids);
+DROP TABLE object_locha_ids CASCADE;
+DROP TABLE comp CASCADE;
 
 WITH
 locha_merge AS (
     SELECT
-        locha_renum.cc_id,
         locha_renum.objtype,
         locha_renum.id,
         locha_renum.version,
         locha_renum.deleted,
-        locha_renum.geom,
         locha_merge_ids.id AS locha_id
     FROM
         locha_renum
@@ -331,6 +334,8 @@ WHERE
     osm_changes.objtype = locha.objtype AND
     osm_changes.id = locha.id
 ;
+DROP TABLE locha_renum CASCADE;
+DROP TABLE locha_merge_ids CASCADE;
 
 DO $$ BEGIN
     assert (SELECT COUNT(*) FROM osm_changes WHERE locha_id IS NULL) = 0, 'locha_id should not be null';
