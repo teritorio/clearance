@@ -43,7 +43,7 @@ CREATE INDEX changes__idx_objtype_id ON changes_ (objtype, id);
 
 DO $$ BEGIN
     assert (SELECT COUNT(*) FROM changes_) = (SELECT COUNT(*) FROM osm_changes), 'changes_ should have the same number of rows as osm_changes';
-    RAISE NOTICE '20_changes_uncibled - changes_: %', (SELECT COUNT(*) FROM changes_);
+    RAISE NOTICE '20_changes_uncibled - changes_: % (%)', (SELECT COUNT(*) FROM changes_), pg_size_pretty(pg_total_relation_size('changes_'));
 END; $$ LANGUAGE plpgsql;
 
 
@@ -88,7 +88,7 @@ FROM
 ALTER TABLE changes ADD PRIMARY KEY (objtype, id);
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - changes: %', (SELECT COUNT(*) FROM changes);
+    RAISE NOTICE '20_changes_uncibled - changes: % (%)', (SELECT COUNT(*) FROM changes), pg_size_pretty(pg_total_relation_size('changes'));
 END; $$ LANGUAGE plpgsql;
 
 
@@ -122,7 +122,7 @@ DROP TABLE changes_ CASCADE;
 
 DO $$ BEGIN
     assert (SELECT COUNT(*) FROM changes) = (SELECT COUNT(*) FROM osm_changes), 'changes should have the same number of rows as osm_changes';
-    RAISE NOTICE '20_changes_uncibled - changes: %', (SELECT COUNT(*) FROM changes);
+    RAISE NOTICE '20_changes_uncibled - changes: % (%)', (SELECT COUNT(*) FROM changes), pg_size_pretty(pg_total_relation_size('changes'));
 END; $$ LANGUAGE plpgsql;
 
 
@@ -145,7 +145,7 @@ CREATE INDEX osm_changes_members_relation_idx_n ON osm_changes_members (relation
 CREATE INDEX osm_changes_members_relation_idx_w ON osm_changes_members (relation_id) WHERE type = 'w';
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - index relation members: %', (SELECT COUNT(*) FROM osm_changes_members);
+    RAISE NOTICE '20_changes_uncibled - index relation members: % (%)', (SELECT COUNT(*) FROM osm_changes_members), pg_size_pretty(pg_total_relation_size('osm_changes_members'));
 END; $$ LANGUAGE plpgsql;
 
 
@@ -452,7 +452,7 @@ SELECT cc_id FROM e WHERE cibled
 CREATE INDEX changes_cluster_idx_cc_id ON changes_cluster (cc_id);
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - cluster changes: %', (SELECT COUNT(*) FROM changes_cluster);
+    RAISE NOTICE '20_changes_uncibled - cluster changes: % (%)', (SELECT COUNT(*) FROM changes_cluster), pg_size_pretty(pg_total_relation_size('changes_cluster'));
 END; $$ LANGUAGE plpgsql;
 
 
@@ -476,5 +476,5 @@ DROP TABLE changes;
 DROP TABLE changes_cluster CASCADE;
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - changes_update: %', (SELECT COUNT(*) FROM changes_update);
+    RAISE NOTICE '20_changes_uncibled - changes_update: % (%)', (SELECT COUNT(*) FROM changes_update), pg_size_pretty(pg_total_relation_size('changes_update'));
 END; $$ LANGUAGE plpgsql;

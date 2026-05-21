@@ -84,6 +84,11 @@ SELECT * FROM ring_snap
 ;
 CREATE INDEX ring_snap_idx_cc_id ON ring_snap (cc_id);
 
+DO $$ BEGIN
+    RAISE NOTICE '30_set_locha_id - ring_snap: % (%)', (SELECT COUNT(*) FROM ring_snap), pg_size_pretty(pg_total_relation_size('ring_snap'));
+END; $$ LANGUAGE plpgsql;
+
+
 DROP TABLE IF EXISTS locha_renum CASCADE;
 CREATE TEMP TABLE locha_renum AS
 WITH
@@ -172,6 +177,10 @@ SELECT * FROM locha_renum
 
 DROP TABLE ring_snap CASCADE;
 
+DO $$ BEGIN
+    RAISE NOTICE '30_set_locha_id - locha_renum: % (%)', (SELECT COUNT(*) FROM locha_renum), pg_size_pretty(pg_total_relation_size('locha_renum'));
+END; $$ LANGUAGE plpgsql;
+
 
 DROP TABLE IF EXISTS object_locha_ids CASCADE;
 CREATE TEMP TABLE object_locha_ids AS
@@ -234,6 +243,11 @@ CREATE INDEX ON object_locha_ids (id);
 CREATE INDEX ON object_locha_ids (main_id);
 CREATE INDEX ON object_locha_ids USING GIN (locha_ids);
 
+DO $$ BEGIN
+    RAISE NOTICE '30_set_locha_id - object_locha_ids: % (%)', (SELECT COUNT(*) FROM object_locha_ids), pg_size_pretty(pg_total_relation_size('object_locha_ids'));
+END; $$ LANGUAGE plpgsql;
+
+
 -- Pre-compute the neighbor graph once: the locha_ids overlaps never change,
 -- only main_id does. Replacing the GIN && join inside the loop with a plain
 -- integer equi-join on this table is much cheaper per iteration.
@@ -249,6 +263,11 @@ FROM
         o2.id != o1.id
 ;
 CREATE INDEX ON object_locha_neighbors (id1);
+
+DO $$ BEGIN
+    RAISE NOTICE '30_set_locha_id - object_locha_neighbors: % (%)', (SELECT COUNT(*) FROM object_locha_neighbors), pg_size_pretty(pg_total_relation_size('object_locha_neighbors'));
+END; $$ LANGUAGE plpgsql;
+
 
 DO $$
 DECLARE
@@ -311,7 +330,13 @@ GROUP BY
     main_id
 ;
 CREATE INDEX ON locha_merge_ids USING GIN (locha_ids);
+
 DROP TABLE object_locha_ids CASCADE;
+
+DO $$ BEGIN
+    RAISE NOTICE '30_set_locha_id - locha_merge_ids: % (%)', (SELECT COUNT(*) FROM locha_merge_ids), pg_size_pretty(pg_total_relation_size('locha_merge_ids'));
+END; $$ LANGUAGE plpgsql;
+
 
 WITH
 locha_merge AS (
