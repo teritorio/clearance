@@ -30,6 +30,7 @@ function project() {
             --server $(cat ${EXTRACT_PATH}/replication/sequence.url) \
             --sequence-file ${EXTRACT_PATH}/replication/sequence.txt \
             --no-deduplicate \
+            --size 30 \
             --outfile ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
         ret_code=$?
 
