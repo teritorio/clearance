@@ -49,7 +49,7 @@ class TestValidator < Test::Unit::TestCase
   end
 end
 
-class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
+class TestUserList < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
@@ -110,7 +110,7 @@ class TestUserList < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFil
   end
 end
 
-class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
+class TestTagsChanges < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
@@ -181,7 +181,7 @@ class TestTagsChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
   end
 end
 
-class TestGeomNewObject < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
+class TestGeomNewObject < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
@@ -234,7 +234,7 @@ class TestGeomNewObject < Test::Unit::TestCase # rubocop:disable Style/OneClassP
   end
 end
 
-class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
+class TestGeomChanges < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
@@ -308,7 +308,7 @@ class TestGeomChanges < Test::Unit::TestCase # rubocop:disable Style/OneClassPer
   end
 end
 
-class TestDelayed < Test::Unit::TestCase # rubocop:disable Style/OneClassPerFile
+class TestDelayed < Test::Unit::TestCase
   extend T::Sig
 
   @@srid = T.let(4326, Integer) # No projection
