@@ -10,6 +10,8 @@ function project() {
     PROJECT=$1
     IMPORT=${PROJECTS_DATA_PATH}/${PROJECT}/import
 
+    read_config $PROJECT # Fills variables EXTRACT_URLS, CHECK_REF_INTEGRITY and CHUNK_UPDATE_SIZE
+
     echo "# State before update"
     cat ${PROJECTS_DATA_PATH}/${PROJECT}/import/state.txt
 
@@ -30,7 +32,7 @@ function project() {
             --server $(cat ${EXTRACT_PATH}/replication/sequence.url) \
             --sequence-file ${EXTRACT_PATH}/replication/sequence.txt \
             --no-deduplicate \
-            --size 30 \
+            --size ${CHUNK_UPDATE_SIZE} \
             --outfile ${IMPORT}/diff-${EXTRACT_NAME}-${TIMESTAMP}.osc.xml.bz2
         ret_code=$?
 

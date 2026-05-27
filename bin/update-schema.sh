@@ -14,7 +14,7 @@ for PROJECT in $PROJECTS; do
     echo $PROJECT
     echo
 
-    read_config $PROJECT # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
+    read_config $PROJECT # Fills variables EXTRACT_URLS, CHECK_REF_INTEGRITY and CHUNK_UPDATE_SIZE
 
     exec {LOCK_FD}> ${PROJECTS_DATA_PATH}/${PROJECT}/lock
     flock $LOCK_FD

@@ -27,6 +27,10 @@ import:
   # Geofabrik: true
   # OSM-FR: false
   check_ref_integrity: true
+  # Osmosis replication files to import buffer size, in MB.
+  # Default is 2 (MB), adapted to 200 Km wide extract.
+  # Increase if you have a wider extract. Set 30 (MB) to 1000 Km wide extract.
+  # chunk_update_size: 3
 
 # Set a projection relative to the data location. Should be in meter unit.
 # If you don't know the projection, set the corresponding UTM Zone ESRID code from.

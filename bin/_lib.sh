@@ -32,8 +32,9 @@ function read_config {
     local CONFIG=${PROJECTS_CONFIG_PATH}/${PROJECT}/config.yaml
     EXTRACT_URLS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
     CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == true || ''"`
+    CHUNK_UPDATE_SIZE=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'chunk_update_size') || '3'"`
 
-    # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
+    # Fills variables EXTRACT_URLS, CHECK_REF_INTEGRITY and CHUNK_UPDATE_SIZE
 }
 
 function geofabrik_cookie {

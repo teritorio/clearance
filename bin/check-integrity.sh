@@ -6,7 +6,7 @@ source $(dirname $0)/_lib.sh
 projects_path # Fills variables PROJECTS, PROJECTS_CONFIG_PATH and PROJECTS_DATA_PATH
 
 PROJECT=$1
-read_config $PROJECT # Fills variables EXTRACT_URLS and CHECK_REF_INTEGRITY
+read_config $PROJECT # Fills variables EXTRACT_URLS, CHECK_REF_INTEGRITY and CHUNK_UPDATE_SIZE
 
 lock_or_wait $PROJECT
 
