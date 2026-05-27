@@ -1,4 +1,4 @@
-FROM ruby:3.4-bullseye
+FROM ruby:3.4-bookworm
 
 RUN apt update -y && apt install -y \
     build-essential \
@@ -13,6 +13,7 @@ RUN apt update -y && apt install -y \
     libosmium2-dev \
     libpq-dev \
     libproj-dev \
+    libprotobuf-dev \
     libprotozero-dev \
     osmium-tool \
     postgresql-client \
@@ -41,6 +42,8 @@ RUN bundle config --global silence_root_warning 1
 RUN bundle install
 
 RUN cd /usr/local/bundle/gems/levenshtein-ffi-1.1.0/ext/levenshtein && \
+    make && \
+    cd /usr/local/bundle/bundler/gems/osmium-ruby-*/ext/osmium && \
     make
 
 ADD . ./

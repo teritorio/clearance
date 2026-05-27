@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/teritorio/osmium-ruby.git
+  revision: 27e71ad4c643898c8d3cd451b3669634e8a5634c
+  specs:
+    osmium-ruby (0.1.0)
+      rice (~> 4.0)
+
+GIT
   remote: https://github.com/teritorio/overpass_parser_ruby.git
   revision: f094527cb53639d002a6321161090721e70217fc
   specs:
@@ -314,6 +321,7 @@ GEM
       rgeo (>= 1.0.0)
     rgeo-proj4 (4.0.0)
       rgeo (~> 3.0.0)
+    rice (4.12.0)
     rubocop (1.75.6)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -432,6 +440,7 @@ DEPENDENCIES
   omniauth-osm-oauth2
   omniauth-rails_csrf_protection
   optparse
+  osmium-ruby!
   overpass_parser_ruby!
   pg (~> 1.1)
   psych

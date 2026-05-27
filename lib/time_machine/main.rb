@@ -109,7 +109,7 @@ class MainMain
 
       if options[:export_osm]
         Db::DbConnRead.conn(project){ |conn|
-          Db.export(conn)
+          Db.export(conn, project)
         }
       elsif options[:export_osm_update]
         Db::DbConnWrite.conn(project){ |conn|
