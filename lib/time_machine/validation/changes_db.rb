@@ -267,6 +267,69 @@ module Validation
     validate_changes(conn)
   end
 
+
+  sig {
+    params(
+      conn: PG::Connection,
+      locha_id_semantic_groups: T::Array[[Integer, Integer]],
+    ).void
+  }
+  def self.apply_locha_id_semantic_groups(conn, locha_id_semantic_groups)
+    sql_create_table = "
+      CREATE TEMP TABLE changes_update (
+        objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
+        id BIGINT NOT NULL,
+        version INTEGER NOT NULL,
+        deleted BOOLEAN NOT NULL,
+        PRIMARY KEY (objtype, id, version, deleted)
+      )
+    "
+    conn.exec(sql_create_table)
+
+    sql_create_table = "
+      CREATE TEMP TABLE locha_id_semantic_group (
+        locha_id INTEGER NOT NULL,
+        semantic_group INTEGER NOT NULL,
+        PRIMARY KEY (locha_id, semantic_group)
+      )
+    "
+    conn.exec(sql_create_table)
+
+    r = conn.exec_params("
+      INSERT INTO locha_id_semantic_group (locha_id, semantic_group)
+      SELECT
+        (data->>0)::integer,
+        (data->>1)::integer
+      FROM
+        json_array_elements($1::json) AS t(data)
+    ", [
+      locha_id_semantic_groups.to_json,
+    ])
+    puts "  locha_id_semantic_group count #{r.inspect}"
+
+    r = conn.exec("
+      INSERT INTO changes_update
+      SELECT
+        objtype,
+        id,
+        version,
+        deleted
+      FROM
+        locha_id_semantic_group
+        JOIN validations_log ON
+          validations_log.locha_id = locha_id_semantic_group.locha_id AND
+          validations_log.semantic_group = locha_id_semantic_group.semantic_group
+        JOIN osm_changes ON
+          osm_changes.objtype = validations_log.after_object->>'objtype' AND
+          osm_changes.id = (validations_log.after_object->>'id')::bigint
+      ON CONFLICT (objtype, id, version, deleted)
+      DO NOTHING
+    ")
+    puts "  changes_update count #{r.inspect}"
+
+    validate_changes(conn)
+  end
+
   sig {
     params(
       conn: PG::Connection,
@@ -274,8 +337,8 @@ module Validation
     ).void
   }
   def self.apply_changes(conn, changes)
-    locha_ids = changes.collect(&:locha_id).uniq
-    apply_lochas_ids(conn, locha_ids)
+    locha_id_semantic_groups = changes.collect{ |change| [change.locha_id, change.semantic_group] }.uniq
+    apply_locha_id_semantic_groups(conn, locha_id_semantic_groups)
   end
 
   sig {
@@ -321,7 +384,7 @@ module Validation
   }
   def self.apply_logs(conn, changes)
     locha_accepted = changes.collect(&:locha_id) - changes.select{ |change| change.action != 'accept' }.collect(&:locha_id)
-    apply_lochas_ids(conn, locha_accepted)
+    apply_lochas_ids(conn, locha_accepted, nil)
 
     conn.exec("
       DELETE FROM
