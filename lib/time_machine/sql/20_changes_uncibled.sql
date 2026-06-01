@@ -204,7 +204,7 @@ END; $$ LANGUAGE plpgsql;
 -- cc_id decreases monotonically; for any X with cc_id=C, the object Z that
 -- originally had cc_id=C (Z.initial_cc_id=C) may have since been merged to
 -- a lower value, letting X skip ahead in O(log D) steps instead of O(D).
-UPDATE changes SET cc_id = cc_id * CASE WHEN cc_propa THEN 1 ELSE -1 END;
+UPDATE changes SET cc_id = cc_id * CASE WHEN cibled OR cc_propa THEN 1 ELSE -1 END;
 ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
 UPDATE changes SET initial_cc_id = cc_id;
 CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
@@ -376,8 +376,54 @@ BEGIN
   END LOOP;
 END $$ LANGUAGE plpgsql;
 
-DROP TABLE osm_changes_members CASCADE;
 ALTER TABLE changes DROP COLUMN initial_cc_id;
+
+DO $$ BEGIN
+    -- Assert that nodes has the same cc_id as their ways
+    CREATE TEMP TABLE mismatch_cc_id_ways AS
+    SELECT
+        'w' || ways.id || '-n' || nodes.id || ' (' || ways.cc_id || ' vs ' || nodes.cc_id || ')' AS mismatch
+    FROM
+        changes AS ways
+        JOIN changes AS nodes ON
+            nodes.objtype = 'n' AND
+            (nodes.cibled OR nodes.cc_propa) AND
+            nodes.id = ANY(ways.nodes) AND
+            nodes.cc_id IS DISTINCT FROM ways.cc_id
+    WHERE
+        ways.objtype = 'w' AND
+        ways.cc_id > 0
+    LIMIT
+        20
+    ;
+    assert (SELECT count(*) FROM mismatch_cc_id_ways) = 0, 'All nodes should have the same cc_id as their ways. Mismatches: ' || (SELECT string_agg(mismatch, ', ') FROM mismatch_cc_id_ways);
+    DROP TABLE mismatch_cc_id_ways;
+
+    -- Assert that relations have the same cc_id as their members
+    CREATE TEMP TABLE mismatch_cc_id_relations AS
+    SELECT
+        'r' || relations.id || '-' || m.type || m.ref || ' (' || relations.cc_id || ' vs ' || members.cc_id || ')' AS mismatch
+    FROM
+        changes AS relations
+        JOIN osm_changes_members AS m ON
+            m.relation_id = relations.id AND
+            m.type = 'w'
+        JOIN changes AS members ON
+            members.objtype = m.type AND
+            (members.cibled OR members.cc_propa) AND
+            members.id = m.ref AND
+            members.cc_id IS DISTINCT FROM relations.cc_id
+    WHERE
+        relations.objtype = 'r' AND
+        relations.cc_id > 0
+    LIMIT
+        20
+    ;
+    assert (SELECT count(*) FROM mismatch_cc_id_relations) = 0, 'All relations should have the same cc_id as their members. Mismatches: ' || (SELECT string_agg(mismatch, ', ') FROM mismatch_cc_id_relations);
+    DROP TABLE mismatch_cc_id_relations;
+END; $$ LANGUAGE plpgsql;
+
+DROP TABLE osm_changes_members CASCADE;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - connex components: %', (SELECT COUNT(DISTINCT cc_id) FROM changes);
