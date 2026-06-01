@@ -32,7 +32,6 @@ class TestValidation < Test::Unit::TestCase
         id: id,
         geojson_geometry: geojson_geometry,
         geos_factory: OSMLogicalHistory.build_geos_factory(srid),
-        geom_distance: 0,
         deleted: deleted,
         members: nil,
         version: version,

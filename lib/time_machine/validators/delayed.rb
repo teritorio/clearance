@@ -39,9 +39,10 @@ module Validators
         _before: T.nilable(Validation::OSMChangeProperties),
         after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
+        _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(_before, after, diff)
+    def apply(_before, after, diff, _conflation_reason)
       return if after.nil?
 
 

@@ -38,7 +38,6 @@ class TestValidation < Test::Unit::TestCase
     objtype: 'n',
     id: 1,
     geojson_geometry: '',
-    geom_distance: 0,
     geos_factory: @@geos_factory,
     deleted: false,
     members: nil,
@@ -57,7 +56,6 @@ class TestValidation < Test::Unit::TestCase
     objtype: 'n',
     id: 1,
     geojson_geometry: '{"type":"Point","coordinates":[1,1]}',
-    geom_distance: 1,
     geos_factory: @@geos_factory,
     deleted: false,
     members: nil,
@@ -83,7 +81,7 @@ class TestValidation < Test::Unit::TestCase
     diff = Validation.diff_osm_object(nil, @@fixture_node_a)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        attribs: { 'deleted' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
@@ -95,7 +93,7 @@ class TestValidation < Test::Unit::TestCase
     diff = Validation.diff_osm_object(@@fixture_node_a, nil)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        attribs: { 'deleted' => [] },
         tags: { 'foo' => [] },
       ).inspect,
       diff.inspect
@@ -107,7 +105,7 @@ class TestValidation < Test::Unit::TestCase
     diff = Validation.diff_osm_object(@@fixture_node_a, @@fixture_node_b)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'geom_distance' => [] },
+        attribs: {},
         tags: { 'foo' => [], 'bar' => [] },
       ).inspect,
       diff.inspect

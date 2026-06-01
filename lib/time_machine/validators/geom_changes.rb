@@ -26,23 +26,21 @@ module Validators
 
     sig {
       override.params(
-        before: T.nilable(Validation::OSMChangeProperties),
-        after: T.nilable(Validation::OSMChangeProperties),
+        _before: T.nilable(Validation::OSMChangeProperties),
+        _after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
+        conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(before, after, diff)
-      return if !before || !diff.attribs['geom_distance'] || diff.attribs['geom_distance'] == 0
+    def apply(_before, _after, diff, conflation_reason)
+      dist = T.cast(conflation_reason.geom&.dig(:max_distance), T.nilable(Float))
+      return if !dist || dist == 0
 
-      return if after.nil? || !after.geom_distance
-
-      dist = after.geom_distance
-      return if dist.nil?
-
+      attribs_geom = diff.attribs['geom'] ||= []
       if dist < @dist
-        assign_action_accept(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
+        assign_action_accept(attribs_geom, options: { 'dist' => dist })
       else
-        assign_action_reject(diff.attribs['geom_distance'] || [], options: { 'dist' => dist })
+        assign_action_reject(attribs_geom, options: { 'dist' => dist })
       end
     end
   end

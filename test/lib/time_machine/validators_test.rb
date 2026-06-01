@@ -74,7 +74,6 @@ class TestUserList < Test::Unit::TestCase
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
-      geom_distance: 0,
       deleted: false,
       members: nil,
       version: 1,
@@ -88,18 +87,19 @@ class TestUserList < Test::Unit::TestCase
       group_ids: nil,
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },
+        attribs: { 'deleted' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
     )
 
     diff = Validation.diff_osm_object(after, after)
-    validator.apply(after, after, diff)
+    validator.apply(after, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
         attribs: {},
@@ -142,7 +142,6 @@ class TestTagsChanges < Test::Unit::TestCase
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
-      geom_distance: 0,
       deleted: false,
       members: nil,
       version: 1,
@@ -158,11 +157,12 @@ class TestTagsChanges < Test::Unit::TestCase
       group_ids: nil,
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        attribs: { 'deleted' => [] },
         tags: { 'shop' => validation_action_reject, 'phone' => validation_action_reject, 'foo' => validation_action_accept }
       ).inspect,
       diff.inspect
@@ -170,7 +170,7 @@ class TestTagsChanges < Test::Unit::TestCase
 
     # No change
     diff = Validation.diff_osm_object(after, after)
-    validator.apply(after, after, diff)
+    validator.apply(after, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
         attribs: {},
@@ -197,18 +197,12 @@ class TestGeomNewObject < Test::Unit::TestCase
       ),
     ])
     validator = Validators::GeomNewObject.new(id: id, osm_tags_matches: osm_tags_matches, action: 'accept')
-    validation_action_accept = [Validation::Action.new(
-      validator_id: id,
-      description: nil,
-      action: 'accept',
-    )]
 
     after = Validation::OSMChangeProperties.new(
       objtype: 'n',
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
-      geom_distance: 0,
       deleted: false,
       members: nil,
       version: 1,
@@ -222,11 +216,12 @@ class TestGeomNewObject < Test::Unit::TestCase
       group_ids: nil,
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom_distance' => validation_action_accept },
+        attribs: { 'deleted' => [] },
         tags: { 'shop' => [] }
       ).inspect,
       diff.inspect
@@ -254,7 +249,7 @@ class TestGeomChanges < Test::Unit::TestCase
       validator_id: 'geom_changes_insignificant',
       description: nil,
       action: 'accept',
-      options: { 'dist' => 10 },
+      options: { 'dist' => 10.0 },
     )]
 
     before = Validation::OSMChangeProperties.new(
@@ -262,7 +257,6 @@ class TestGeomChanges < Test::Unit::TestCase
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[10,10]}',
       geos_factory: @@geos_factory,
-      geom_distance: 0,
       deleted: false,
       members: nil,
       version: 1,
@@ -281,7 +275,6 @@ class TestGeomChanges < Test::Unit::TestCase
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
-      geom_distance: 10,
       deleted: false,
       members: nil,
       version: 1,
@@ -295,12 +288,16 @@ class TestGeomChanges < Test::Unit::TestCase
       group_ids: nil,
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(
+      geom: { max_distance: 10.0 },
+      conflate: ''
+    )
     diff = Validation.diff_osm_object(before, after)
-    diff.attribs['geom_distance'] = []
-    validator.apply(before, after, diff)
+    diff.attribs['geom'] = []
+    validator.apply(before, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'geom_distance' => validation_action_accept },
+        attribs: { 'geom' => validation_action_accept },
         tags: {}
       ).inspect,
       diff.inspect
@@ -334,7 +331,6 @@ class TestDelayed < Test::Unit::TestCase
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
-      geom_distance: 0,
       deleted: false,
       members: nil,
       version: 1,
@@ -348,11 +344,12 @@ class TestDelayed < Test::Unit::TestCase
       group_ids: nil,
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },
+        attribs: { 'deleted' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect
@@ -362,11 +359,12 @@ class TestDelayed < Test::Unit::TestCase
       created: '2000-01-01T00:00:10Z', # 20s ago
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        attribs: { 'deleted' => [] },
         tags: { 'foo' => [] }
       ).inspect,
       diff.inspect
@@ -393,7 +391,6 @@ class TestDelayed < Test::Unit::TestCase
       id: 1,
       geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
       geos_factory: @@geos_factory,
-      geom_distance: 0,
       deleted: false,
       members: nil,
       version: 1,
@@ -407,11 +404,12 @@ class TestDelayed < Test::Unit::TestCase
       group_ids: nil,
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom_distance' => [] },
+        attribs: { 'deleted' => [] },
         tags: { 'foo' => [] }
       ).inspect,
       diff.inspect
@@ -421,11 +419,12 @@ class TestDelayed < Test::Unit::TestCase
       created: '2000-01-01T00:00:10Z', # 20s ago
     )
 
+    conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
     diff = Validation.diff_osm_object(nil, after)
-    validator.apply(nil, after, diff)
+    validator.apply(nil, after, diff, conflation_reason)
     assert_equal(
       Validation::DiffActions.new(
-        attribs: { 'deleted' => validation_action, 'geom_distance' => validation_action },
+        attribs: { 'deleted' => validation_action },
         tags: { 'foo' => validation_action }
       ).inspect,
       diff.inspect

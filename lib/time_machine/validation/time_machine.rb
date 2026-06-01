@@ -44,16 +44,11 @@ module Validation
     prevalidation_clusters.collect{ |accepted_links, conflations_matches|
       conflations_matches.each{ |link|
         validators.each{ |validator|
-          validator.apply(link.conflation.before, link.conflation.after, link.result.diff)
+          validator.apply(link.conflation.before, link.conflation.after, link.result.diff, link.conflation.conflation_reason)
         }
       }
 
       conflations_matches.collect{ |link|
-        if !link.result.diff.attribs['geom_distance'].nil?
-          link.result.diff.attribs['geom'] = (link.result.diff.attribs['geom'] || []) + T.must(link.result.diff.attribs['geom_distance'])
-          link.result.diff.attribs.delete('geom_distance')
-        end
-
         link.result.action = link.result.diff.fully_accepted? ? 'accept' : link.result.diff.partialy_rejected? ? 'reject' : nil
       }
 

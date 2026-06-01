@@ -51,7 +51,7 @@ module Validation
     # - lat
     # - lon
     # - members
-    %i[deleted geom_distance].each { |attrib|
+    %i[deleted].each { |attrib|
       diff_attribs[attrib.to_s] = [] if before&.send(attrib) != after&.send(attrib)
     }
 
