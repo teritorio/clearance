@@ -14,9 +14,10 @@ module Validators
         before: T.nilable(Validation::OSMChangeProperties),
         after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
+        _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(before, after, diff)
+    def apply(before, after, diff, _conflation_reason)
       return if after.nil?
 
       after_geos = T.unsafe(after.geos)
