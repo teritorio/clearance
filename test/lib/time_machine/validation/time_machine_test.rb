@@ -103,7 +103,7 @@ class TestValidation < Test::Unit::TestCase
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
-      }, config.local_srid)
+      }, OSMLogicalHistory.build_geos_factory(config.local_srid))
     }
 
     r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
@@ -138,7 +138,7 @@ class TestValidation < Test::Unit::TestCase
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p.to_json),
-      }, config.local_srid)
+      }, OSMLogicalHistory.build_geos_factory(config.local_srid))
     }
 
     r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
@@ -163,7 +163,7 @@ validators: {}"
         'objtype' => 'w',
         'id' => id,
         'p' => JSON.parse(p),
-      }, config.local_srid)
+      }, OSMLogicalHistory.build_geos_factory(config.local_srid))
     }
 
     r = Validation.time_machine_locha(config, 1, locha).semantic_clusters.collect(&:links).flatten(1)
