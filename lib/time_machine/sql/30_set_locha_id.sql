@@ -20,7 +20,6 @@ objects AS (
         id,
         version,
         deleted,
-        tags = '{}'::jsonb AS no_tags,
         nodes,
         geom,
         true AS is_change
@@ -32,7 +31,6 @@ objects AS (
         base.id,
         base.version,
         false AS deleted,
-        base.tags = '{}'::jsonb AS no_tags,
         base.nodes,
         base.geom,
         false AS is_change
@@ -49,7 +47,6 @@ rings AS (
         id,
         version,
         deleted,
-        no_tags,
         is_change,
         nodes,
         ST_Transform(
@@ -71,7 +68,6 @@ ring_snap AS (
         id,
         max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
-        bool_and(no_tags) AS no_tags,
         array_unique(array_concat(DISTINCT nodes)) AS nodes,
         ST_Union(geom) AS geom
     FROM
@@ -166,7 +162,7 @@ locha_split AS (
 ),
 locha_renum AS (
     SELECT
-        cc_id, objtype, id, version, deleted, no_tags, nodes, geom,
+        cc_id, objtype, id, version, deleted, nodes, geom,
         dense_rank() OVER (ORDER BY snap_geom, locha_id) AS locha_id
     FROM
         locha_split
@@ -203,8 +199,7 @@ nodes_locha_ids AS (
     FROM
         locha_renum
     WHERE
-        objtype = 'n' AND
-        NOT no_tags
+        objtype = 'n'
     GROUP BY
         locha_id
 ),
