@@ -38,7 +38,6 @@ class TestValidation < Test::Unit::TestCase
     id: 1,
     geojson_geometry: '',
     geos_factory: @@geos_factory,
-    geom_distance: 0,
     deleted: false,
     members: nil,
     version: 1,
@@ -57,7 +56,6 @@ class TestValidation < Test::Unit::TestCase
     id: 1,
     geojson_geometry: '{"type":"Point","coordinates":[1,1]}',
     geos_factory: @@geos_factory,
-    geom_distance: 1,
     deleted: false,
     members: nil,
     version: 2,
@@ -115,10 +113,7 @@ class TestValidation < Test::Unit::TestCase
       action: nil,
       created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
-        attribs: {
-          'deleted' => [],
-          'geom' => [],
-        },
+        attribs: { 'deleted' => [] },
         tags: { 'foo' => [] },
       ),
     )
@@ -133,7 +128,7 @@ class TestValidation < Test::Unit::TestCase
       action: nil,
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
-        attribs: { 'deleted' => [], 'geom' => [] },
+        attribs: { 'deleted' => [] },
         tags: { 'bar' => [] },
       ),
     )
@@ -164,7 +159,7 @@ class TestValidation < Test::Unit::TestCase
       action: nil,
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
-        attribs: { 'geom' => [] },
+        attribs: {},
         tags: { 'foo' => [], 'bar' => [] },
       ),
     )
@@ -189,7 +184,7 @@ class TestValidation < Test::Unit::TestCase
         action: action || 'reject',
         created: @@fixture_node_b.created,
         diff: Validation::DiffActions.new(
-          attribs: { 'geom' => validated },
+          attribs: {},
           tags: { 'foo' => validated, 'bar' => validated },
         ),
       )

@@ -14,10 +14,11 @@ module Validators
         before: T.nilable(Validation::OSMChangeProperties),
         _after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
+        _conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply(before, _after, diff)
-      %w[geom_distance members].each{ |attrib|
+    def apply(before, _after, diff, _conflation_reason)
+      %w[members].each{ |attrib|
         assign_action(T.must(diff.attribs[attrib])) if !before && !diff.attribs[attrib].nil?
       }
     end

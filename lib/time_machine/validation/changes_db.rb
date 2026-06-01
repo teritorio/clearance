@@ -17,9 +17,6 @@ module Validation
   class OSMChangeProperties < OSMLogicalHistory::OSMObject
     extend T::Sig
 
-    sig { returns(T.nilable(T.any(Float, Integer))) }
-    attr_accessor :geom_distance
-
     sig { returns(T.nilable(Osm::Changeset)) }
     attr_reader :changeset
 
@@ -44,10 +41,9 @@ module Validation
         changeset: T.nilable(Osm::Changeset),
         is_change: T::Boolean,
         group_ids: T.nilable(T::Array[String]),
-        geom_distance: T.nilable(T.any(Float, Integer)),
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changeset:, is_change:, group_ids:, geom_distance: nil) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changeset:, is_change:, group_ids:) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -60,7 +56,6 @@ module Validation
         created: created,
         tags: tags,
       )
-      @geom_distance = geom_distance
       @changeset = changeset
       @is_change = is_change
       @group_ids = group_ids
@@ -86,7 +81,6 @@ module Validation
         changeset: hash['changeset'].nil? ? nil : Osm::Changeset.from_hash(hash['changeset']),
         is_change: hash['is_change'],
         group_ids: hash['group_ids'],
-        geom_distance: hash['geom_distance'],
       )
     end
 
@@ -107,7 +101,6 @@ module Validation
         'changeset' => changeset,
         'is_change' => is_change,
         'group_ids' => group_ids,
-        'geom_distance' => geom_distance,
       }
     end
 
@@ -131,7 +124,6 @@ module Validation
         changeset: kwargs.fetch(:changeset, changeset),
         is_change: kwargs.fetch(:is_change, is_change),
         group_ids: kwargs.fetch(:group_ids, group_ids),
-        geom_distance: kwargs.fetch(:geom_distance, geom_distance),
       )
       o.geos = kwargs[:geos] if kwargs[:geos]
       o
