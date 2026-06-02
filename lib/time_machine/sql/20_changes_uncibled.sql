@@ -265,53 +265,28 @@ BEGIN
 
         UNION ALL
 
-        -- relations_to_nodes: update nodes based on containing relations
+        -- relations_to_nodes_or_ways: update nodes or ways based on containing relations
         SELECT
             min(relations.cc_id) AS min_cc_id,
-            nodes.objtype,
-            nodes.id
+            nodes_or_ways.objtype,
+            nodes_or_ways.id
         FROM
             changes relations
             JOIN osm_changes_members m ON
                 m.relation_id = relations.id AND
-                m.type = 'n'
-            JOIN changes AS nodes ON
-                nodes.objtype = 'n' AND
-                nodes.id = m.ref AND
-                nodes.cc_id >= 0
+                m.type IN ('n', 'w')
+            JOIN changes AS nodes_or_ways ON
+                nodes_or_ways.objtype IN ('n', 'w') AND
+                nodes_or_ways.id = m.ref AND
+                nodes_or_ways.cc_id >= 0
         WHERE
             relations.objtype = 'r' AND
             relations.cc_id >= 0
         GROUP BY
-            nodes.objtype,
-            nodes.id
+            nodes_or_ways.objtype,
+            nodes_or_ways.id
         HAVING
-            min(relations.cc_id) < nodes.cc_id
-
-        UNION ALL
-
-        -- relations_to_ways: update ways based on containing relations
-        SELECT
-            min(relations.cc_id) AS min_cc_id,
-            ways.objtype,
-            ways.id
-        FROM
-            changes AS relations
-            JOIN osm_changes_members AS m ON
-                m.relation_id = relations.id AND
-                m.type = 'w'
-            JOIN changes AS ways ON
-                ways.objtype = 'w' AND
-                ways.id = m.ref AND
-                ways.cc_id >= 0
-        WHERE
-            relations.objtype = 'r' AND
-            relations.cc_id >= 0
-        GROUP BY
-            ways.objtype,
-            ways.id
-        HAVING
-            min(relations.cc_id) < ways.cc_id
+            min(relations.cc_id) < nodes_or_ways.cc_id
 
         UNION ALL
 
