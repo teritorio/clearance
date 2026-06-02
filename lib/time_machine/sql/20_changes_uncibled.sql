@@ -83,6 +83,18 @@ combined AS (
                 )
             )
         ) AS cibled,
+        (
+            base.id IS NULL AND
+            changes.cibled_geom
+        ) OR (
+            base.id IS NOT NULL AND
+            (base.cibled_tags OR changes.cibled_tags) AND
+            (base.cibled_geom OR changes.cibled_geom) AND
+            NOT ST_Equals(
+                coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
+                coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
+            )
+        ) AS cibled_geom_changed,
         changes.deleted AS cc_propa,
         CASE WHEN base.nodes IS NOT NULL THEN base.nodes || changes.nodes ELSE changes.nodes END AS nodes,
         CASE WHEN base.members IS NOT NULL THEN base.members || changes.members ELSE changes.members  END AS members,
@@ -101,6 +113,7 @@ SELECT
     cibled,
     nodes,
     members,
+    cibled_geom_changed,
     cc_propa,
     geom
 FROM
@@ -276,6 +289,7 @@ BEGIN
                 nodes_or_ways.cc_id >= 0
         WHERE
             relations.objtype = 'r' AND
+            relations.cibled_geom_changed AND
             relations.cc_id >= 0
         GROUP BY
             nodes_or_ways.objtype,
@@ -298,6 +312,7 @@ BEGIN
                 m.ref = nodes_or_ways.id
             JOIN changes AS relations ON
                 relations.objtype = 'r' AND
+                relations.cibled_geom_changed AND
                 relations.id = m.relation_id AND
                 relations.cc_id >= 0
         WHERE
@@ -410,6 +425,7 @@ DO $$ BEGIN
             members.cc_id IS DISTINCT FROM relations.cc_id
     WHERE
         relations.objtype = 'r' AND
+        relations.cibled_geom_changed AND
         relations.cc_id > 0
     LIMIT
         20
