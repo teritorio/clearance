@@ -113,8 +113,10 @@ module Validation
   def self.apply_unclibled_changes(conn, osm_tags_matches, proj, distance, geojson_polygons = nil)
     escape_literal = proc { |s| conn.escape_literal(s) }
     sql_osm_filter_tags = osm_tags_matches.to_sql('postgres', '_', escape_literal)
+    sql_osm_diff_tags = osm_tags_matches.to_sql_changes('postgres', 'base', 'changes', escape_literal)
     conn.exec(File.new('/sql/20_changes_uncibled.sql').read
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
+      .gsub(':osm_diff_tags', sql_osm_diff_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json))
       .gsub(':proj', proj.to_s)
       .gsub(':distance', distance.to_s))

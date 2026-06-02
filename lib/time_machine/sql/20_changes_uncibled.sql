@@ -53,6 +53,7 @@ changes_base AS (
     SELECT
         _.objtype,
         _.id,
+        _.tags,
         coalesce(:osm_filter_tags, false) AND
         (
             _.geom IS NULL
@@ -77,6 +78,9 @@ SELECT
     base.nodes || changes.nodes AS nodes,
     base.members || changes.members AS members,
     changes.deleted AS cc_propa,
+    :osm_diff_tags AS changed_tags,
+    NOT (base.geom IS NULL AND changes.geom IS NULL) OR NOT ST_Equals(base.geom, changes.geom) AS changed_geom,
+    CASE objtype WHEN 'r' THEN base.members != changes.members END AS changed_members,
     ST_Union(
         coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
         coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
@@ -107,6 +111,9 @@ SELECT
     CASE WHEN base.nodes IS NOT NULL THEN _.nodes || base.nodes ELSE _.nodes END AS nodes,
     CASE WHEN base.members IS NOT NULL THEN _.members || base.members ELSE _.members END AS members,
     true AS cc_propa,
+    true AS changed_tags,
+    true AS changed_geom,
+    CASE objtype WHEN 'r' THEN true END AS changed_members,
     CASE WHEN base.geom IS NOT NULL THEN ST_Union(_.geom, base.geom) ELSE _.geom END AS geom
 FROM
     clip,
@@ -115,6 +122,15 @@ FROM
     LEFT JOIN changes USING (objtype, id)
 WHERE
     changes.objtype IS NULL
+;
+
+UPDATE changes
+SET
+    cibled = false
+WHERE
+    cibled AND
+    NOT changed_tags AND
+    NOT changed_geom
 ;
 
 DROP TABLE clip CASCADE;

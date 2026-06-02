@@ -112,6 +112,29 @@ module Osm
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
     end
+
+    sig {
+      params(
+        sql_dialect: String,
+        table1: String,
+        table2: String,
+        escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
+      ).returns(T.nilable(String))
+    }
+    def to_sql_changes(sql_dialect, table1, table2, escape_literal)
+      return nil if @selector_extra.blank?
+
+      escape = escape_literal || proc { |input| input }
+      pp = @selector_matches.collect{ |selectors|
+        p1 = selectors.to_sql(sql_dialect, table1, 0, escape_literal)
+        p2 = selectors.to_sql(sql_dialect, table2, 0, escape_literal)
+
+        extra = @selector_extra.keys.collect{ |key| "#{table1}.tags->>#{escape.call(key)} IS DISTINCT FROM #{table2}.tags->>#{escape.call(key)}" }
+
+        "((#{p1}) AND (#{p2}) AND (#{extra.join(' OR ')}))"
+      }
+      pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
+    end
   end
 
   class TagsMatches
@@ -160,6 +183,22 @@ module Osm
         'true'
       else
         @matches.collect{ |match| match.to_sql(sql_dialect, table, escape_literal) }.join(' OR ')
+      end
+    end
+
+    sig {
+      params(
+        sql_dialect: String,
+        table1: String,
+        table2: String,
+        escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
+      ).returns(String)
+    }
+    def to_sql_changes(sql_dialect, table1, table2, escape_literal)
+      if @matches.blank?
+        'true'
+      else
+        @matches.collect{ |match| match.to_sql_changes(sql_dialect, table1, table2, escape_literal) }.compact.join(" OR\n")
       end
     end
   end
