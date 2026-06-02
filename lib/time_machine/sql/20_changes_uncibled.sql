@@ -24,12 +24,12 @@ CREATE TEMP TABLE changes_ AS
         _.objtype,
         _.id,
         _.deleted,
-        coalesce(:osm_filter_tags, false) AND
+        coalesce(:osm_filter_tags, false) AS cibled_tags,
         (
             _.geom IS NULL
             OR
             (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
-        ) AS cibled,
+        ) AS cibled_geom,
         _.nodes,
         _.members,
         _.tags,
@@ -49,89 +49,68 @@ END; $$ LANGUAGE plpgsql;
 
 CREATE TEMP TABLE changes AS
 WITH
-changes_base AS (
+base AS (
     SELECT
-        _.objtype,
-        _.id,
-        _.tags,
-        coalesce(:osm_filter_tags, false) AND
+        _.*,
+        coalesce(:osm_filter_tags, false) AS cibled_tags,
         (
             _.geom IS NULL
             OR
             (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
-        ) AS cibled,
-        _.nodes,
-        _.members,
-        _.geom
+        ) AS cibled_geom
     FROM
         clip,
         osm_base AS _
-    WHERE
-        _.geom IS NOT NULL AND
-        (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
+),
+combined AS (
+    SELECT
+        objtype,
+        id,
+        (
+            base.id IS NULL AND
+            changes.cibled_tags AND
+            changes.cibled_geom
+        ) OR (
+            base.id IS NOT NULL AND
+            (base.cibled_tags OR changes.cibled_tags) AND
+            (base.cibled_geom OR changes.cibled_geom) AND
+            (
+                :osm_diff_tags
+                OR
+                NOT ST_Equals(
+                    coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
+                    coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
+                )
+            )
+        ) AS cibled,
+        changes.deleted AS cc_propa,
+        CASE WHEN base.nodes IS NOT NULL THEN base.nodes || changes.nodes ELSE changes.nodes END AS nodes,
+        CASE WHEN base.members IS NOT NULL THEN base.members || changes.members ELSE changes.members  END AS members,
+        nullif(ST_Union(
+            coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
+            coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
+        ), ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)) AS geom
+    FROM
+        changes_ AS changes
+        LEFT JOIN base USING (objtype, id)
 )
 SELECT
     row_number() OVER () AS cc_id,
     objtype,
     id,
-    base.cibled OR changes.cibled AS cibled,
-    base.nodes || changes.nodes AS nodes,
-    base.members || changes.members AS members,
-    changes.deleted AS cc_propa,
-    :osm_diff_tags AS changed_tags,
-    NOT (base.geom IS NULL AND changes.geom IS NULL) OR NOT ST_Equals(base.geom, changes.geom) AS changed_geom,
-    CASE objtype WHEN 'r' THEN base.members != changes.members END AS changed_members,
-    ST_Union(
-        coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
-        coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
-    ) AS geom
+    cibled,
+    nodes,
+    members,
+    cc_propa,
+    geom
 FROM
-    changes_base AS base
-    JOIN changes_ AS changes USING (objtype, id)
+    combined
 ;
 ALTER TABLE changes ADD PRIMARY KEY (objtype, id);
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - changes: % (%)', (SELECT COUNT(*) FROM changes), pg_size_pretty(pg_total_relation_size('changes'));
 END; $$ LANGUAGE plpgsql;
-
-
-INSERT INTO changes
--- changes without base
-SELECT
-    coalesce((SELECT max(cc_id) FROM changes), 0) + row_number() OVER () AS cc_id,
-    objtype,
-    id,
-    coalesce(:osm_filter_tags, false) AND
-    (
-        _.geom IS NULL
-        OR
-        (clip.geom IS NULL OR ST_Intersects(clip.geom, _.geom))
-    ) AS cibled,
-    CASE WHEN base.nodes IS NOT NULL THEN _.nodes || base.nodes ELSE _.nodes END AS nodes,
-    CASE WHEN base.members IS NOT NULL THEN _.members || base.members ELSE _.members END AS members,
-    true AS cc_propa,
-    true AS changed_tags,
-    true AS changed_geom,
-    CASE objtype WHEN 'r' THEN true END AS changed_members,
-    CASE WHEN base.geom IS NOT NULL THEN ST_Union(_.geom, base.geom) ELSE _.geom END AS geom
-FROM
-    clip,
-    changes_ AS _
-    LEFT JOIN osm_base AS base USING (objtype, id)
-    LEFT JOIN changes USING (objtype, id)
-WHERE
-    changes.objtype IS NULL
-;
-
-UPDATE changes
-SET
-    cibled = false
-WHERE
-    cibled AND
-    NOT changed_tags AND
-    NOT changed_geom
-;
 
 DROP TABLE clip CASCADE;
 DROP TABLE changes_ CASCADE;
@@ -500,9 +479,7 @@ SELECT
     osm_changes.*
 FROM
     osm_changes
-    JOIN changes ON
-        changes.objtype = osm_changes.objtype AND
-        changes.id = osm_changes.id
+    JOIN changes USING (objtype, id)
     LEFT JOIN changes_cluster ON
         changes_cluster.cc_id = changes.cc_id
 WHERE

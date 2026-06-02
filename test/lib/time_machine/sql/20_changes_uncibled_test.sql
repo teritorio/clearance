@@ -6,6 +6,7 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 \set polygon NULL
 \set osm_filter_tags false
+\set osm_diff_tags true
 \set locha_cluster_distance 0
 \set proj 4326
 \set distance 1
