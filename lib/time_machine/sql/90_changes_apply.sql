@@ -1,13 +1,12 @@
--- DO $$ BEGIN
---     RAISE NOTICE '90_changes_apply - to insert: %', (SELECT COUNT(*) FROM :changes_source WHERE NOT deleted);
--- END; $$ LANGUAGE plpgsql;
+DROP VIEW IF EXISTS __changes_source;
+CREATE TEMP VIEW __changes_source AS SELECT * FROM :changes_source;
 
 INSERT INTO
     osm_base_n
 SELECT DISTINCT ON (id)
     id, version, changeset_id, created, uid, username, tags, lon, lat
 FROM
-    :changes_source AS changes
+    __changes_source AS changes
 WHERE
     NOT changes.deleted AND
     objtype = 'n'
@@ -28,12 +27,17 @@ SET
     lat = EXCLUDED.lat
 ;
 
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - upserted nodes: %', (SELECT COUNT(*) FROM __changes_source WHERE objtype = 'n' AND NOT deleted);
+END; $$ LANGUAGE plpgsql;
+
+
 INSERT INTO
     osm_base_w
 SELECT DISTINCT ON (id)
     id, version, changeset_id, created, uid, username, tags, nodes
 FROM
-    :changes_source AS changes
+    __changes_source AS changes
 WHERE
     NOT changes.deleted AND
     objtype = 'w'
@@ -53,12 +57,17 @@ SET
     nodes = EXCLUDED.nodes
 ;
 
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - upserted ways: %', (SELECT COUNT(*) FROM __changes_source WHERE objtype = 'w' AND NOT deleted);
+END; $$ LANGUAGE plpgsql;
+
+
 INSERT INTO
     osm_base_r
 SELECT DISTINCT ON (id)
     id, version, changeset_id, created, uid, username, tags, members
 FROM
-    :changes_source AS changes
+    __changes_source AS changes
 WHERE
     NOT changes.deleted AND
     objtype = 'r'
@@ -78,6 +87,11 @@ SET
     members = EXCLUDED.members
 ;
 
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - upserted relations: %', (SELECT COUNT(*) FROM __changes_source WHERE objtype = 'r' AND NOT deleted);
+END; $$ LANGUAGE plpgsql;
+
+
 INSERT INTO
     osm_changes_applyed
 SELECT DISTINCT ON (id, objtype, version, deleted)
@@ -96,7 +110,7 @@ SELECT DISTINCT ON (id, objtype, version, deleted)
     changes.members
 FROM
     osm_changes AS changes
-    JOIN :changes_source AS update ON
+    JOIN __changes_source AS update ON
         update.objtype = changes.objtype AND
         update.id = changes.id
 ORDER BY
@@ -106,14 +120,15 @@ ON CONFLICT ON CONSTRAINT osm_changes_applyed_pkey
 DO NOTHING
 ;
 
--- DO $$ BEGIN
---     RAISE NOTICE '90_changes_apply - delete: %', (SELECT COUNT(*) FROM :changes_source WHERE deleted);
--- END; $$ LANGUAGE plpgsql;
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - logged changes';
+END; $$ LANGUAGE plpgsql;
+
 
 DELETE FROM
     osm_base_r AS osm_base
 USING
-    :changes_source AS changes
+    __changes_source AS changes
 WHERE
     changes.objtype = 'r' AND
     changes.id = osm_base.id AND
@@ -123,7 +138,7 @@ WHERE
 DELETE FROM
     osm_base_w AS osm_base
 USING
-    :changes_source AS changes
+    __changes_source AS changes
 WHERE
     changes.objtype = 'w' AND
     changes.id = osm_base.id AND
@@ -133,22 +148,27 @@ WHERE
 DELETE FROM
     osm_base_n AS osm_base
 USING
-    :changes_source AS changes
+    __changes_source AS changes
 WHERE
     changes.objtype = 'n' AND
     changes.id = osm_base.id AND
     changes.deleted
 ;
 
--- DO $$ BEGIN
---     RAISE NOTICE '90_changes_apply - prune changes: %', (SELECT COUNT(*) FROM :changes_source);
--- END; $$ LANGUAGE plpgsql;
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - deleted: %', (SELECT COUNT(*) FROM __changes_source WHERE deleted);
+END; $$ LANGUAGE plpgsql;
+
 
 DELETE FROM
     osm_changes AS changes
 USING
-    :changes_source AS update
+    __changes_source AS update
 WHERE
     update.objtype = changes.objtype AND
     update.id = changes.id
 ;
+
+DO $$ BEGIN
+    RAISE NOTICE '90_changes_apply - pruned changes: %', (SELECT COUNT(*) FROM __changes_source);
+END; $$ LANGUAGE plpgsql;
