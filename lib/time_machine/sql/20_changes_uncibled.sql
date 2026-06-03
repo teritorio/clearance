@@ -457,29 +457,50 @@ WHERE
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - cibled changes: % / %', (SELECT COUNT(*) FROM changes WHERE cibled), (SELECT COUNT(*) FROM changes);
     assert (SELECT COUNT(*) FROM osm_changes WHERE cc_id IS NULL) = 0, 'cc_id should not be null';
+    assert (SELECT COUNT(*) FROM changes) = (SELECT COUNT(*) FROM osm_changes), 'changes should have the same number of rows as osm_changes';
     RAISE NOTICE '20_changes_uncibled - largest connex components size: %', (SELECT array_agg(n) FROM (SELECT count(*) FROM osm_changes GROUP BY cc_id ORDER BY count(*) DESC LIMIT 10) AS t(n));
 END; $$ LANGUAGE plpgsql;
 
 
--- Match grid cells to pairs of integers using Cantor pairing
-DROP FUNCTION IF EXISTS cantor_pairing CASCADE;
-CREATE FUNCTION cantor_pairing(x bigint, y bigint) RETURNS bigint AS $$
-DECLARE
-    a bigint := CASE WHEN x >= 0 THEN 2*x ELSE -2*x - 1 END;
-    b bigint := CASE WHEN y >= 0 THEN 2*y ELSE -2*y - 1 END;
-BEGIN
-  RETURN (a + b) * (a + b + 1) / 2 + b;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+DROP FUNCTION IF EXISTS split_by_grid(geometry, float);
+CREATE OR REPLACE FUNCTION split_by_grid(geom geometry, cell_size float)
+RETURNS TABLE (geom geometry) AS $$
+WITH
+bounds AS (
+    SELECT
+        floor(ST_XMin(geom) / cell_size) * cell_size AS xmin,
+        floor(ST_YMin(geom) / cell_size) * cell_size AS ymin,
+        ceil(ST_XMax(geom)  / cell_size) * cell_size AS xmax,
+        ceil(ST_YMax(geom)  / cell_size) * cell_size AS ymax
+),
+grid AS (
+    SELECT
+        ST_SetSRID(ST_MakeEnvelope(x, y, x + cell_size, y + cell_size), ST_SRID(geom)) AS cell
+    FROM
+        bounds,
+        generate_series(xmin::bigint, (xmax - cell_size)::bigint, cell_size::bigint) AS x,
+        generate_series(ymin::bigint, (ymax - cell_size)::bigint, cell_size::bigint) AS y
+)
+SELECT
+    ST_Intersection(geom, cell)
+FROM
+    grid
+WHERE
+    ST_Intersects(geom, cell)
+;
+$$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
+
+ALTER TABLE changes ADD COLUMN geom_proj geometry(Geometry, :proj) GENERATED ALWAYS AS (ST_Transform(ST_MakeValid(geom), :proj)) STORED;
+CREATE INDEX changes_geom_proj_idx ON changes USING GIST (geom_proj) WHERE NOT cibled;
 
 CREATE TEMP TABLE changes_cluster AS
 WITH
-a AS (SELECT cc_id, bool_or(cibled) AS cibled, ST_Transform(ST_MakeValid(ST_Collect(geom)), :proj) AS geom_proj FROM changes GROUP BY cc_id),
-b AS (SELECT cc_id, cibled, geom_proj, ST_SnapToGrid(ST_PointOnSurface(geom_proj), :distance * 100) AS snap_geom FROM a),
-c AS (SELECT cc_id, cibled, geom_proj, cantor_pairing(ST_X(snap_geom)::bigint, ST_Y(snap_geom)::bigint) AS snap_grid_id FROM b),
-d AS (SELECT cc_id, cibled, ST_ClusterWithinWin(geom_proj, :distance) OVER (PARTITION BY snap_grid_id) AS cluster_id FROM c),
-e AS (SELECT cc_id, bool_or(cibled) OVER (PARTITION BY cluster_id) AS cibled, cluster_id FROM d)
-SELECT cc_id FROM e WHERE cibled
+a AS (SELECT cc_id, bool_or(cibled) AS cibled, ST_Buffer(ST_Collect(geom_proj), :distance) AS geom_proj FROM changes WHERE cibled GROUP BY cc_id),
+b AS (SELECT cc_id, cibled, split_by_grid(geom_proj, :distance * 100) AS split_geom_proj FROM a),
+c AS (SELECT DISTINCT changes.cc_id FROM b JOIN changes ON NOT changes.cibled AND ST_Intersects(b.split_geom_proj, changes.geom_proj))
+SELECT cc_id FROM a
+UNION
+SELECT cc_id FROM c
 ;
 CREATE INDEX changes_cluster_idx_cc_id ON changes_cluster (cc_id);
 
