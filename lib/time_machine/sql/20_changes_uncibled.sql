@@ -217,6 +217,7 @@ ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
 UPDATE changes SET initial_cc_id = cc_id;
 CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
 CREATE INDEX changes_idx_cc_id ON changes (cc_id);
+CREATE INDEX changes_idx_nodes ON changes USING GIN (nodes);
 ANALYZE changes;
 
 -- Propagate cc_id to all connex components by topology
@@ -270,6 +271,29 @@ BEGIN
             nodes.id
         HAVING
             min(ways.cc_id) < nodes.cc_id
+
+        UNION ALL
+
+        -- ways_to_ways: update ways based on shared nodes
+        -- When there is no changes on common nodes
+        SELECT
+            min(ways2.cc_id) AS min_cc_id,
+            ways.objtype,
+            ways.id
+        FROM
+            changes AS ways
+            JOIN changes AS ways2 ON
+                ways2.objtype = 'w' AND
+                ways2.nodes && ways.nodes AND
+                ways2.cc_id >= 0
+        WHERE
+            ways.objtype = 'w' AND
+            ways.cc_id >= 0
+        GROUP BY
+            ways.objtype,
+            ways.id
+        HAVING
+            min(ways2.cc_id) < ways.cc_id
 
         UNION ALL
 
