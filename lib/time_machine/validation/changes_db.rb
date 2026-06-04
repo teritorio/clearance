@@ -211,11 +211,8 @@ module Validation
     ).void
   }
   def self.apply_logs(conn, changes)
-    accepts = changes.select{ |change|
-      change.action == 'accept'
-    }
-
-    apply_changes(conn, accepts)
+    locha_accepted = changes.collect(&:locha_id) - changes.select{ |change| change.action != 'accept' }.collect(&:locha_id)
+    apply_lochas_ids(conn, locha_accepted)
 
     conn.exec("
       DELETE FROM
