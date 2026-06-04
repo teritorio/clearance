@@ -107,9 +107,12 @@ CREATE INDEX IF NOT EXISTS osm_base_idx_members_r ON osm_base_r USING gin(osm_ba
 
 -- Trigger to update geom
 DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
-DROP TRIGGER IF EXISTS osm_base_nodes_trigger ON osm_base_n;
-DROP TRIGGER IF EXISTS osm_base_trigger_insert ON osm_base_n;
-DROP TRIGGER IF EXISTS osm_base_trigger_update ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_n_trigger_insert ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_w_trigger_insert ON osm_base_w;
+DROP TRIGGER IF EXISTS osm_base_r_trigger_insert ON osm_base_r;
+DROP TRIGGER IF EXISTS osm_base_n_trigger_update ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_w_trigger_update ON osm_base_w;
+DROP TRIGGER IF EXISTS osm_base_r_trigger_update ON osm_base_r;
 
 CREATE TABLE IF NOT EXISTS osm_base_changes_ids(
   objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
@@ -121,21 +124,6 @@ CREATE TABLE IF NOT EXISTS osm_base_changes_flag(
   flag text,
   UNIQUE (flag)
 );
-
-CREATE OR REPLACE FUNCTION osm_base_nodes_geom() RETURNS trigger AS $$
-BEGIN
-  INSERT INTO osm_base_changes_ids VALUES ('n', NEW.id) ON CONFLICT (objtype, id) DO NOTHING;
-  INSERT INTO osm_base_changes_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER osm_base_nodes_trigger
-  BEFORE INSERT OR UPDATE OF lon, lat
-  ON osm_base_n
-  FOR EACH ROW
-EXECUTE PROCEDURE osm_base_nodes_geom();
 
 CREATE OR REPLACE FUNCTION osm_base_n_log_update() RETURNS trigger AS $$
 BEGIN
@@ -161,22 +149,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER osm_base_trigger_insert
+CREATE OR REPLACE TRIGGER osm_base_n_trigger_insert
   AFTER INSERT
   ON osm_base_n
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_n_log_update();
 
-CREATE OR REPLACE TRIGGER osm_base_trigger_insert
+CREATE OR REPLACE TRIGGER osm_base_w_trigger_insert
   AFTER INSERT
   ON osm_base_w
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_w_log_update();
-CREATE OR REPLACE TRIGGER osm_base_trigger_insert
+
+CREATE OR REPLACE TRIGGER osm_base_r_trigger_insert
   AFTER INSERT
   ON osm_base_r
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_r_log_update();
+
+CREATE OR REPLACE TRIGGER osm_base_n_trigger_update
+  AFTER UPDATE OF lon, lat
+  ON osm_base_n
+  FOR EACH ROW
+EXECUTE PROCEDURE osm_base_n_log_update();
 
 CREATE OR REPLACE TRIGGER osm_base_w_trigger_update
   AFTER UPDATE
