@@ -10,6 +10,16 @@ RETURNS anyelement AS $$
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
 
+-- Triggers to update geom
+DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
+DROP TRIGGER IF EXISTS osm_base_n_trigger_insert ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_w_trigger_insert ON osm_base_w;
+DROP TRIGGER IF EXISTS osm_base_r_trigger_insert ON osm_base_r;
+DROP TRIGGER IF EXISTS osm_base_n_trigger_update ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_w_trigger_update ON osm_base_w;
+DROP TRIGGER IF EXISTS osm_base_r_trigger_update ON osm_base_r;
+
+
 DO $$ BEGIN
     RAISE NOTICE 'schema_geom - osm_base_n';
 END; $$ LANGUAGE plpgsql;
@@ -105,14 +115,7 @@ CREATE INDEX IF NOT EXISTS osm_base_idx_members_w ON osm_base_r USING gin(osm_ba
 CREATE INDEX IF NOT EXISTS osm_base_idx_members_r ON osm_base_r USING gin(osm_base_idx_nodes_members(members, 'r'));
 
 
--- Trigger to update geom
-DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
-DROP TRIGGER IF EXISTS osm_base_n_trigger_insert ON osm_base_n;
-DROP TRIGGER IF EXISTS osm_base_w_trigger_insert ON osm_base_w;
-DROP TRIGGER IF EXISTS osm_base_r_trigger_insert ON osm_base_r;
-DROP TRIGGER IF EXISTS osm_base_n_trigger_update ON osm_base_n;
-DROP TRIGGER IF EXISTS osm_base_w_trigger_update ON osm_base_w;
-DROP TRIGGER IF EXISTS osm_base_r_trigger_update ON osm_base_r;
+-- Drop triggers to update geom
 
 CREATE TABLE IF NOT EXISTS osm_base_changes_ids(
   objtype CHAR(1) CHECK(objtype IN ('n', 'w', 'r')),
