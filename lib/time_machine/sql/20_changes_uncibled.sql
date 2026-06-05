@@ -230,7 +230,7 @@ BEGIN
     updates AS (
         -- nodes_to_ways: update ways based on member nodes
         SELECT
-            min(nodes.cc_id) AS min_cc_id,
+            min(abs(nodes.cc_id)) AS min_cc_id,
             ways.objtype,
             ways.id
         FROM
@@ -238,8 +238,7 @@ BEGIN
             JOIN LATERAL unnest_unique(ways.nodes) AS node_id ON true
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = node_id AND
-                nodes.cc_id >= 0
+                nodes.id = node_id
         WHERE
             ways.objtype = 'w' AND
             ways.cc_id >= 0
@@ -247,13 +246,13 @@ BEGIN
             ways.objtype,
             ways.id
         HAVING
-            min(nodes.cc_id) < ways.cc_id
+            min(abs(nodes.cc_id)) < ways.cc_id
 
         UNION ALL
 
         -- ways_to_nodes: update nodes based on containing ways
         SELECT
-            min(ways.cc_id) AS min_cc_id,
+            min(abs(ways.cc_id)) AS min_cc_id,
             nodes.objtype,
             nodes.id
         FROM
@@ -264,28 +263,26 @@ BEGIN
                 nodes.id = node_id AND
                 nodes.cc_id >= 0
         WHERE
-            ways.objtype = 'w' AND
-            ways.cc_id >= 0
+            ways.objtype = 'w'
         GROUP BY
             nodes.objtype,
             nodes.id
         HAVING
-            min(ways.cc_id) < nodes.cc_id
+            min(abs(ways.cc_id)) < nodes.cc_id
 
         UNION ALL
 
         -- ways_to_ways: update ways based on shared nodes
         -- When there is no changes on common nodes
         SELECT
-            min(ways2.cc_id) AS min_cc_id,
+            min(abs(ways2.cc_id)) AS min_cc_id,
             ways.objtype,
             ways.id
         FROM
             changes AS ways
             JOIN changes AS ways2 ON
                 ways2.objtype = 'w' AND
-                ways2.nodes && ways.nodes AND
-                ways2.cc_id >= 0
+                ways2.nodes && ways.nodes
         WHERE
             ways.objtype = 'w' AND
             ways.cc_id >= 0
@@ -293,13 +290,13 @@ BEGIN
             ways.objtype,
             ways.id
         HAVING
-            min(ways2.cc_id) < ways.cc_id
+            min(abs(ways2.cc_id)) < ways.cc_id
 
         UNION ALL
 
         -- relations_to_nodes_or_ways: update nodes or ways based on containing relations
         SELECT
-            min(relations.cc_id) AS min_cc_id,
+            min(abs(relations.cc_id)) AS min_cc_id,
             nodes_or_ways.objtype,
             nodes_or_ways.id
         FROM
@@ -313,19 +310,18 @@ BEGIN
                 nodes_or_ways.cc_id >= 0
         WHERE
             relations.objtype = 'r' AND
-            relations.cibled_geom_changed AND
-            relations.cc_id >= 0
+            relations.cibled_geom_changed
         GROUP BY
             nodes_or_ways.objtype,
             nodes_or_ways.id
         HAVING
-            min(relations.cc_id) < nodes_or_ways.cc_id
+            min(abs(relations.cc_id)) < nodes_or_ways.cc_id
 
         UNION ALL
 
         -- nodes_or_ways_to_relations: update relations based on contained nodes/ways
         SELECT
-            min(nodes_or_ways.cc_id) AS min_cc_id,
+            min(abs(nodes_or_ways.cc_id)) AS min_cc_id,
             relations.objtype,
             relations.id
         FROM
@@ -340,13 +336,12 @@ BEGIN
                 relations.id = m.relation_id AND
                 relations.cc_id >= 0
         WHERE
-            nodes_or_ways.objtype IN ('n', 'w') AND
-            nodes_or_ways.cc_id >= 0
+            nodes_or_ways.objtype IN ('n', 'w')
         GROUP BY
             relations.objtype,
             relations.id
         HAVING
-            min(nodes_or_ways.cc_id) < relations.cc_id
+            min(abs(nodes_or_ways.cc_id)) < relations.cc_id
 
         -- TODO relations to relations
     ),
@@ -363,6 +358,15 @@ BEGIN
     ;
 
     GET DIAGNOSTICS cnt = ROW_COUNT;
+
+    WITH
+    cc_ids_pos AS (SELECT DISTINCT cc_id FROM changes WHERE cc_id >= 0)
+    UPDATE changes
+    SET cc_id = -changes.cc_id
+    FROM cc_ids_pos
+    WHERE
+        -changes.cc_id = cc_ids_pos.cc_id
+    ;
 
     -- Full path compression: for each cc_id value C that objects point to,
     -- follow the chain initial_cc_id=C → cc_id → ... recursively until the
