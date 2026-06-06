@@ -26,6 +26,9 @@ module Validation
     sig { returns(T.nilable(T::Array[String])) }
     attr_reader :group_ids
 
+    sig { returns(Integer) }
+    attr_reader :cc_id
+
     sig {
       params(
         objtype: String,
@@ -41,9 +44,10 @@ module Validation
         changeset: T.nilable(Osm::Changeset),
         is_change: T::Boolean,
         group_ids: T.nilable(T::Array[String]),
+        cc_id: Integer,
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changeset:, is_change:, group_ids:) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -59,6 +63,7 @@ module Validation
       @changeset = changeset
       @is_change = is_change
       @group_ids = group_ids
+      @cc_id = cc_id
     end
 
     sig {
@@ -81,6 +86,7 @@ module Validation
         changeset: hash['changeset'].nil? ? nil : Osm::Changeset.from_hash(hash['changeset']),
         is_change: hash['is_change'],
         group_ids: hash['group_ids'],
+        cc_id: hash['cc_id'],
       )
     end
 
@@ -101,6 +107,7 @@ module Validation
         'changeset' => changeset,
         'is_change' => is_change,
         'group_ids' => group_ids,
+        'cc_id' => cc_id,
       }
     end
 
@@ -124,6 +131,7 @@ module Validation
         changeset: kwargs.fetch(:changeset, changeset),
         is_change: kwargs.fetch(:is_change, is_change),
         group_ids: kwargs.fetch(:group_ids, group_ids),
+        cc_id: kwargs.fetch(:cc_id, cc_id),
       )
       o.geos = kwargs[:geos] if kwargs[:geos]
       o
