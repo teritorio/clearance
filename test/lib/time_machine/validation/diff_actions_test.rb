@@ -50,6 +50,7 @@ class TestValidation < Test::Unit::TestCase
     }, T::Hash[String, String]),
     is_change: false,
     group_ids: nil,
+    cc_id: 1,
   ), Validation::OSMChangeProperties)
 
   @@fixture_node_b = T.let(Validation::OSMChangeProperties.new(
@@ -68,6 +69,7 @@ class TestValidation < Test::Unit::TestCase
     },
     is_change: true,
     group_ids: nil,
+    cc_id: 1,
   ), Validation::OSMChangeProperties)
 
   sig { void }
