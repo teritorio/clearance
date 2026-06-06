@@ -85,6 +85,7 @@ class TestUserList < Test::Unit::TestCase
       },
       is_change: true,
       group_ids: nil,
+      cc_id: 1,
     )
 
     conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
@@ -155,6 +156,7 @@ class TestTagsChanges < Test::Unit::TestCase
       },
       is_change: true,
       group_ids: nil,
+      cc_id: 1,
     )
 
     conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
@@ -214,6 +216,7 @@ class TestGeomNewObject < Test::Unit::TestCase
       },
       is_change: false,
       group_ids: nil,
+      cc_id: 1,
     )
 
     conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
@@ -268,6 +271,7 @@ class TestGeomChanges < Test::Unit::TestCase
       },
       is_change: false,
       group_ids: nil,
+      cc_id: 1,
     )
 
     after = Validation::OSMChangeProperties.new(
@@ -286,6 +290,7 @@ class TestGeomChanges < Test::Unit::TestCase
       },
       is_change: true,
       group_ids: nil,
+      cc_id: 1,
     )
 
     conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(
@@ -342,6 +347,7 @@ class TestDelayed < Test::Unit::TestCase
       },
       is_change: true,
       group_ids: nil,
+      cc_id: 1,
     )
 
     conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')
@@ -402,6 +408,7 @@ class TestDelayed < Test::Unit::TestCase
       },
       is_change: true,
       group_ids: nil,
+      cc_id: 1,
     )
 
     conflation_reason = OSMLogicalHistory::Conflation::ConflationReason.new(conflate: '')

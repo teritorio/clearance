@@ -24,8 +24,30 @@ module Validation
   end
 
   class SemanticCluster < T::Struct
+    extend T::Sig
+
     const :links, T::Array[Link]
     const :action, T.nilable(ActionType)
+
+    sig {
+      params(
+        other: SemanticCluster
+      ).returns(SemanticCluster)
+    }
+    def +(other)
+      SemanticCluster.new(
+        links: (links + other.links).uniq,
+        action: (
+          if action == 'reject' || other.action == 'reject'
+            'reject'
+          elsif action.nil? || other.action.nil?
+            nil
+          else
+            'accept'
+          end
+        )
+      )
+    end
   end
 
   class LoCha < T::Struct
@@ -183,7 +205,47 @@ module Validation
         if index % 100 == 0
           puts "  Processing locha ##{index}, objects processed: #{objects}..."
         end
-        yielder << time_machine_locha(config, locha_id, lo_cha)
+
+        locha = time_machine_locha(config, locha_id, lo_cha)
+
+        cluster_cc_ids = locha.semantic_clusters.collect{ |cluster|
+          cc_ids = cluster.links.flat_map{ |link| [link.conflation.before&.cc_id, link.conflation.after&.cc_id] }.compact.uniq
+          [cluster, cc_ids]
+        }
+
+        # Merge cluster_cc_ids while they have common cc_ids
+        changed = T.let(true, T::Boolean)
+        while changed
+          changed = false # rubocop:disable Lint/UselessAssignment
+
+          cluster_cc_ids_stash = cluster_cc_ids.dup
+          cluster_cc_ids_next = []
+          while cluster_cc_ids_stash.any?
+            cluster, cc_ids = T.must(cluster_cc_ids_stash.pop)
+            intersect = cluster_cc_ids_stash.select { |other_cluster, other_cc_ids|
+              cluster != other_cluster && (cc_ids & other_cc_ids).any?
+            }
+
+            if intersect.empty?
+              cluster_cc_ids_next << [cluster, cc_ids]
+            else
+              changed = true
+              intersect.each { |o| cluster_cc_ids_stash.delete(o) }
+              cluster_cc_ids_next << [
+                intersect.collect(&:first).sum(cluster),
+                (intersect.collect(&:last).flatten(1) + cc_ids).uniq
+              ]
+            end
+          end
+
+          cluster_cc_ids = cluster_cc_ids_next
+        end
+
+        yielder << LoCha.new(
+          locha_id: locha.locha_id,
+          action: locha.action,
+          semantic_clusters: cluster_cc_ids.collect(&:first)
+        )
       }
       puts "  Finished processing #{index} locha, total objects processed: #{objects}."
     }
