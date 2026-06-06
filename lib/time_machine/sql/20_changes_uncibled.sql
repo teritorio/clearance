@@ -238,7 +238,8 @@ BEGIN
             JOIN LATERAL unnest_unique(ways.nodes) AS node_id ON true
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
-                nodes.id = node_id
+                nodes.id = node_id AND
+                (nodes.cibled OR nodes.cc_propa OR nodes.cibled_geom_changed)
         WHERE
             ways.objtype = 'w' AND
             ways.cc_id >= 0
@@ -263,7 +264,8 @@ BEGIN
                 nodes.id = node_id AND
                 nodes.cc_id >= 0
         WHERE
-            ways.objtype = 'w'
+            ways.objtype = 'w' AND
+            (ways.cibled OR ways.cc_propa OR ways.cibled_geom_changed)
         GROUP BY
             nodes.objtype,
             nodes.id
@@ -282,7 +284,8 @@ BEGIN
             changes AS ways
             JOIN changes AS ways2 ON
                 ways2.objtype = 'w' AND
-                ways2.nodes && ways.nodes
+                ways2.nodes && ways.nodes AND
+                (ways2.cibled OR ways2.cc_propa OR ways2.cibled_geom_changed)
         WHERE
             ways.objtype = 'w' AND
             ways.cc_id >= 0
@@ -310,7 +313,7 @@ BEGIN
                 nodes_or_ways.cc_id >= 0
         WHERE
             relations.objtype = 'r' AND
-            relations.cibled_geom_changed
+            (relations.cibled OR relations.cc_propa OR relations.cibled_geom_changed)
         GROUP BY
             nodes_or_ways.objtype,
             nodes_or_ways.id
@@ -332,11 +335,12 @@ BEGIN
                 m.ref = nodes_or_ways.id
             JOIN changes AS relations ON
                 relations.objtype = 'r' AND
-                relations.cibled_geom_changed AND
                 relations.id = m.relation_id AND
-                relations.cc_id >= 0
+                relations.cc_id >= 0 AND
+                relations.cibled_geom_changed
         WHERE
-            nodes_or_ways.objtype IN ('n', 'w')
+            nodes_or_ways.objtype IN ('n', 'w') AND
+            (nodes_or_ways.cibled OR nodes_or_ways.cc_propa OR nodes_or_ways.cibled_geom_changed)
         GROUP BY
             relations.objtype,
             relations.id
