@@ -96,6 +96,7 @@ combined AS (
             )
         ) AS cibled_geom_changed,
         changes.deleted AS cc_propa,
+        base.id IS NULL AS new,
         CASE WHEN base.nodes IS NOT NULL THEN base.nodes || changes.nodes ELSE changes.nodes END AS nodes,
         CASE WHEN base.members IS NOT NULL THEN base.members || changes.members ELSE changes.members  END AS members,
         nullif(ST_Union(
@@ -115,11 +116,13 @@ SELECT
     members,
     cibled_geom_changed,
     cc_propa,
+    new,
     geom
 FROM
     combined
 ;
 ALTER TABLE changes ADD PRIMARY KEY (objtype, id);
+CREATE INDEX changes_idx_nodes ON changes USING GIN (nodes);
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - changes: % (%)', (SELECT COUNT(*) FROM changes), pg_size_pretty(pg_total_relation_size('changes'));
@@ -154,6 +157,54 @@ CREATE INDEX osm_changes_members_relation_idx_w ON osm_changes_members (relation
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - index relation members: % (%)', (SELECT COUNT(*) FROM osm_changes_members), pg_size_pretty(pg_total_relation_size('osm_changes_members'));
+END; $$ LANGUAGE plpgsql;
+
+
+-- Flag referenced new objets as cc_propa
+WITH
+changes_propa_new AS (
+SELECT
+    nodes.objtype,
+    nodes.id
+FROM
+    changes AS nodes
+    JOIN changes AS ways ON
+        ways.objtype = 'w' AND
+        array[nodes.id] <@ ways.nodes
+WHERE
+    nodes.new AND
+    nodes.objtype = 'n' AND
+    NOT nodes.cc_propa
+
+UNION
+
+SELECT
+    nodes_or_ways.objtype,
+    nodes_or_ways.id
+FROM
+    changes AS nodes_or_ways
+    JOIN osm_changes_members ON
+        osm_changes_members.type = nodes_or_ways.objtype AND
+        osm_changes_members.ref = nodes_or_ways.id
+    JOIN changes AS relations ON
+        relations.objtype = 'r' AND
+        relations.id = osm_changes_members.relation_id
+WHERE
+    nodes_or_ways.new AND
+    nodes_or_ways.objtype IN ('n', 'w') AND
+    NOT nodes_or_ways.cc_propa
+)
+UPDATE changes
+SET cc_propa = true
+FROM
+    changes_propa_new
+WHERE
+    changes.objtype = changes_propa_new.objtype AND
+    changes.id = changes_propa_new.id
+;
+
+DO $$ BEGIN
+    RAISE NOTICE '20_changes_uncibled - Flag referenced new objets as cc_propa';
 END; $$ LANGUAGE plpgsql;
 
 
@@ -217,7 +268,6 @@ ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
 UPDATE changes SET initial_cc_id = cc_id;
 CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
 CREATE INDEX changes_idx_cc_id ON changes (cc_id);
-CREATE INDEX changes_idx_nodes ON changes USING GIN (nodes);
 ANALYZE changes;
 
 -- Propagate cc_id to all connex components by topology
