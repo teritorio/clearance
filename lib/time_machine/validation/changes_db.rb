@@ -141,11 +141,10 @@ module Validation
   sig {
     params(
       osm_change_object: T.untyped,
-      local_srid: Integer
+      geos_factory: T.proc.params(geom: String).returns(T.nilable(RGeo::Feature::Geometry)),
     ).returns([T.nilable(OSMChangeProperties), OSMChangeProperties])
   }
-  def self.convert_locha_item(osm_change_object, local_srid)
-    geos_factory = OSMLogicalHistory.build_geos_factory(local_srid)
+  def self.convert_locha_item(osm_change_object, geos_factory)
     ids = { 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'], 'geos_factory' => geos_factory }
     before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
     after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
@@ -165,6 +164,7 @@ module Validation
     ).void
   }
   def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
+    geos_factory = OSMLogicalHistory.build_geos_factory(local_srid)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
     conn.exec(File.new('/sql/30_set_locha_id.sql').read
       .gsub(':proj', local_srid.to_s)
@@ -182,7 +182,7 @@ module Validation
           results = []
         end
 
-        results << convert_locha_item(osm_change_object, local_srid)
+        results << convert_locha_item(osm_change_object, geos_factory)
         last_locha_id = locha_id
       }
 
