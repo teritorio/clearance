@@ -195,13 +195,15 @@ module Db
           has_content = true
 
           object = Osm::ObjectChanges.from_hash(row)
-          action = if object.version == 1
-                     'create'
-                   elsif object.deleted
-                     'delete'
-                   else
-                     'modify'
-                   end
+          action = (
+            if object.deleted
+              'delete'
+            elsif object.version == 1
+              'create'
+            else
+              'modify'
+            end
+          )
 
           if action_old != '' && action != action_old
             f.write("  </#{action_old}>\n")
