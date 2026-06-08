@@ -44,6 +44,7 @@ class Project < ActiveFile::Base
 
         {
           id: project,
+          initialized: true,
           title: c.title,
           description: c.description,
           date_last_update: date_last_update&.timestamp,

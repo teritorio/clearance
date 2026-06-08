@@ -7,7 +7,7 @@ class UsersController < ApplicationController
       render(status: :not_found)
     else
       Project.reload(true)
-      projects = Project.all.select{ |project|
+      projects = Project.all.select(&:initialized).select{ |project|
         project.main_contacts.include?(current_user.osm_name) ||
           project.user_groups.find{ |_id, user_group| user_group.users.include?(current_user.osm_name) }
       }.map(&:id)
