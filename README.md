@@ -271,3 +271,8 @@ UI / UX
     * Review status (Fixed, I will do it, Need help...)
     * Data Revert tool
     * Easy creation of changeset discussions or OSM notes
+
+# Fund
+
+This project is partially funded through the NGI0 Commons Fund, a fund established by NLnet with financial support from the European Commission's Next Generation Internet programme.
+* https://nlnet.nl/project/Clearance/
