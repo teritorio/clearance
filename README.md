@@ -237,6 +237,11 @@ Engine
   * LoCha splitting strategy on large clusters
   * Support changes on objects larger than a cluster: admin relations, large landuses, rivers
 
+Database
+  * Import and update a partial database filtered by the configured tags; remotely fetch any missing objects.
+  * Optimize the database schema by storing either `lon/lat` or `geom`, but not both.
+  * Optimize the database schema by storing user names in a separate table.
+
 Configuration
   * By feature type
     * LoCha / clustering distance
