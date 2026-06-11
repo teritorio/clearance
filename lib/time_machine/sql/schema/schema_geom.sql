@@ -88,6 +88,7 @@ $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
 CREATE INDEX IF NOT EXISTS osm_base_idx_members_n ON osm_base_r USING gin(osm_base_idx_nodes_members(members, 'n'));
 CREATE INDEX IF NOT EXISTS osm_base_idx_members_w ON osm_base_r USING gin(osm_base_idx_nodes_members(members, 'w'));
+CREATE INDEX IF NOT EXISTS osm_base_idx_members_r ON osm_base_r USING gin(osm_base_idx_nodes_members(members, 'r'));
 
 
 -- Trigger to update geom
