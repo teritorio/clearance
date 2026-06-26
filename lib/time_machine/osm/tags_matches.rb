@@ -131,7 +131,7 @@ module Osm
 
         extra = @selector_extra.keys.collect{ |key| "#{table1}.tags->>#{escape.call(key)} IS DISTINCT FROM #{table2}.tags->>#{escape.call(key)}" }
 
-        "((#{p1}) AND (#{p2}) AND (#{extra.join(' OR ')}))"
+        "(((#{p1}) OR (#{p2})) AND (#{extra.join(' OR ')}))"
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
     end

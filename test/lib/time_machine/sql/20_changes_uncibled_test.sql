@@ -52,13 +52,14 @@ INSERT INTO osm_base_n VALUES
 ;
 
 INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 3, 3, NULL, NULL, true, NULL, 1)
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 1, 1, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
 -- Base in tags, but changes not
 \set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
+\set osm_diff_tags '(((base.tags?\'a\') OR (changes.tags?\'a\')) AND (base.tags->>\'a\' IS DISTINCT FROM changes.tags->>\'a\'))'
 
 do $$ BEGIN
   ASSERT 0 = (SELECT count(*) FROM changes_update),
@@ -67,12 +68,14 @@ END; $$ LANGUAGE plpgsql;
 
 -- Base not in tags, but change yes
 \set osm_filter_tags '_.tags?\'b\''
+\set osm_diff_tags '(((base.tags?\'b\') OR (changes.tags?\'b\')) AND (base.tags->>\'b\' IS DISTINCT FROM changes.tags->>\'b\'))'
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
   ASSERT 0 = (SELECT count(*) FROM changes_update),
     (SELECT count(*) FROM changes_update);
 END; $$ LANGUAGE plpgsql;
+\set osm_diff_tags true
 
 -- All not in tags
 \set osm_filter_tags '_.tags?\'z\''
@@ -153,8 +156,7 @@ INSERT INTO osm_changes VALUES
 \set osm_filter_tags '_.tags?\'w\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
-select array_agg(id) from changes_update;
-
 do $$ BEGIN
   ASSERT (SELECT array_agg(id) FROM changes_update) IS NULL;
 END; $$ LANGUAGE plpgsql;
+TRUNCATE osm_changes;
