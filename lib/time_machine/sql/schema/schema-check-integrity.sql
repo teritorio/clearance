@@ -6,25 +6,35 @@ DECLARE
 BEGIN
     FOR r IN (
     SELECT
-        nodes_id
+        nodes_id,
+        new_rows.id AS way_id
     FROM
-        unnest(NEW.nodes) AS t(nodes_id)
+        new_rows
+        JOIN LATERAL unnest(new_rows.nodes) AS t(nodes_id) ON true
         LEFT JOIN osm_base_n ON
             osm_base_n.id = nodes_id
     WHERE
         osm_base_n.id IS NULL
     LIMIT 1
     ) LOOP
-        RAISE 'Missing node % from way %', r.nodes_id, NEW.id;
+        RAISE 'Missing node % from way %', r.nodes_id, r.way_id;
     END LOOP;
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE TRIGGER osm_base_w
-  AFTER INSERT OR UPDATE
+  AFTER INSERT
   ON osm_base_w
-  FOR EACH ROW
+  REFERENCING NEW TABLE AS new_rows
+  FOR EACH STATEMENT
+EXECUTE PROCEDURE osm_base_w_check_fk();
+
+CREATE OR REPLACE TRIGGER osm_base_w_update
+  AFTER UPDATE
+  ON osm_base_w
+  REFERENCING NEW TABLE AS new_rows
+  FOR EACH STATEMENT
 EXECUTE PROCEDURE osm_base_w_check_fk();
 
 CREATE OR REPLACE FUNCTION osm_base_n_check_fk() RETURNS trigger AS $$
@@ -33,14 +43,15 @@ DECLARE
 BEGIN
     FOR r IN (
     SELECT
-        id
+        old_rows.id,
+        osm_base_w.id AS way_id
     FROM
-        osm_base_w
-    WHERE
-        nodes && ARRAY[OLD.id]
+        old_rows
+        JOIN osm_base_w ON
+            osm_base_w.nodes && ARRAY[old_rows.id]
     -- LIMIT 1 -- No limit to use index
     ) LOOP
-        RAISE 'Node % is still referenced by way %', OLD.id, r.id;
+        RAISE 'Node % is still referenced by way %', r.id, r.way_id;
     END LOOP;
     RETURN NULL;
 END;
@@ -49,7 +60,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER osm_base_n
   AFTER DELETE
   ON osm_base_n
-  FOR EACH ROW
+  REFERENCING OLD TABLE AS old_rows
+  FOR EACH STATEMENT
 EXECUTE PROCEDURE osm_base_n_check_fk();
 
 -- CREATE OR REPLACE FUNCTION osm_base_r_check_fk() RETURNS trigger AS $$
@@ -82,5 +94,6 @@ EXECUTE PROCEDURE osm_base_n_check_fk();
 -- CREATE OR REPLACE TRIGGER osm_base_r
 --   AFTER INSERT OR UPDATE
 --   ON osm_base_r
---   FOR EACH ROW
+--   REFERENCING NEW TABLE AS new_rows
+--   FOR EACH STATEMENT
 -- EXECUTE PROCEDURE osm_base_r_check_fk();
