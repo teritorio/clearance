@@ -3,6 +3,7 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/schema/schema.sql
 \i lib/time_machine/sql/schema/schema_geom.sql
 \i lib/time_machine/sql/schema/schema_changes_geom.sql
+\i lib/time_machine/sql/schema/schema-check-integrity.sql
 
 DROP TABLE IF EXISTS changes_update CASCADE;
 CREATE TEMP TABLE changes_update (
