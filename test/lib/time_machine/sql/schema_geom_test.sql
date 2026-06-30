@@ -39,8 +39,6 @@ BEGIN;
 UPDATE osm_base_w SET version = 2 WHERE id = 3;
 COMMIT;
 
-SELECT id, nodes, ST_AsText(geom) FROM osm_base_w;
-
 do $$ BEGIN
   ASSERT 2 = (SELECT version FROM osm_base_w),
     (SELECT version FROM osm_base_w);
@@ -51,10 +49,6 @@ END; $$ LANGUAGE plpgsql;
 BEGIN;
 UPDATE osm_base_w SET nodes = ARRAY[1, 1] WHERE id = 3;
 COMMIT;
-
-SELECT id, nodes, ST_AsText(geom) FROM osm_base_w;
-SELECT * FROM osm_base_changes_ids;
-SELECT * FROM osm_base_changes_flag;
 
 do $$ BEGIN
   ASSERT 'POINT(3 3)' = (SELECT ST_AsText(geom) FROM osm_base_w),

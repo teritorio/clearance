@@ -4,8 +4,7 @@ CREATE OR REPLACE FUNCTION osm_base_w_check_fk() RETURNS trigger AS $$
 DECLARE
     r record;
 BEGIN
-    FOR r IN (
-    SELECT
+    SELECT INTO r
         nodes_id,
         new_rows.id AS way_id
     FROM
@@ -16,9 +15,11 @@ BEGIN
     WHERE
         osm_base_n.id IS NULL
     LIMIT 1
-    ) LOOP
+    ;
+
+    IF r.nodes_id IS NOT NULL THEN
         RAISE 'Missing node % from way %', r.nodes_id, r.way_id;
-    END LOOP;
+    END IF;
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
@@ -41,18 +42,42 @@ CREATE OR REPLACE FUNCTION osm_base_n_check_fk() RETURNS trigger AS $$
 DECLARE
     r record;
 BEGIN
+    DROP TABLE IF EXISTS node_groups;
+    CREATE TEMP TABLE IF NOT EXISTS node_groups AS
+    WITH numbered AS (
+        SELECT
+            id,
+            row_number() OVER (ORDER BY id) / 100000 AS batch_num
+        FROM
+            old_rows
+    )
+    SELECT
+        array_agg(id) AS ids
+    FROM
+        numbered
+    GROUP BY
+        batch_num
+    ;
+
+    ANALYZE node_groups;
+    ANALYZE osm_base_w;
+
     FOR r IN (
     SELECT
-        old_rows.id,
+        (SELECT id FROM (SELECT id FROM unnest(osm_base_w.nodes) INTERSECT SELECT unnest(node_groups.ids)) AS t LIMIT 1) id,
         osm_base_w.id AS way_id
     FROM
-        old_rows
+        node_groups
         JOIN osm_base_w ON
-            osm_base_w.nodes && ARRAY[old_rows.id]
+            osm_base_w.nodes && node_groups.ids
     -- LIMIT 1 -- No limit to use index
     ) LOOP
+        DROP TABLE IF EXISTS node_groups;
         RAISE 'Node % is still referenced by way %', r.id, r.way_id;
     END LOOP;
+
+    DROP TABLE IF EXISTS node_groups;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;

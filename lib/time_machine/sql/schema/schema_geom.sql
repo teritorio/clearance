@@ -193,21 +193,66 @@ EXECUTE PROCEDURE osm_base_r_log_update();
 
 CREATE OR REPLACE FUNCTION osm_base_update_geom() RETURNS trigger AS $$
 BEGIN
+  RAISE NOTICE 'schema_geom - osm_base_update_geom';
+
+  DROP TABLE IF EXISTS node_groups;
+  CREATE TEMP TABLE IF NOT EXISTS node_groups AS
+  WITH numbered AS (
+    SELECT
+      id,
+      row_number() OVER (ORDER BY id) / 100000 AS batch_num
+    FROM
+      osm_base_changes_ids
+    WHERE
+      objtype = 'n'
+  )
+  SELECT
+    array_agg(id) AS ids
+  FROM
+    numbered
+  GROUP BY
+    batch_num
+  ;
+
+  DROP TABLE IF EXISTS way_groups;
+  CREATE TEMP TABLE IF NOT EXISTS way_groups AS
+  WITH numbered AS (
+    SELECT
+      id,
+      row_number() OVER (ORDER BY id) / 100000 AS batch_num
+    FROM
+      osm_base_changes_ids
+    WHERE
+      objtype = 'w'
+  )
+  SELECT
+    array_agg(id) AS ids
+  FROM
+    numbered
+  GROUP BY
+    batch_num
+  ;
+  RAISE NOTICE 'schema_geom - group changes ids';
+
+  ANALYZE node_groups;
+  ANALYZE way_groups;
+  ANALYZE osm_base_w;
+  RAISE NOTICE 'schema_geom - ANALYZE';
+
   -- Add transitive changes, from nodes to ways
   INSERT INTO osm_base_changes_ids
   SELECT DISTINCT ON (ways.id)
     'w' AS objtype,
     ways.id
   FROM
-    osm_base_changes_ids
+    node_groups
     JOIN osm_base_w AS ways ON
-      ARRAY[osm_base_changes_ids.id] <@ ways.nodes
-  WHERE
-    osm_base_changes_ids.objtype = 'n'
+      node_groups.ids && ways.nodes
   ORDER BY
     ways.id
   ON CONFLICT (objtype, id) DO NOTHING
   ;
+  RAISE NOTICE 'schema_geom - transitive changes nodes to ways';
 
   -- Add transitive changes, to relations
   INSERT INTO osm_base_changes_ids (
@@ -215,11 +260,9 @@ BEGIN
     'r' AS objtype,
     relations.id
   FROM
-    osm_base_changes_ids
+    node_groups
     JOIN osm_base_r AS relations ON
-      ARRAY[osm_base_changes_ids.id] <@ osm_base_idx_nodes_members(members, 'n')
-  WHERE
-    osm_base_changes_ids.objtype = 'n'
+      node_groups.ids && osm_base_idx_nodes_members(members, 'n')
   ORDER BY
     relations.id
 
@@ -229,16 +272,18 @@ BEGIN
     'r' AS objtype,
     relations.id
   FROM
-    osm_base_changes_ids
+    way_groups
     JOIN osm_base_r AS relations ON
-      ARRAY[osm_base_changes_ids.id] <@ osm_base_idx_nodes_members(members, 'w')
-  WHERE
-    osm_base_changes_ids.objtype = 'w'
+      way_groups.ids && osm_base_idx_nodes_members(members, 'w')
   ORDER BY
     relations.id
   )
   ON CONFLICT (objtype, id) DO NOTHING
   ;
+  RAISE NOTICE 'schema_geom - transitive changes nodes+ways to relations';
+
+  DROP TABLE IF EXISTS node_groups;
+  DROP TABLE IF EXISTS way_groups;
 
   WITH
   ways AS (
@@ -254,39 +299,33 @@ BEGIN
   ),
   a AS (
     SELECT
-      id,
-      CASE
-        WHEN ST_NPoints(ST_MakeLine(geom ORDER BY index)) = 1 THEN ST_PointN(ST_MakeLine(geom ORDER BY index), 1)
-        ELSE ST_MakeLine(geom ORDER BY index)
-      END AS geom
-    FROM (
-      SELECT
-        ways.id,
-        way_nodes.index,
-        CASE
-          WHEN nodes.geom = lead(nodes.geom) OVER (PARTITION BY ways.id ORDER BY way_nodes.index) THEN NULL
-          ELSE nodes.geom
-        END AS geom
-      FROM
-        ways
-        LEFT JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
-        LEFT JOIN osm_base_n AS nodes ON
-          nodes.id = way_nodes.node_id
-        WHERE
-          nodes.geom IS NOT NULL
-      ) AS nodes
+      ways.id,
+      ST_RemoveRepeatedPoints(ST_MakeLine(geom ORDER BY index)) AS geom
+    FROM
+      ways
+      LEFT JOIN LATERAL unnest(ways.nodes) WITH ORDINALITY AS way_nodes(node_id, index) ON true
+      LEFT JOIN osm_base_n AS nodes ON
+        nodes.id = way_nodes.node_id
+      WHERE
+        nodes.geom IS NOT NULL
     GROUP BY
-      id
+      ways.id
   )
   UPDATE
     osm_base_w
   SET
-    geom = a.geom
+    geom = CASE
+      WHEN ST_NPoints(a.geom) = 0 THEN NULL
+      WHEN ST_NPoints(a.geom) = 1 THEN ST_PointN(a.geom, 1)
+      WHEN ST_NPoints(a.geom) = 2 AND ST_PointN(a.geom, 1) = ST_PointN(a.geom, 2) THEN ST_PointN(a.geom, 1)
+      ELSE a.geom
+    END
   FROM
     a
   WHERE
     osm_base_w.id = a.id
   ;
+  RAISE NOTICE 'schema_geom - update ways.geom';
 
   WITH
   relations AS (
@@ -325,6 +364,7 @@ BEGIN
   WHERE
     osm_base_r.id = a.id
   ;
+  RAISE NOTICE 'schema_geom - update relations.geom';
 
   DELETE FROM osm_base_changes_ids;
   DELETE FROM osm_base_changes_flag;
