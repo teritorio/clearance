@@ -18,7 +18,7 @@ class ProjectsController < ApplicationController
 
   def project
     Project.reload(true)
-    render json: prepare(Project.find(params['project']).attributes)
+    render json: prepare(Project.find(params.expect('project')).attributes)
   end
 
   private

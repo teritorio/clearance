@@ -25,7 +25,7 @@ class ChangesLogsController < ApplicationController
           }
           format.atom {
             public_url = ENV.fetch('PUBLIC_URL', nil)
-            render plain: atom(project, Project.find(params['project']), lochas, public_url)
+            render plain: atom(project, Project.find(params.expect('project')), lochas, public_url)
           }
         }
       rescue PG::UndefinedFunction
