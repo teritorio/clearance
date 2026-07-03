@@ -210,6 +210,8 @@ The goal is to retain suspect changes as not complying with quality criteria.
 The OSM tags properties, the metadata properties, the geometry and the changeset properties can be used to evaluate the quality.
 
 Currently implemented validators:
+- changeset_comment: reject from changeset with comment
+- changeset_review_requested: reject from changeset with review requested tag
 - delayed: retain hot changes within a delay (retain disputed features or change-in-progress, or accept changes automatically after delay if nothing change.
 - deleted: flag deleted objects
 - geom_changes: flag objects with change distance greater than a threshold

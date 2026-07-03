@@ -100,6 +100,18 @@ validators:
     list: []
     action: reject
 
+  # Reject from changeset with comment
+  changeset_comment:
+    instance: Validators::ChangesetComment
+    description: Changeset with comment
+    action: reject
+
+  # Reject from changeset with review requested tag
+  changeset_review_requested:
+    instance: Validators::ChangesetReviewRequested
+    description: Changeset with review requested
+    action: reject
+
   # Reject deleted objects.
   # Always consider deletion as unsafe.
   deleted:
