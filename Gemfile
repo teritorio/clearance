@@ -27,6 +27,7 @@ gem 'rack-cors'
 gem 'tzinfo-data'
 
 gem 'active_hash', '~> 2.3.0'
+gem 'builder', '~> 3.3'
 gem 'bzip2-ffi'
 gem 'devise'
 gem 'http'
@@ -39,6 +40,7 @@ gem 'omniauth-rails_csrf_protection'
 gem 'openstreetmap_logical_history', git: 'https://github.com/teritorio/openstreetmap-logical-history.git'
 gem 'optparse'
 gem 'osmium-ruby', git: 'https://github.com/teritorio/osmium-ruby.git'
+gem 'ostruct', '~> 0.6.3'
 gem 'overpass_parser_ruby', git: 'https://github.com/teritorio/overpass_parser_ruby.git'
 gem 'pg', '~> 1.1'
 gem 'rego'
@@ -75,5 +77,3 @@ group :development do
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
 end
-
-gem 'builder', '~> 3.3'
