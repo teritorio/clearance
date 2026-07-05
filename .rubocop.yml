@@ -13,6 +13,9 @@ plugins:
  - rubocop-rake
  - rubocop-rails
 
+require:
+  - ./lib/rubocop/cop/custom/from_hash_strict.rb
+
 Layout/EmptyLines:
   Enabled: false
 
