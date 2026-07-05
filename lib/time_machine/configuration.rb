@@ -97,7 +97,7 @@ module Configuration
         rule
       }
 
-      [group_id, UserGroupConfig.from_hash(v.merge('path' => path))]
+      [group_id, UserGroupConfig.from_hash(v.merge('path' => path), true)]
     }
 
     osm_tags_matches = Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|
@@ -122,10 +122,14 @@ module Configuration
     ).returns(Config)
   }
   def self.parse(config_yaml, path)
-    config = MainConfig.from_hash(config_yaml)
+    config = MainConfig.from_hash(config_yaml, false)
 
-    user_groups, osm_tags_matches = load_user_groups(path, config)
-    validators = Validation.validators_factory(config.validators, osm_tags_matches)
+    begin
+      user_groups, osm_tags_matches = load_user_groups(path, config)
+      validators = Validation.validators_factory(config.validators, osm_tags_matches)
+    rescue StandardError => e
+      raise "Error loading configuration \"#{path}\": #{e.message}"
+    end
 
     Config.new(
       title: config.title,

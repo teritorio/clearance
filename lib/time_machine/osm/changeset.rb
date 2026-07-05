@@ -22,7 +22,7 @@ module Osm
       raise [response.error, url].join(' ') if !response.success?
 
       JSON.parse(response.content)['changesets'].collect{ |json|
-        Changeset.from_hash(json)
+        Changeset.from_hash(json, false)
       }
     }
   end

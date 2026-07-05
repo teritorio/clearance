@@ -194,7 +194,7 @@ module Db
         result.each{ |row|
           has_content = true
 
-          object = Osm::ObjectChanges.from_hash(row)
+          object = Osm::ObjectChanges.from_hash(row.except('cibled', 'locha_id', 'cc_id'), true)
           action = (
             if object.deleted
               'delete'

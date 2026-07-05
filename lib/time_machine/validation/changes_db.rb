@@ -68,10 +68,11 @@ module Validation
 
     sig {
       params(
-        hash: T::Hash[String, T.untyped]
+        hash: T::Hash[String, T.untyped],
+        strict: T::Boolean,
       ).returns(OSMChangeProperties)
     }
-    def self.from_hash(hash)
+    def self.from_hash(hash, strict)
       OSMChangeProperties.new(
         objtype: hash['objtype'],
         id: hash['id'],
@@ -83,7 +84,7 @@ module Validation
         username: hash['username'],
         created: hash['created'],
         tags: hash['tags'],
-        changeset: hash['changeset'].nil? ? nil : Osm::Changeset.from_hash(hash['changeset']),
+        changeset: hash['changeset'].nil? ? nil : Osm::Changeset.from_hash(hash['changeset'].except('updated_at'), strict),
         is_change: hash['is_change'],
         group_ids: hash['group_ids'],
         cc_id: hash['cc_id'],
@@ -146,8 +147,8 @@ module Validation
   }
   def self.convert_locha_item(osm_change_object, geos_factory)
     ids = { 'objtype' => osm_change_object['objtype'], 'id' => osm_change_object['id'], 'geos_factory' => geos_factory }
-    before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids))
-    after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids))
+    before = osm_change_object['p'][0]['is_change'] ? nil : OSMChangeProperties.from_hash(osm_change_object['p'][0].merge(ids), true)
+    after = OSMChangeProperties.from_hash(osm_change_object['p'][-1].merge(ids), true)
     [before, after]
   end
 
