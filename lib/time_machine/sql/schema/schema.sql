@@ -97,8 +97,8 @@ CREATE TABLE validations_log (
     -- id BIGINT NOT NULL,
     -- version INTEGER NOT NULL,
     -- deleted BOOLEAN NOT NULL,
-    before_object JSONB,
-    after_object JSONB,
+    before_object JSONB CHECK (before_object IS NULL OR jsonb_typeof(before_object) = 'object'),
+    after_object JSONB CHECK (after_object IS NULL OR jsonb_typeof(after_object) = 'object'),
     semantic_group INTEGER NOT NULL,
     conflation JSONB NOT NULL
 );

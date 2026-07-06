@@ -266,8 +266,8 @@ module Validation
           ValidationLog.new(
             locha_id: locha.locha_id,
             semantic_group: ((locha.locha_id + semantic_group_index) + 2**31) % 2**32 - 2**31,
-            before_objects: (Osm::ObjectChangeId.from_hash(link.conflation.before.to_h) if !link.conflation.before.nil?),
-            after_objects: (Osm::ObjectChangeId.from_hash(link.conflation.after.to_h) if !link.conflation.after.nil?),
+            before_objects: (Osm::ObjectChangeId.from_hash(link.conflation.before.to_h.except('geojson_geometry', 'members', 'username', 'created', 'tags', 'changeset', 'is_change', 'group_ids', 'cc_id'), true) if !link.conflation.before.nil?),
+            after_objects: (Osm::ObjectChangeId.from_hash(link.conflation.after.to_h.except('geojson_geometry', 'members', 'username', 'created', 'tags', 'changeset', 'is_change', 'group_ids', 'cc_id'), true) if !link.conflation.after.nil?),
             created: link.result.created,
             conflation_reason: link.conflation.conflation_reason,
             matches: link.validations,

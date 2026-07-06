@@ -412,8 +412,8 @@ module Validation
         change.diff_attribs.empty? ? nil : change.diff_attribs.as_json.to_json,
         change.diff_tags.empty? ? nil : change.diff_tags.as_json.to_json,
         change.locha_id,
-        change.before_objects&.to_json,
-        change.after_objects.to_json,
+        change.before_objects.nil? ? nil : change.before_objects.to_json, # rubocop:disable Style/SafeNavigation -- because nil.to_json -> 'null' and we want nil instead
+        change.after_objects.nil? ? nil : change.after_objects.to_json, # rubocop:disable Style/SafeNavigation
         change.semantic_group,
         change.conflation_reason.to_json,
       ])
