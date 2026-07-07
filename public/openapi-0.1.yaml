@@ -441,7 +441,7 @@ components:
               type: array
               items:
                 type: object
-                required: [id, uid, open, tags, user, maxlat, maxlon, minlat, minlon, closed_at, created_at, changes_count, comments_count]
+                required: [id, uid, open, tags, user, max_lat, max_lon, min_lat, min_lon, closed_at, created_at, changes_count, comments_count]
                 properties:
                   id:
                     type: number
@@ -455,13 +455,13 @@ components:
                       type: string
                   user:
                     type: string
-                  maxlat:
+                  max_lat:
                     type: number
-                  maxlon:
+                  max_lon:
                     type: number
-                  minlat:
+                  min_lat:
                     type: number
-                  minlon:
+                  min_lon:
                     type: number
                   closed_at:
                     type: string
