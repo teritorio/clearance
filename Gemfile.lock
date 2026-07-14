@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/teritorio/openstreetmap-logical-history.git
-  revision: 367d38ef069a52943883748d95b3fca10f902715
+  revision: 39da192c9c175cf03f3c715597209681f9d2a19a
   specs:
     openstreetmap_logical_history (0.1.0)
       activesupport (~> 8.0.3)
