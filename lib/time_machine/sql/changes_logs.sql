@@ -118,7 +118,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
     links AS (
         SELECT
             locha_id,
-            jsonb_agg(link ORDER BY semantic_group) AS links
+            jsonb_object_agg(semantic_group, link ORDER BY semantic_group) AS links
         FROM
             links_uniq
         GROUP BY

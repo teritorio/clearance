@@ -229,11 +229,11 @@ module Validation
     params(
       conn: PG::Connection,
       locha_ids: T::Array[Integer],
-      links_index: T.nilable(Integer),
+      semantic_group: T.nilable(Integer),
     ).void
   }
-  def self.apply_lochas_ids(conn, locha_ids, links_index)
-    raise 'Invalid locha id paramter' if !links_index.nil? && locha_ids.size > 1
+  def self.apply_lochas_ids(conn, locha_ids, semantic_group)
+    raise 'Invalid locha id paramter' if locha_ids.size > 1 && !semantic_group.nil?
 
     sql_create_table = "
       CREATE TEMP TABLE changes_update (
@@ -256,12 +256,18 @@ module Validation
         deleted
       FROM
         osm_changes
+        JOIN validations_log ON
+          osm_changes.objtype = validations_log.after_object->>'objtype' AND
+          osm_changes.id = (validations_log.after_object->>'id')::bigint AND
+          validations_log.locha_id = osm_changes.locha_id AND
+          ($2::integer IS NULL OR validations_log.semantic_group = $2::integer)
       WHERE
-        locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[])
+        osm_changes.locha_id = ANY((SELECT array_agg(i)::integer[] FROM json_array_elements_text($1::json) AS t(i))::bigint[])
       ON CONFLICT (objtype, id, version, deleted)
       DO NOTHING
     ", [
       locha_ids.to_json,
+      semantic_group,
     ])
     puts "Apply on #{locha_ids.size} loCha"
 
@@ -449,12 +455,12 @@ module Validation
     params(
       conn: PG::Connection,
       locha_id: Integer,
-      links_index: T.nilable(Integer),
+      semantic_group: T.nilable(Integer),
       validator_uid: T.nilable(Integer),
     ).void
   }
-  def self.accept_locha(conn, locha_id, links_index, validator_uid = nil)
-    apply_lochas_ids(conn, [locha_id], links_index)
+  def self.accept_locha(conn, locha_id, semantic_group, validator_uid = nil)
+    apply_lochas_ids(conn, [locha_id], semantic_group)
 
     conn.exec("
       UPDATE
@@ -464,10 +470,10 @@ module Validation
         validator_uid = $3
       WHERE
         locha_id = $1 AND
-        ($2 IS NULL OR semantic_group = $2)
+        ($2::integer IS NULL OR semantic_group = $2::integer)
     ", [
       locha_id,
-      links_index,
+      semantic_group,
       validator_uid,
     ])
   end

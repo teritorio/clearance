@@ -37,7 +37,7 @@ class ChangesLogsController < ApplicationController
   def accept_locha
     project = params['project'].to_s
     locha_id = params['locha_id'].to_i
-    links_index = Integer(params['links_index'], exception: false)
+    semantic_group = Integer(params['semantic_group'], exception: false)
 
     config = ::Configuration.load("/#{Project.projects_config_path}/#{project}/config.yaml")
     if config.nil?
@@ -54,7 +54,7 @@ class ChangesLogsController < ApplicationController
     end
 
     Db::DbConnWrite.conn(project) { |conn|
-      Validation.accept_locha(conn, locha_id, links_index, current_user_osm_id.to_i)
+      Validation.accept_locha(conn, locha_id, semantic_group, current_user_osm_id.to_i)
     }
   end
 

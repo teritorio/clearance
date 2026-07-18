@@ -91,15 +91,15 @@ paths:
         '404':
           description: Project configuration not found.
 
-  /api/0.1/projects/{project}/changes_logs/{locha_id}/{links_index}/accept:
+  /api/0.1/projects/{project}/changes_logs/{locha_id}/{semantic_group}/accept:
     parameters:
       - $ref: '#/components/parameters/project'
       - $ref: '#/components/parameters/locha_id'
-      - $ref: '#/components/parameters/links_index'
+      - $ref: '#/components/parameters/semantic_group'
     put:
       tags: [changes_logs]
       summary: Accept one LoCha links group
-      description: Accepts a specific links group index for a LoCha.
+      description: Accepts a specific links group by semantic_group id for a LoCha.
       responses:
         '200':
           description: Accepted.
@@ -212,8 +212,8 @@ components:
       required: true
       schema:
         type: integer
-    links_index:
-      name: links_index
+    semantic_group:
+      name: semantic_group
       in: path
       required: true
       schema:
@@ -371,8 +371,8 @@ components:
           required: [links, locha_id, changesets]
           properties:
             links:
-              type: array
-              items:
+              type: object
+              additionalProperties:
                 type: array
                 items:
                   type: object

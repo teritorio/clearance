@@ -17,7 +17,7 @@ Rails.application.routes.draw do
         get '/', controller: 'projects', action: 'project'
         get '/changes_logs', controller: 'changes_logs', action: 'index'
         put '/changes_logs/:locha_id/accept', controller: 'changes_logs', action: 'accept_locha'
-        put '/changes_logs/:locha_id/:links_index/accept', controller: 'changes_logs', action: 'accept_locha'
+        put '/changes_logs/:locha_id/:semantic_group/accept', controller: 'changes_logs', action: 'accept_locha'
         post '/changes_logs/accept', controller: 'changes_logs', action: 'accept_lochas'
 
         get '/validators/', to: 'validators#index'
