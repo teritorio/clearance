@@ -239,7 +239,6 @@ The idea is to group changes locally to make contextual validation. It allows de
 
 ## Roadmap
 Engine
-  * Ensure database integrity (base and changes, by source type)
   * LoCha splitting strategy on large clusters
   * Support changes on objects larger than a cluster: admin relations, large landuses, rivers
 
@@ -261,12 +260,10 @@ Validators implementation
 
 Validation evaluation scoring
   * Fetch user blocks and use them in score
-  * Fetch changeset discussions and use them in the score
   * Contributors' reputation: based on external tools / APIs
   * Support equivalent tagging schemas to avoid false positives
 
 UI / UX
-  * Partial validation of LoCha
   * Validation review UI / UX
   * Configuration UI:
     * Display
