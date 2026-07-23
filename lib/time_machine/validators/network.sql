@@ -3,8 +3,7 @@ CREATE TEMP TABLE validator_network AS
 WITH
 osm_base_w AS (
   SELECT
-    id,
-    nodes
+    *
   FROM
     osm_base_w AS _
   WHERE
@@ -29,6 +28,7 @@ base_neighbors AS (
     JOIN osm_base_w ON
       osm_base_w.id = way.id
     JOIN osm_base_w AS _ ON
+      _.geom && osm_base_w.geom AND
       _.nodes && osm_base_w.nodes AND
       _.id != osm_base_w.id
   GROUP BY
