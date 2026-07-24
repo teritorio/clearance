@@ -36,7 +36,7 @@ module Validators
         }.join(" \n")
         sql_map_select_distance = "CASE \n#{map_select_distance} END"
         sql_osm_filter_tags = specific_osm_tags_matches.to_sql('postgres', '_', escape_literal)
-        conn.exec(File.new(File.join(File.dirname(__FILE__), 'duplicate.sql')).read
+        conn.exec(File.read(File.join(File.dirname(__FILE__), 'duplicate.sql'))
           .gsub(':osm_filter_tags', sql_osm_filter_tags)
           .gsub(':map_select_index', sql_map_select_index)
           .gsub(':map_select_distance', sql_map_select_distance)
