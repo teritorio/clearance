@@ -13,6 +13,6 @@ module Db
     ).void
   }
   def self.import_changes(conn, dump)
-    conn.exec(File.new('/sql/00_import_changes.sql').read.gsub(':pgcopy', dump))
+    conn.exec(File.read('/sql/00_import_changes.sql').gsub(':pgcopy', dump))
   end
 end

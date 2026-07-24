@@ -167,10 +167,10 @@ module Validation
   def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
     geos_factory = OSMLogicalHistory.build_geos_factory(local_srid)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
-    conn.exec(File.new('/sql/30_set_locha_id.sql').read
+    conn.exec(File.read('/sql/30_set_locha_id.sql')
       .gsub(':proj', local_srid.to_s)
       .gsub(':distance', locha_cluster_distance.to_s))
-    conn.exec(File.new('/sql/31_fetch_changes.sql').read)
+    conn.exec(File.read('/sql/31_fetch_changes.sql'))
     results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
     last_locha_id = T.let(nil, T.nilable(Integer))
     conn.exec_params(
@@ -199,7 +199,7 @@ module Validation
     ).void
   }
   def self.changes_prune(conn)
-    r = conn.exec(File.new('/sql/10_changes_prune.sql').read)
+    r = conn.exec(File.read('/sql/10_changes_prune.sql'))
     puts "  10_changes_prune #{r.inspect}"
   end
 
@@ -216,13 +216,13 @@ module Validation
     escape_literal = proc { |s| conn.escape_literal(s) }
     sql_osm_filter_tags = osm_tags_matches.to_sql('postgres', '_', escape_literal)
     sql_osm_diff_tags = osm_tags_matches.to_sql_changes('postgres', 'base', 'changes', escape_literal)
-    conn.exec(File.new('/sql/20_changes_uncibled.sql').read
+    conn.exec(File.read('/sql/20_changes_uncibled.sql')
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
       .gsub(':osm_diff_tags', sql_osm_diff_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json))
       .gsub(':proj', proj.to_s)
       .gsub(':distance', distance.to_s))
-    conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_update'))
+    conn.exec(File.read('/sql/90_changes_apply.sql').gsub(':changes_source', 'changes_update'))
   end
 
   sig {
@@ -354,10 +354,10 @@ module Validation
     ).void
   }
   def self.validate_changes(conn)
-    r = conn.exec(File.new('/sql/40_validated_changes.sql').read)
+    r = conn.exec(File.read('/sql/40_validated_changes.sql'))
     puts "  40_validated_changes #{r.inspect}"
 
-    r = conn.exec(File.new('/sql/90_changes_apply.sql').read.gsub(':changes_source', 'changes_source'))
+    r = conn.exec(File.read('/sql/90_changes_apply.sql').gsub(':changes_source', 'changes_source'))
     puts " 90_changes_apply #{r.inspect}"
   end
 
