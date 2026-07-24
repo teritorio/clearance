@@ -29,16 +29,16 @@ module Validators
     end
 
     Neighbor = T.type_alias {
-      Integer
+      { 'x' => Float, 'y' => Float, 'id' => Integer, 'way_id' => Integer }
     }
 
     sig {
       params(
         conflations_matches: T::Array[Validation::Link],
-        neighbors_ways_index: T::Hash[Integer, { 'base_neighbors_ways' => T::Array[Neighbor], 'change_neighbors_ways' => T::Array[Neighbor] }],
+        neighbors_index: T::Hash[Integer, { 'base_neighbors' => T::Array[Neighbor], 'change_neighbors' => T::Array[Neighbor] }],
       ).returns([T::Hash[Integer, T::Array[Neighbor]], T::Hash[Integer, T::Array[Neighbor]]])
     }
-    def neighbors(conflations_matches, neighbors_ways_index)
+    def neighbors(conflations_matches, neighbors_index)
       before_ids = T.let([], T::Array[Integer])
       after_ids = T.let([], T::Array[Integer])
       conflations_matches.each{ |link|
@@ -49,13 +49,26 @@ module Validators
       after_ids = after_ids.uniq
 
       before_neighbors = before_ids.index_with{ |before_id|
-        T.cast(neighbors_ways_index.dig(before_id, 'base_neighbors_ways') || [], T::Array[Neighbor])
+        T.cast(neighbors_index.dig(before_id, 'base_neighbors') || [], T::Array[Neighbor])
       }
       after_neighbors = after_ids.index_with{ |after_id|
-        T.cast(neighbors_ways_index.dig(after_id, 'change_neighbors_ways') || [], T::Array[Neighbor])
+        T.cast(neighbors_index.dig(after_id, 'change_neighbors') || [], T::Array[Neighbor])
       }
 
       [before_neighbors, after_neighbors]
+    end
+
+    sig {
+      params(
+        all_before_neighbors: T::Array[Neighbor],
+        all_after_neighbors: T::Array[Neighbor],
+      ).returns([T::Array[Neighbor], T::Array[Neighbor]])
+    }
+    def symmetric_difference(all_before_neighbors, all_after_neighbors)
+      only_all_before_neighbors = all_before_neighbors.select{ |neighbor| !all_after_neighbors.any?{ |n| n['id'] == neighbor['id'] || n['way_id'] == neighbor['way_id'] || (n['x'] == neighbor['x'] && n['y'] == neighbor['y']) } }
+      only_all_after_neighbors = all_after_neighbors.select{ |neighbor| !all_before_neighbors.any?{ |n| n['id'] == neighbor['id'] || n['way_id'] == neighbor['way_id'] || (n['x'] == neighbor['x'] && n['y'] == neighbor['y']) } }
+
+      [only_all_before_neighbors, only_all_after_neighbors]
     end
 
     sig {
@@ -67,8 +80,8 @@ module Validators
     }
     def apply(conn, locha_id, prevalidation_clusters)
       # Get node_id that are in change but not in base, and node_id that are in base but not in change
-      neighbors_ways = T.cast(conn.exec('SELECT * FROM validator_network WHERE locha_id = $1', T.unsafe([locha_id])).to_a, T::Array[{ 'id' => Integer, 'base_neighbors_ways' => T::Array[Neighbor], 'change_neighbors_ways' => T::Array[Neighbor] }])
-      neighbors_ways_index = neighbors_ways.index_by { |row| row['id'] }
+      neighbors_ways = T.cast(conn.exec('SELECT * FROM validator_network WHERE locha_id = $1', T.unsafe([locha_id])).to_a, T::Array[{ 'id' => Integer, 'base_neighbors' => T::Array[Neighbor], 'change_neighbors' => T::Array[Neighbor] }])
+      neighbors_index = neighbors_ways.index_by { |row| row['id'] }
 
       # Flag corresponding way that are disconnected or connected from the neighbor
       prevalidation_clusters.collect{ |_accepted_links, conflations_matches|
@@ -76,14 +89,13 @@ module Validators
           link.conflation.before&.objtype == 'w' && link.conflation.after&.objtype == 'w'
         }
 
-        before_neighbors, after_neighbors = neighbors(conflations_matches, neighbors_ways_index)
+        before_neighbors, after_neighbors = neighbors(conflations_matches, neighbors_index)
 
         all_before_neighbors = before_neighbors.values.flatten.uniq
         all_after_neighbors = after_neighbors.values.flatten.uniq
 
         # Symmetric difference of before_neighbors and after_neighbors to find disconnected and connected neighbors
-        only_all_before_neighbors = all_before_neighbors - all_after_neighbors
-        only_all_after_neighbors = all_after_neighbors - all_before_neighbors
+        only_all_before_neighbors, only_all_after_neighbors = symmetric_difference(all_before_neighbors, all_after_neighbors)
 
         only_before_neighbors = before_neighbors.transform_values{ |neighbors| neighbors & only_all_before_neighbors }.compact_blank
         only_after_neighbors = after_neighbors.transform_values{ |neighbors| neighbors & only_all_after_neighbors }.compact_blank

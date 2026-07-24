@@ -15,8 +15,8 @@ CREATE OR REPLACE FUNCTION vnv() RETURNS TABLE (
 ) AS $$
   SELECT
     array_agg(id ORDER BY id)::text ||
-    coalesce(array_agg(coalesce(base_neighbors_ways::text, 'NULL'))::text, '{}') ||
-    coalesce(array_agg(coalesce(change_neighbors_ways::text, 'NULL'))::text, '{}')
+    coalesce(array_agg(coalesce((SELECT array_agg(DISTINCT n->>'way_id' ORDER BY n->>'way_id')::text FROM unnest(base_neighbors) AS n(n)), 'NULL'))::text, '{}') ||
+    coalesce(array_agg(coalesce((SELECT array_agg(DISTINCT n->>'way_id' ORDER BY n->>'way_id')::text FROM unnest(change_neighbors) AS n(n)), 'NULL'))::text, '{}')
   FROM
     validator_network
   ;
@@ -88,37 +88,73 @@ do $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
 
+-- Internal disconnect is not possible
 
--- Test internal disconnect way
+-- -- Test internal disconnect way
+-- BEGIN;
+-- INSERT INTO osm_changes VALUES
+--   ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 2], NULL, true),
+--   ('w', 12, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 4], NULL, true)
+-- ;
+-- COMMIT;
+
+-- \i lib/time_machine/validators/network.sql
+
+-- do $$ BEGIN
+--   ASSERT '{11,12}{"{10,12}","{11,13}"}{"{10}","{13}"}' = (SELECT * FROM vnv()),
+--     (SELECT * FROM vnv());
+-- END; $$ LANGUAGE plpgsql;
+-- TRUNCATE osm_changes;
+
+
+-- -- Test internal deleted way
+-- BEGIN;
+-- INSERT INTO osm_changes VALUES
+--   ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true),
+--   ('w', 12, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true),
+--   ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true)
+-- ;
+-- COMMIT;
+
+-- \i lib/time_machine/validators/network.sql
+
+-- do $$ BEGIN
+--   ASSERT '{11,12,13}{"{10,12}","{11,13}","{12}"}{"{10,13}","NULL","{10,11}"}' = (SELECT * FROM vnv()),
+--     (SELECT * FROM vnv());
+-- END; $$ LANGUAGE plpgsql;
+-- TRUNCATE osm_changes;
+
+
+-- Test connection to new way
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 2], NULL, true),
-  ('w', 12, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 4], NULL, true)
+  ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 5], NULL, true),
+  ('w', 20, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[5, 1], NULL, true)
 ;
 COMMIT;
 
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{11,12}{"{10,12}","{11,13}"}{"{10}","{13}"}' = (SELECT * FROM vnv()),
+  ASSERT '{20}{"NULL"}{"{10}"}' = (SELECT * FROM vnv()),
     (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
 
 
--- Test internal deleted way
+-- Test split connected way
 BEGIN;
 INSERT INTO osm_changes VALUES
-  ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true),
-  ('w', 12, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true),
-  ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true)
+  ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 20], NULL, true),
+  ('w', 20, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[20, 21], NULL, true),
+  ('w', 21, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[22, 3], NULL, true)
 ;
 COMMIT;
 
 \i lib/time_machine/validators/network.sql
 
 do $$ BEGIN
-  ASSERT '{11,12,13}{"{10,12}","{11,13}","{12}"}{"{10,13}","NULL","{10,11}"}' = (SELECT * FROM vnv()),
+  ASSERT '{11,21}{"{10,12}","NULL"}{"{10}","{12}"}' = (SELECT * FROM vnv()),
     (SELECT * FROM vnv());
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
