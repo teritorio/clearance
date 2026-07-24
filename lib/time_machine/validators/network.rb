@@ -44,12 +44,12 @@ module Validators
       before_ids = before_ids.uniq
       after_ids = after_ids.uniq
 
-      before_neighbors = before_ids.collect{ |before_id|
-        T.cast(neighbors_ways_index.dig(before_id, 'base_neighbors_ways') || [], T::Array[Integer]).collect{ |n| [n, before_id] }
-      }.flatten(1).group_by(&:first).transform_values{ |v| v.collect(&:last).uniq }
-      after_neighbors = after_ids.collect{ |after_id|
-        T.cast(neighbors_ways_index.dig(after_id, 'change_neighbors_ways') || [], T::Array[Integer]).collect{ |n| [n, after_id] }
-      }.flatten(1).group_by(&:first).transform_values{ |v| v.collect(&:last).uniq }
+      before_neighbors = before_ids.index_with{ |before_id|
+        T.cast(neighbors_ways_index.dig(before_id, 'base_neighbors_ways') || [], T::Array[Integer])
+      }
+      after_neighbors = after_ids.index_with{ |after_id|
+        T.cast(neighbors_ways_index.dig(after_id, 'change_neighbors_ways') || [], T::Array[Integer])
+      }
 
       [before_neighbors, after_neighbors]
     end
@@ -74,9 +74,15 @@ module Validators
 
         before_neighbors, after_neighbors = neighbors(conflations_matches, neighbors_ways_index)
 
+        all_before_neighbors = before_neighbors.values.flatten.uniq
+        all_after_neighbors = after_neighbors.values.flatten.uniq
+
         # Symmetric difference of before_neighbors and after_neighbors to find disconnected and connected neighbors
-        only_before_neighbors = before_neighbors.select{ |key, _| !after_neighbors.key?(key) }
-        only_after_neighbors = after_neighbors.select{ |key, _| !before_neighbors.key?(key) }
+        only_all_before_neighbors = all_before_neighbors - all_after_neighbors
+        only_all_after_neighbors = all_after_neighbors - all_before_neighbors
+
+        only_before_neighbors = before_neighbors.transform_values{ |neighbors| neighbors & only_all_before_neighbors }.compact_blank
+        only_after_neighbors = after_neighbors.transform_values{ |neighbors| neighbors & only_all_after_neighbors }.compact_blank
 
         conflations_matches_before_index = conflations_matches.index_by{ |link| link.conflation.before&.id }
         conflations_matches_after_index = conflations_matches.index_by{ |link| link.conflation.after&.id }
@@ -88,17 +94,15 @@ module Validators
           [T::Hash[Integer, Validation::Link], String, String]
         ])
         a.each{ |only_neighbors, (conflations_matches_index, validator_id, option_key)|
-          only_neighbors.each{ |neighbor, before_ids|
-            before_ids.each{ |before_id|
-              link = T.must(conflations_matches_index[before_id])
-              actions = link.result.diff.attribs['geom'] || []
-              actions << Validation::Action.new(
-                validator_id: validator_id,
-                action: 'reject',
-                options: { option_key => neighbor },
-              )
-              link.result.diff.attribs['geom'] = actions
-            }
+          only_neighbors.each{ |before_id, neighbors|
+            link = T.must(conflations_matches_index[before_id])
+            actions = link.result.diff.attribs['geom'] || []
+            actions << Validation::Action.new(
+              validator_id: validator_id,
+              action: 'reject',
+              options: { option_key => neighbors },
+            )
+            link.result.diff.attribs['geom'] = actions
           }
         }
       }

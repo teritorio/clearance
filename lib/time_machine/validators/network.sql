@@ -25,12 +25,13 @@ base_neighbors AS (
     array_agg(_.id ORDER BY _.id) AS neighbors_ways
   FROM
     osm_changes AS way
-    JOIN osm_base_w ON
-      osm_base_w.id = way.id
+    JOIN osm_base_w USING (id)
     JOIN osm_base_w AS _ ON
       _.geom && osm_base_w.geom AND
       _.nodes && osm_base_w.nodes AND
       _.id != osm_base_w.id
+  WHERE
+    way.cibled
   GROUP BY
     way.locha_id,
     way.id
@@ -42,9 +43,7 @@ osm_last AS (
     coalesce(osm_changes.deleted, false) AS deleted
   FROM
     osm_base_w
-    LEFT JOIN osm_changes ON
-      osm_changes.objtype = 'w' AND
-      osm_changes.id = osm_base_w.id
+    LEFT JOIN osm_changes USING (id)
 ),
 changes_neighbors AS (
   SELECT
@@ -58,6 +57,7 @@ changes_neighbors AS (
       c.id != way.id AND
       c.deleted = false
   WHERE
+    way.cibled AND
     way.deleted = false
   GROUP BY
     way.locha_id,
