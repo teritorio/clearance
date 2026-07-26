@@ -28,11 +28,15 @@ module Validators
       }
     end
 
+    Neighbor = T.type_alias {
+      Integer
+    }
+
     sig {
       params(
         conflations_matches: T::Array[Validation::Link],
-        neighbors_ways_index: T::Hash[Integer, { 'base_neighbors_ways' => T::Array[Integer], 'change_neighbors_ways' => T::Array[Integer] }],
-      ).returns([T::Hash[Integer, T::Array[Integer]], T::Hash[Integer, T::Array[Integer]]])
+        neighbors_ways_index: T::Hash[Integer, { 'base_neighbors_ways' => T::Array[Neighbor], 'change_neighbors_ways' => T::Array[Neighbor] }],
+      ).returns([T::Hash[Integer, T::Array[Neighbor]], T::Hash[Integer, T::Array[Neighbor]]])
     }
     def neighbors(conflations_matches, neighbors_ways_index)
       before_ids = T.let([], T::Array[Integer])
@@ -45,10 +49,10 @@ module Validators
       after_ids = after_ids.uniq
 
       before_neighbors = before_ids.index_with{ |before_id|
-        T.cast(neighbors_ways_index.dig(before_id, 'base_neighbors_ways') || [], T::Array[Integer])
+        T.cast(neighbors_ways_index.dig(before_id, 'base_neighbors_ways') || [], T::Array[Neighbor])
       }
       after_neighbors = after_ids.index_with{ |after_id|
-        T.cast(neighbors_ways_index.dig(after_id, 'change_neighbors_ways') || [], T::Array[Integer])
+        T.cast(neighbors_ways_index.dig(after_id, 'change_neighbors_ways') || [], T::Array[Neighbor])
       }
 
       [before_neighbors, after_neighbors]
@@ -63,7 +67,7 @@ module Validators
     }
     def apply(conn, locha_id, prevalidation_clusters)
       # Get node_id that are in change but not in base, and node_id that are in base but not in change
-      neighbors_ways = T.cast(conn.exec('SELECT * FROM validator_network WHERE locha_id = $1', T.unsafe([locha_id])).to_a, T::Array[{ 'id' => Integer, 'base_neighbors_ways' => T::Array[Integer], 'change_neighbors_ways' => T::Array[Integer] }])
+      neighbors_ways = T.cast(conn.exec('SELECT * FROM validator_network WHERE locha_id = $1', T.unsafe([locha_id])).to_a, T::Array[{ 'id' => Integer, 'base_neighbors_ways' => T::Array[Neighbor], 'change_neighbors_ways' => T::Array[Neighbor] }])
       neighbors_ways_index = neighbors_ways.index_by { |row| row['id'] }
 
       # Flag corresponding way that are disconnected or connected from the neighbor
