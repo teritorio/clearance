@@ -60,7 +60,7 @@ class Project < ActiveFile::Base
       count = T.let(nil, T.nilable(Integer))
       Db::DbConnRead.conn(project) { |conn|
         count = begin
-          conn.exec('SELECT count(*) AS count FROM validations_log WHERE action IS NULL OR action = \'reject\'') { |result|
+          conn.exec('SELECT count(DISTINCT (locha_id, semantic_group)) AS count FROM validations_log WHERE action IS NULL OR action = \'reject\'') { |result|
             result[0]['count'] || 0
           }
         rescue PG::UndefinedTable
