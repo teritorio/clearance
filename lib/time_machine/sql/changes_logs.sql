@@ -14,73 +14,151 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             action IS NULL OR
             action = 'reject'
     ),
-    features_uniq AS ((
-        SELECT DISTINCT ON (validations_log.before_object->>'objtype', (validations_log.before_object->>'id')::bigint)
+    features_uniq_ AS ((
+        SELECT DISTINCT ON (osm_base.objtype, osm_base.id)
             validations_log.locha_id,
+            validations_log.semantic_group,
             validations_log.created,
             ST_Envelope(osm_base.geom) AS bbox,
             osm_base.changeset_id AS changeset_id,
-            CASE WHEN osm_base.id IS NOT NULL THEN jsonb_build_object(
-                'type', 'Feature',
-                'id', 'b' || osm_base.objtype || osm_base.id,
-                'properties', jsonb_strip_nulls(jsonb_build_object(
-                    'objtype', osm_base.objtype,
-                    'id', osm_base.id,
-                    'version', osm_base.version,
-                    'changeset_id', osm_base.changeset_id,
-                    'created', osm_base.created,
-                    'uid', osm_base.uid,
-                    'username', osm_base.username,
-                    'tags', osm_base.tags,
-                    'deleted', false,
-                    'members', osm_base.members,
-                    'links', dense_rank() OVER (PARTITION BY validations_log.locha_id ORDER BY validations_log.semantic_group) - 1
-                )),
-                'geometry', ST_AsGeoJSON(osm_base.geom)::jsonb
-            ) END AS feature
+            'b' || osm_base.objtype || osm_base.id AS id,
+            CASE WHEN osm_base.id IS NOT NULL THEN jsonb_strip_nulls(jsonb_build_object(
+                'objtype', osm_base.objtype,
+                'id', osm_base.id,
+                'version', osm_base.version,
+                'changeset_id', osm_base.changeset_id,
+                'created', osm_base.created,
+                'uid', osm_base.uid,
+                'username', osm_base.username,
+                'tags', osm_base.tags,
+                'deleted', false,
+                'members', osm_base.members
+            )) END AS properties,
+            osm_base.geom
         FROM
             validations_log
-            LEFT JOIN osm_base ON -- Allow NULL for coherent dense_rank
+            JOIN osm_base ON
                 osm_base.objtype = validations_log.before_object->>'objtype' AND
                 osm_base.id = (validations_log.before_object->>'id')::bigint
         ORDER BY
-            validations_log.before_object->>'objtype',
-            (validations_log.before_object->>'id')::bigint
+            osm_base.objtype,
+            osm_base.id
     ) UNION ALL (
-        SELECT DISTINCT ON (validations_log.after_object->>'objtype', (validations_log.after_object->>'id')::bigint)
+        SELECT DISTINCT ON (osm_changes.objtype, osm_changes.id)
             validations_log.locha_id,
+            validations_log.semantic_group,
             validations_log.created,
             ST_Envelope(osm_changes.geom) AS bbox,
             osm_changes.changeset_id AS changeset_id,
-            CASE WHEN osm_changes.id IS NOT NULL THEN jsonb_build_object(
-                'type', 'Feature',
-                'id', 'a' || osm_changes.objtype || osm_changes.id,
-                'properties', jsonb_strip_nulls(jsonb_build_object(
-                    'objtype', osm_changes.objtype,
-                    'id', osm_changes.id,
-                    'version', osm_changes.version,
-                    'changeset_id', osm_changes.changeset_id,
-                    'created', osm_changes.created,
-                    'uid', osm_changes.uid,
-                    'username', osm_changes.username,
-                    'tags', osm_changes.tags,
-                    'deleted', osm_changes.deleted,
-                    'members', osm_changes.members,
-                    'links', dense_rank() OVER (PARTITION BY validations_log.locha_id ORDER BY validations_log.semantic_group) - 1
-                )),
-                'geometry', ST_AsGeoJSON(osm_changes.geom)::jsonb
-            ) END AS feature
+            'a' || osm_changes.objtype || osm_changes.id AS id,
+            CASE WHEN osm_changes.id IS NOT NULL THEN jsonb_strip_nulls(jsonb_build_object(
+                'objtype', osm_changes.objtype,
+                'id', osm_changes.id,
+                'version', osm_changes.version,
+                'changeset_id', osm_changes.changeset_id,
+                'created', osm_changes.created,
+                'uid', osm_changes.uid,
+                'username', osm_changes.username,
+                'tags', osm_changes.tags,
+                'deleted', osm_changes.deleted,
+                'members', osm_changes.members
+            )) END AS properties,
+            osm_changes.geom
         FROM
             validations_log
-            LEFT JOIN osm_changes_geom AS osm_changes ON
+            JOIN osm_changes_geom AS osm_changes ON
+                osm_changes.objtype = 'n' AND -- Force index usage
                 osm_changes.objtype = validations_log.after_object->>'objtype' AND
                 osm_changes.id = (validations_log.after_object->>'id')::bigint AND
                 osm_changes.version = (validations_log.after_object->>'version')::integer AND
                 osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
         ORDER BY
-            validations_log.after_object->>'objtype',
-            (validations_log.after_object->>'id')::bigint
+            osm_changes.objtype,
+            osm_changes.id
+    ) UNION ALL (
+        SELECT DISTINCT ON (osm_changes.objtype, osm_changes.id)
+            validations_log.locha_id,
+            validations_log.semantic_group,
+            validations_log.created,
+            ST_Envelope(osm_changes.geom) AS bbox,
+            osm_changes.changeset_id AS changeset_id,
+            'a' || osm_changes.objtype || osm_changes.id AS id,
+            CASE WHEN osm_changes.id IS NOT NULL THEN jsonb_strip_nulls(jsonb_build_object(
+                'objtype', osm_changes.objtype,
+                'id', osm_changes.id,
+                'version', osm_changes.version,
+                'changeset_id', osm_changes.changeset_id,
+                'created', osm_changes.created,
+                'uid', osm_changes.uid,
+                'username', osm_changes.username,
+                'tags', osm_changes.tags,
+                'deleted', osm_changes.deleted,
+                'members', osm_changes.members
+            )) END AS properties,
+            osm_changes.geom
+        FROM
+            validations_log
+            JOIN osm_changes_geom AS osm_changes ON
+                osm_changes.objtype = 'w' AND
+                osm_changes.objtype = validations_log.after_object->>'objtype' AND
+                osm_changes.id = (validations_log.after_object->>'id')::bigint AND
+                osm_changes.version = (validations_log.after_object->>'version')::integer AND
+                osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
+        ORDER BY
+            osm_changes.objtype,
+            osm_changes.id
+    ) UNION ALL (
+        SELECT DISTINCT ON (osm_changes.objtype, osm_changes.id)
+            validations_log.locha_id,
+            validations_log.semantic_group,
+            validations_log.created,
+            ST_Envelope(osm_changes.geom) AS bbox,
+            osm_changes.changeset_id AS changeset_id,
+            'a' || osm_changes.objtype || osm_changes.id AS id,
+            CASE WHEN osm_changes.id IS NOT NULL THEN jsonb_strip_nulls(jsonb_build_object(
+                'objtype', osm_changes.objtype,
+                'id', osm_changes.id,
+                'version', osm_changes.version,
+                'changeset_id', osm_changes.changeset_id,
+                'created', osm_changes.created,
+                'uid', osm_changes.uid,
+                'username', osm_changes.username,
+                'tags', osm_changes.tags,
+                'deleted', osm_changes.deleted,
+                'members', osm_changes.members
+            )) END AS properties,
+            osm_changes.geom
+        FROM
+            validations_log
+            JOIN osm_changes_geom AS osm_changes ON
+                osm_changes.objtype = 'r' AND
+                osm_changes.objtype = validations_log.after_object->>'objtype' AND
+                osm_changes.id = (validations_log.after_object->>'id')::bigint AND
+                osm_changes.version = (validations_log.after_object->>'version')::integer AND
+                osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
+        ORDER BY
+            osm_changes.objtype,
+            osm_changes.id
     )),
+    features_uniq AS (
+        SELECT
+            locha_id,
+            created,
+            bbox,
+            changeset_id,
+            jsonb_build_object(
+                'type', 'Feature',
+                'id', id,
+                'properties', properties || jsonb_build_object(
+                    'links', dense_rank() OVER (PARTITION BY locha_id ORDER BY semantic_group) - 1
+                ),
+                'geometry', ST_AsGeoJSON(geom)::jsonb
+            ) AS feature
+        FROM
+            features_uniq_
+        ORDER BY
+            locha_id
+    ),
     features AS (
         SELECT
             locha_id,
