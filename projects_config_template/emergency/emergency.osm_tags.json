@@ -1,7 +1,15 @@
 [
   {
     "select": [
-      "[amenity=hospital]"
+      "[highway=motorway]"
+    ],
+    "interest": {
+      "name": null
+    }
+  },
+  {
+    "select": [
+      "[amenity~'^(hospital|clinic)$']"
     ],
     "interest": {
       "name": null,
