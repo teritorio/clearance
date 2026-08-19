@@ -1,12 +1,16 @@
 # Clearance Changelog
 
-## Unreleased
+## v0.6.0 (2026-08-20)
+
+### Validators
+* Added generic `Validator` config to support configurable validator instances.
+* Refactored `ValidatorLink` to support validator network connections and SRID propagation.
+* Added `Duplicate` validator to detect duplicate OSM objects within a project, with dedicated SQL queries.
+* Added `Network` validator to validate objects against a network topology (neighbor relationships), with dedicated SQL queries.
+* Added `specific_osm_tags_matches` to filter OSM tag matches per validator.
 
 ### Bug Fixes
 * Changeset user is now nullable to handle incomplete OSM data.
-
-### Database
-* Added migration to allow null user on changeset records.
 
 ---
 
