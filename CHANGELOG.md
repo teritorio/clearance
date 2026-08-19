@@ -1,5 +1,98 @@
 # Clearance Changelog
 
+## Unreleased
+
+### Bug Fixes
+* Changeset user is now nullable to handle incomplete OSM data.
+
+### Database
+* Added migration to allow null user on changeset records.
+
+---
+
+## v0.5.5 (2026-08-15)
+
+### Validator Architecture Refactoring
+* Split `Validator` class into `Validator` and `ValidatorLink` for clearer separation of concerns.
+* Moved apply logic into validator classes.
+* Added base connection handling to validators.
+* Split `time_machine_validate` loop to iterate first on validators.
+
+### New Validators
+* Added `ChangesetComment` validator to check changeset comments.
+* Added `ChangesetReviewRequested` validator to check review request tags.
+
+### Changeset Improvements
+* Updated changeset processing on a log bias.
+* Added changeset update timestamp migration.
+
+### Performance
+* Fixed `changes_logs()` SQL query performance (major rewrite of changes_logs.sql).
+
+### Compatibility
+* Added `ostruct` gem for Ruby 4.0 compatibility.
+
+### Maintenance
+* Reviewed template config.
+* Lint: replaced `File.new().read` with `File.read`.
+
+---
+
+## v0.5.4 (2026-08-11)
+
+### LoCha & Semantic Grouping
+* Project count now reflects locha subgroups.
+* Use `semantic_group` id in place of link group index for consistency.
+
+### Dependencies
+* Updated `openstreetmap_logical_history` library, fixing geom_score calculation.
+
+---
+
+## v0.5.3 (2026-07-10)
+
+### Dependencies
+* Updated `overpass_parser_ruby` to fix set aggregation issue.
+
+---
+
+## v0.5.2 (2026-07-08)
+
+### Validation
+* Cleaned validation jsonb content for consistency.
+* Fixed changeset bbox field name.
+
+### Code Quality
+* Added custom Rubocop rule (`FromHashStrict`) to ensure `from_hash` is always called with the strict option.
+* Applied `from_hash` strict option across the codebase.
+
+### Database
+* Added migration to clean validation log jsonb content.
+* Added migration to fix changeset bbox column structure.
+
+---
+
+## v0.5.1 (2026-07-02)
+
+### Bug Fixes
+* Fixed `osm_diff_tags` filter.
+
+### Performance
+* Optimized `schema-check-integrity` SQL queries.
+* Performance optimization on update geometry trigger.
+
+### Configuration
+* Added missing `NUXT_PUBLIC_MAP_STYLE_URL` to frontend environment.
+
+### Testing
+* Enabled integrity checks in test suite.
+
+### Maintenance
+* Bundle update.
+* Lint cleanup.
+
+---
+
 ## From v0.4 to v0.5
 
 This development cycle delivers a major overhaul of Clearance's core processing engine, validation workflow, and database architecture. The primary focus was improving LoCha generation, scalability, validation quality, and operational reliability.
