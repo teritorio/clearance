@@ -13,7 +13,7 @@ module Osm
     const :closed_at, T.nilable(String)
     const :open, T::Boolean
     const :user, T.nilable(String)
-    const :uid, Integer
+    const :uid, T.nilable(Integer)
     const :min_lat, T.nilable(T.any(Float, Integer))
     const :min_lon, T.nilable(T.any(Float, Integer))
     const :max_lat, T.nilable(T.any(Float, Integer))

@@ -51,7 +51,7 @@ CREATE TABLE osm_changesets (
     closed_at TIMESTAMP (0) WITHOUT TIME ZONE,
     open BOOLEAN NOT NULL,
     "user" TEXT,
-    uid INTEGER NOT NULL,
+    uid INTEGER,
     min_lat REAL,
     min_lon REAL,
     max_lat REAL,

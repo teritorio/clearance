@@ -441,7 +441,7 @@ components:
               type: array
               items:
                 type: object
-                required: [id, uid, open, tags, max_lat, max_lon, min_lat, min_lon, closed_at, created_at, changes_count, comments_count]
+                required: [id, open, tags, max_lat, max_lon, min_lat, min_lon, closed_at, created_at, changes_count, comments_count]
                 properties:
                   id:
                     type: number
