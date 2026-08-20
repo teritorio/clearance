@@ -56,6 +56,7 @@ services:
       - PROJECTS_DATA_PATH=/projects_data
     volumes:
       - ./lib/time_machine/sql:/sql
+      - ./projects_config_template:/projects_config_template
       - projects_config:/projects_config
       - projects_data:/projects_data
     depends_on:
@@ -82,6 +83,7 @@ services:
     volumes:
       - ./lib/time_machine/sql:/sql
       - ./cache:/cache
+      - ./projects_config_template:/projects_config_template
       - projects_config:/projects_config
       - projects_data:/projects_data
     depends_on:
