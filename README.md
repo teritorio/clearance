@@ -242,14 +242,27 @@ Held objects and manual object acceptance are available via API and user [fronte
 The idea is to group changes locally to make contextual validation. It allows detecting, and ignoring, e.g. deletion and recreation of the same object. It also allows implementing multi-object validators, e.g. to validate road network continuity.
 
 ## Roadmap
+
+Input
+  * Support a partial data source, like an Overpass API, GeoDesk/GOL/Parquet or ohsome-planet/Parquet as initial and diff source for small area (in place of larger raw OSM extract).
+  * Import and update a partial database filtered by the configured tags; remotely fetch any missing objects.
+  * Support non OSM spatial data
+
 Engine
   * LoCha splitting strategy on large clusters
+  * LoCha splitting routes relations with independent local changes
   * Support changes on objects larger than a cluster: admin relations, large landuses, rivers
 
+Computation
+  * Optimize, do not run a full update computation on empty diff update (unless forced).
+  * Optimize, do not run a LoCha update computation when no update on changes (unless forced).
+  * Optimize, only recompute LoCha on updated changes objects.
+  * Optimize matrix computation, only compute matrix cells under distance threshold
+
 Database
-  * Import and update a partial database filtered by the configured tags; remotely fetch any missing objects.
   * Optimize the database schema by storing either `lon/lat` or `geom`, but not both.
   * Optimize the database schema by storing user names in a separate table.
+  * Optimize the database schema by storing `NULL` in place of empty jsonb `{}` tags.
 
 Configuration
   * By feature type
@@ -257,16 +270,24 @@ Configuration
     * Evaluation of geometry change thresholds
 
 Validators implementation
-  * Validate again OpenData set
+  * Validate against External dataset, let pass when conflate
+    * Conflation by ref or geom
+    * Geometry acceptability
+    * Tags acceptability
   * Validate changes using external rule sets, like MapCSS from JOSM or Osmose-QA validation
 
 Validation evaluation scoring
   * Fetch user blocks and use them in score
   * Contributors' reputation: based on external tools / APIs
   * Support equivalent tagging schemas to avoid false positives
+  * Improve Delayed validator: function of parameters (user score, etc.)
+  * Improve Network validator: subclass it
+    * Road network with of oriented edge
+    * Road barrier
 
 UI / UX
-  * Validation review UI / UX
+  * Split connected components and LoCha subgroups in the API and the UI
+  * [In progress] Validation review UI / UX
   * Configuration UI:
     * Display
     * Edit
@@ -274,6 +295,8 @@ UI / UX
     * Review status (Fixed, I will do it, Need help...)
     * Data Revert tool
     * Easy creation of changeset discussions or OSM notes
+  * Show update in process (from projects locks)
+  * Store and show update duration
 
 # Fund
 
