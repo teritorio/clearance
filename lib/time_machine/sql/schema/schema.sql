@@ -58,7 +58,8 @@ CREATE TABLE osm_changesets (
     max_lon REAL,
     comments_count INTEGER NOT NULL,
     changes_count INTEGER NOT NULL,
-    tags JSONB NOT NULL
+    tags JSONB NOT NULL,
+    updated_at TIMESTAMP (0) WITHOUT TIME ZONE DEFAULT to_timestamp(0) NOT NULL
 );
 ALTER TABLE osm_changesets ADD PRIMARY KEY(id);
 
