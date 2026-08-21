@@ -109,8 +109,12 @@ class ChangesLogsController < ApplicationController
         features = locha['features'].index_by { |f| f['id'] }
         links = locha['metadata']['links']
 
-        objects = links.collect{ |link| (link.pluck('before') + link.pluck('after')).compact.uniq.collect{ |id| features[id] } }.flatten(1)
-        matches = links.collect{ |link| link.pluck('matches').flatten(1) }.flatten(1)
+        objects = links.collect{ |_, linkss|
+          linkss.collect{ |link| [link['before'], link['after']] }
+        }.flatten(2).compact.collect{ |id| id[1..] }.uniq.collect{ |id| features[id] }.compact
+        matches = links.collect{ |_, link|
+          link.pluck('matches')
+        }.flatten(2)
         bbox = locha['bbox']
         point = "#{(bbox[0] + bbox[2]) / 2} #{(bbox[1] + bbox[3]) / 2}"
         atom_entry(xml, locha_id, objects, matches, point, href)
