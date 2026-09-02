@@ -44,8 +44,8 @@ class TestValidator < Test::Unit::TestCase
   sig { void }
   def test_action_force
     id = 'foo'
-    action = 'accept'
-    validator = Validators::ValidatorLink.new(settings: build_settings(id, Osm::TagsMatches.new([])), action_force: action)
+    action = 'force_accept'
+    validator = Validators::ValidatorLink.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -54,7 +54,8 @@ class TestValidator < Test::Unit::TestCase
     assert_equal(1, actions.size)
     a = T.must(actions[0])
     assert_equal(id, a.validator_id)
-    assert_equal(action, a.action)
+    assert_equal('accept', a.action)
+    assert_equal(true, a.force)
   end
 end
 
@@ -434,16 +435,17 @@ class TestDelayed < Test::Unit::TestCase
   sig { void }
   def test_after_delayed
     id = 'foo'
-    action = 'accept'
+    action = 'force_accept'
     osm_tags_matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
     now = '2000-01-01T00:00:30Z'
-    validator = Validators::Delayed.new(settings: build_settings(id, osm_tags_matches), after_delay: 10, action_force: action, now: now)
+    validator = Validators::Delayed.new(settings: build_settings(id, osm_tags_matches), after_delay: 10, action: action, now: now)
     validation_action = [Validation::Action.new(
       validator_id: id,
       description: nil,
-      action: action,
+      action: 'accept',
+      force: true,
     )]
 
     after = Validation::OSMChangeProperties.new(
@@ -486,7 +488,7 @@ class TestDelayed < Test::Unit::TestCase
     assert_equal(
       Validation::DiffActions.new(
         attribs: { 'deleted' => validation_action },
-        tags: { 'foo' => validation_action }
+        tags: { 'foo' => validation_action },
       ).inspect,
       diff.inspect
     )

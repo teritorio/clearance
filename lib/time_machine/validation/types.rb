@@ -21,6 +21,7 @@ module Validation
     const :validator_id, String
     const :description, T.nilable(String)
     const :action, ActionType
+    const :force, T::Boolean, default: false
     prop :options, T.nilable(T::Hash[String, T.untyped])
 
     sig {
@@ -40,7 +41,7 @@ module Validation
       ).returns(T::Array[T.untyped])
     }
     def as_json(json_options = T.unsafe(nil))
-      [@validator_id, @action, @options].as_json(json_options)
+      [@validator_id, @action, @force, @options].as_json(json_options)
     end
   end
 

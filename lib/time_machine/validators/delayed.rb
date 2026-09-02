@@ -18,15 +18,13 @@ module Validators
         before_delay: T.nilable(Integer),
         after_delay: T.nilable(Integer),
         action: T.nilable(Validation::ActionType),
-        action_force: T.nilable(Validation::ActionType),
         now: T.nilable(String),
       ).void
     }
-    def initialize(settings:, before_delay: nil, after_delay: nil, action: nil, action_force: nil, now: nil)
+    def initialize(settings:, before_delay: nil, after_delay: nil, action: nil, now: nil)
       raise "At least one of 'before_delay' or 'after_delay' should be declared in #{settings.id}" if before_delay.nil? && after_delay.nil?
-      raise "At least one of 'action' or 'action_force' should be declared in #{settings.id}" if action.nil? && action_force.nil?
 
-      super(settings: settings, action: action, action_force: action_force)
+      super(settings: settings, action: action)
       now_time = now.nil? ? Time.now.utc : Time.parse(now).utc
       @before_thresold = T.let(before_delay.nil? ? nil : (now_time - before_delay).iso8601, T.nilable(String))
       @after_thresold = T.let(after_delay.nil? ? nil : (now_time - after_delay).iso8601, T.nilable(String))

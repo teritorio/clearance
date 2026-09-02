@@ -56,16 +56,15 @@ module Validators
       params(
         settings: ValidatorBase::Settings,
         action: T.nilable(Validation::ActionType),
-        action_force: T.nilable(Validation::ActionType),
       ).void
     }
-    def initialize(settings:, action: nil, action_force: nil)
+    def initialize(settings:, action: nil)
       super(settings: settings)
-      @action_force = T.let(!action_force.nil?, T::Boolean)
       @action = T.let(Validation::Action.new(
         validator_id: settings.id,
         description: settings.description,
-        action: action || action_force || 'reject'
+        action: action&.split('_')&.last || 'reject',
+        force: action&.start_with?('force_') || false,
       ), Validation::Action)
     end
 
@@ -78,7 +77,7 @@ module Validators
     }
     def assign_action(actions, value: nil, options: nil)
       # Side effect in actions
-      actions.clear if @action_force
+      actions.clear if @action.force
       if value
         actions << value
       else
@@ -161,7 +160,6 @@ module Validators
       params(
         settings: ValidatorBase::Settings,
         action: T.nilable(Validation::ActionType),
-        action_force: T.nilable(Validation::ActionType),
         block: T.nilable(T.proc.params(
           before: T.nilable(Validation::OSMChangeProperties),
           after: T.nilable(Validation::OSMChangeProperties),
@@ -169,8 +167,8 @@ module Validators
         ).returns(T::Boolean))
       ).void
     }
-    def initialize(settings:, action: nil, action_force: nil, &block)
-      super(settings: settings, action: action, action_force: action_force)
+    def initialize(settings:, action: nil, &block)
+      super(settings: settings, action: action)
 
       @block = block
     end

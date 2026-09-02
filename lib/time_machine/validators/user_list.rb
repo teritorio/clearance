@@ -14,11 +14,10 @@ module Validators
         settings: ValidatorBase::Settings,
         list: T::Array[String],
         action: T.nilable(Validation::ActionType),
-        action_force: T.nilable(Validation::ActionType),
       ).void
     }
-    def initialize(settings:, list:, action: nil, action_force: nil)
-      super(settings: settings, action: action, action_force: action_force)
+    def initialize(settings:, list:, action: nil)
+      super(settings: settings, action: action)
       @list = list
     end
 

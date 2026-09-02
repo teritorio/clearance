@@ -90,7 +90,7 @@ validators:
     list:
       - davidfaure_bot
       - b-jazz-bot
-    action_force: accept
+    action: force_accept
 
   # Reject changes by black listed users
   # OSM username you don't trust, always consider changing unsafe.
@@ -115,7 +115,7 @@ validators:
   # Reject deleted objects.
   # Always consider deletion as unsafe.
   deleted:
-    action_force: reject
+    action: force_reject
 
   # Reject changes that break network connectivity
   network:
@@ -137,4 +137,4 @@ validators:
   accept_after_delay:
     instance: Validators::Delayed
     after_delay: 864000 # 10 days
-    action_force: accept
+    action: force_accept

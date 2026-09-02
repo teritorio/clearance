@@ -82,7 +82,7 @@ class TestValidation < Test::Unit::TestCase
     yaml = CONFIG_YAML_HEADER + <<~YAML
       validators:
         deleted:
-          action_force: reject
+          action: force_reject
     YAML
     config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
 
@@ -120,7 +120,7 @@ class TestValidation < Test::Unit::TestCase
     yaml = CONFIG_YAML_HEADER + <<~YAML
       validators:
         deleted:
-          action_force: reject
+          action: force_reject
     YAML
     config = Configuration.parse(YAML.unsafe_load(yaml), './test/fixtures/')
 
