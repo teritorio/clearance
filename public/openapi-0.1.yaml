@@ -479,7 +479,31 @@ components:
         $ref: '#/components/schemas/LoCha'
 
     ValidatorsMap:
-      type: object
-      additionalProperties:
+      type: array
+      items:
         type: object
-        additionalProperties: true
+        properties:
+          settings:
+            type: object
+            properties:
+              id:
+                type: string
+              description:
+                type: string
+            additionalProperties:
+              type: object
+          actions:
+            type: array
+            items:
+              type: object
+              properties:
+                validation_id:
+                  type: string
+                action:
+                  type: string
+                  enum: [accept, reject]
+                force:
+                  type: boolean
+                options:
+                  type: object
+                  additionalProperties: true

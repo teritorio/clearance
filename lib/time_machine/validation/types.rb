@@ -38,10 +38,15 @@ module Validation
     sig {
       params(
         json_options: T.untyped,
-      ).returns(T::Array[T.untyped])
+      ).returns(T::Hash[String, T.untyped])
     }
     def as_json(json_options = T.unsafe(nil))
-      [@validator_id, @action, @force, @options].as_json(json_options)
+      {
+        validator_id: @validator_id,
+        action: @action,
+        force: @force,
+        options: @options,
+      }.as_json(json_options)
     end
   end
 

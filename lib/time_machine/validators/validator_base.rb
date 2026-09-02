@@ -57,5 +57,16 @@ module Validators
         [v.to_s.delete('@'), instance_variable_get(v)]
       }
     end
+
+    sig {
+      params(
+        json_options: T.untyped,
+      ).returns(T.untyped)
+    }
+    def as_json(json_options = T.unsafe(nil))
+      {
+        settings: @settings.as_json(json_options),
+      }
+    end
   end
 end

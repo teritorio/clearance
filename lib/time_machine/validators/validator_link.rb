@@ -89,6 +89,19 @@ module Validators
         actions << action
       end
     end
+
+    sig {
+      params(
+        json_options: T.untyped,
+      ).returns(T.untyped)
+    }
+    def as_json(json_options = T.unsafe(nil))
+      super.merge({
+        actions: [
+          @action.as_json(json_options),
+        ].compact_blank
+      }.as_json(json_options))
+    end
   end
 
   class ValidatorLinkDual < ValidatorLinkBase
@@ -154,6 +167,20 @@ module Validators
       end
 
       actions << action
+    end
+
+    sig {
+      params(
+        json_options: T.untyped,
+      ).returns(T.untyped)
+    }
+    def as_json(json_options = T.unsafe(nil))
+      super.merge({
+        actions: [
+          @action_accept.as_json(json_options),
+          @action_reject.as_json(json_options),
+        ].compact_blank
+      }.as_json(json_options))
     end
   end
 
