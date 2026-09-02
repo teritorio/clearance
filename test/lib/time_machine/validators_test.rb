@@ -154,7 +154,10 @@ class TestTagsChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::TagsChanges.new(settings: build_settings(id, osm_tags_matches), accept: 'action_accept', reject: 'action_reject')
+    validator = Validators::TagsChanges.new(settings: build_settings(id, osm_tags_matches), actions: {
+      'accept' => 'action_accept',
+      'reject' => 'action_reject',
+    })
     validation_action_accept = [Validation::Action.new(
       validator_id: 'action_accept',
       description: nil,
@@ -293,7 +296,10 @@ class TestGeomChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomChanges.new(settings: build_settings(id, osm_tags_matches), dist: 100, reject: 'geom_changes_significant', accept: 'geom_changes_insignificant')
+    validator = Validators::GeomChanges.new(settings: build_settings(id, osm_tags_matches), dist: 100, actions: {
+      'reject' => 'geom_changes_significant',
+      'accept' => 'geom_changes_insignificant',
+    })
     validation_action_accept = [Validation::Action.new(
       validator_id: 'geom_changes_insignificant',
       description: nil,

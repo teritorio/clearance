@@ -97,21 +97,26 @@ module Validators
     sig {
       params(
         settings: ValidatorBase::Settings,
-        accept: String,
-        reject: String,
+        actions: T::Hash[String, String],
       ).void
     }
-    def initialize(settings:, accept:, reject:)
+    def initialize(settings:, actions:)
       super(settings: settings)
-      @action_accept = T.let(Validation::Action.new(
-        validator_id: accept,
-        description: settings.description,
-        action: 'accept'
-      ), Validation::Action)
+      if actions.key?('accept') || actions.key?('force_accept')
+        @action_accept = T.let(Validation::Action.new(
+          validator_id: T.must(actions['accept']),
+          description: settings.description,
+          action: 'accept',
+          force: actions.key?('force_accept'),
+        ), Validation::Action)
+      end
+      return unless actions.key?('reject') || actions.key?('force_reject')
+
       @action_reject = T.let(Validation::Action.new(
-        validator_id: reject,
+        validator_id: T.must(actions['reject']),
         description: settings.description,
-        action: 'reject'
+        action: 'reject',
+        force: actions.key?('force_reject'),
       ), Validation::Action)
     end
 

@@ -12,13 +12,12 @@ module Validators
     sig {
       params(
         settings: ValidatorBase::Settings,
-        accept: String,
-        reject: String,
+        actions: T::Hash[String, String],
         dist: T.any(Float, Integer),
       ).void
     }
-    def initialize(settings:, accept:, reject:, dist:)
-      super(settings: settings, accept: accept, reject: reject)
+    def initialize(settings:, actions:, dist:)
+      super(settings: settings, actions: actions)
       @dist = dist
     end
 

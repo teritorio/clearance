@@ -70,14 +70,16 @@ validators:
   geom_changes_insignificant:
     instance: Validators::GeomChanges
     dist: 2 # 2 meters
-    reject: geom_changes_significant
-    accept: geom_changes_insignificant
+    actions:
+      reject: geom_changes_significant
+      accept: geom_changes_insignificant
 
   # Core validator, does not change
   tags_changes_significant:
     instance: Validators::TagsChanges
-    reject: tags_changes_significant
-    accept: tags_changes_non_significant
+    actions:
+      reject: tags_changes_significant
+      accept: tags_changes_non_significant
 
   # Accept changes by white listed users
   # OSM username you trust, always consider changing safe.
