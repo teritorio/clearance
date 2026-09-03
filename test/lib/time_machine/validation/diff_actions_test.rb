@@ -43,6 +43,7 @@ class TestValidation < Test::Unit::TestCase
     members: nil,
     version: 1,
     changeset: @@fixture_changeset1,
+    uid: 1,
     username: 'bob',
     created: 'today',
     tags: T.let({
@@ -62,6 +63,7 @@ class TestValidation < Test::Unit::TestCase
     members: nil,
     version: 2,
     changeset: @@fixture_changeset1,
+    uid: 1,
     username: 'bob',
     created: 'today',
     tags: {

@@ -97,6 +97,7 @@ class TestUserList < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: 'today',
       tags: {
@@ -178,6 +179,7 @@ class TestTagsChanges < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: 'today',
       tags: {
@@ -249,6 +251,7 @@ class TestGeomNewObject < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: 'today',
       tags: {
@@ -316,6 +319,7 @@ class TestGeomChanges < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: 'today',
       tags: {
@@ -335,6 +339,7 @@ class TestGeomChanges < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: 'today',
       tags: {
@@ -401,6 +406,7 @@ class TestDelayed < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
@@ -463,6 +469,7 @@ class TestDelayed < Test::Unit::TestCase
       members: nil,
       version: 1,
       changeset: nil,
+      uid: 1,
       username: 'bob',
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {

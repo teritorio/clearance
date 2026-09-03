@@ -38,6 +38,7 @@ module Validation
         deleted: T::Boolean,
         members: T.nilable(T::Array[Integer]),
         version: Integer,
+        uid: T.nilable(Integer),
         username: T.nilable(String),
         created: String,
         tags: T::Hash[String, String],
@@ -47,7 +48,7 @@ module Validation
         cc_id: Integer,
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, username:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, uid:, username:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -56,6 +57,7 @@ module Validation
         deleted: deleted,
         members: members,
         version: version,
+        uid: uid,
         username: username,
         created: created,
         tags: tags,
@@ -81,6 +83,7 @@ module Validation
         deleted: hash['deleted'],
         members: hash['members'],
         version: hash['version'],
+        uid: hash['uid'],
         username: hash['username'],
         created: hash['created'],
         tags: hash['tags'],
@@ -102,6 +105,7 @@ module Validation
         'deleted' => deleted,
         'members' => members,
         'version' => version,
+        'uid' => uid,
         'username' => username,
         'created' => created,
         'tags' => tags,
@@ -126,6 +130,7 @@ module Validation
         deleted: kwargs.fetch(:deleted, deleted),
         members: kwargs.fetch(:members, members),
         version: kwargs.fetch(:version, version),
+        uid: kwargs.fetch(:username, uid),
         username: kwargs.fetch(:username, username),
         created: kwargs.fetch(:created, created),
         tags: kwargs.fetch(:tags, tags),
