@@ -110,3 +110,19 @@ CREATE TABLE osm_changes_applyed AS
 SELECT * FROM osm_changes
 WITH NO DATA;
 ALTER TABLE osm_changes_applyed ADD PRIMARY KEY(id, objtype, version, deleted); -- %PK:osm_changes_applyed%
+
+DROP TABLE IF EXISTS osm_users CASCADE;
+CREATE TABLE osm_users (
+    id BIGINT NOT NULL,
+    display_name TEXT NOT NULL,
+    account_created TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL,
+    description TEXT,
+    company TEXT,
+    img_href TEXT,
+    changesets_count INTEGER NOT NULL,
+    traces_count INTEGER NOT NULL,
+    blocks_received_count INTEGER,
+    blocks_received_active INTEGER,
+    updated_at TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL
+);
+ALTER TABLE osm_users ADD PRIMARY KEY(id);
