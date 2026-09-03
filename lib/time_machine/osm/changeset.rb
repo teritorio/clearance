@@ -9,6 +9,25 @@ require 'webcache'
 module Osm
   extend T::Sig
 
+  class Changeset < T::InexactStruct
+    const :id, Integer
+    const :created_at, String
+    const :closed_at, T.nilable(String)
+    const :open, T::Boolean
+    const :user, T.nilable(String)
+    const :uid, T.nilable(Integer)
+    const :min_lat, T.nilable(T.any(Float, Integer))
+    const :min_lon, T.nilable(T.any(Float, Integer))
+    const :max_lat, T.nilable(T.any(Float, Integer))
+    const :max_lon, T.nilable(T.any(Float, Integer))
+    const :comments_count, Integer
+    const :changes_count, Integer
+    const :created_count, T.nilable(Integer)
+    const :modified_count, T.nilable(Integer)
+    const :deleted_count, T.nilable(Integer)
+    const :tags, T.nilable(T::Hash[String, String])
+  end
+
   sig{
     params(
       ids: T::Array[Integer],
