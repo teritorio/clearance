@@ -1,5 +1,7 @@
 # Clearance Changelog
 
+* Add validator `user_block`: change made by an user currently blocked, or with too much previous blocks.
+
 ## v0.6.0 (2026-08-20)
 
 ### Validators

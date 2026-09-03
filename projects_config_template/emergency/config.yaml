@@ -102,6 +102,11 @@ validators:
     list: []
     action: reject
 
+  user_block:
+    instance: Validators::UserBlock
+    description: Change made by an user currently blocked, or with too much previous blocks.
+    action: reject
+
   # Reject from changeset with comment
   changeset_comment:
     instance: Validators::ChangesetComment
