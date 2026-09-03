@@ -12,6 +12,7 @@ require './lib/time_machine/db/changeset'
 require './lib/time_machine/db/db_conn'
 require './lib/time_machine/db/export'
 require './lib/time_machine/db/import'
+require './lib/time_machine/db/user'
 
 if ENV['SENTRY_DSN_TOOLS'].present?
   Sentry.init do |config|
@@ -43,6 +44,9 @@ OptionParser.new { |opts|
   end
   opts.on('-c', '--fetch_changesets', 'Fetch and store changesets details.') do
     @options[:fetch_changesets] = true
+  end
+  opts.on('-c', '--fetch_users', 'Fetch and store users details.') do
+    @options[:fetch_users] = true
   end
   opts.on('-v', '--validate', 'Ouput list of acceptable changes.') do
     @options[:validate] = true
@@ -105,6 +109,12 @@ class MainMain
       if options[:fetch_changesets]
         Db::DbConnWrite.conn(project){ |conn|
           Db.get_missing_changeset_ids(conn)
+        }
+      end
+
+      if options[:fetch_users]
+        Db::DbConnWrite.conn(project){ |conn|
+          Db.get_missing_user_ids(conn)
         }
       end
 

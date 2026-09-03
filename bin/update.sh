@@ -98,6 +98,8 @@ function project() {
     bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --apply_unclibled_changes && \
     echo "== fetch_changesets ==" && \
     bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --fetch_changesets && \
+    echo "== fetch_users ==" && \
+    bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --fetch_users && \
     echo "== validate ==" && \
     bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --validate && \
     echo "== export-osm-update ==" && \
