@@ -29,6 +29,9 @@ module Validation
     sig { returns(Integer) }
     attr_reader :cc_id
 
+    sig { returns(T.nilable(Osm::User)) }
+    attr_reader :osm_user
+
     sig {
       params(
         objtype: String,
@@ -40,6 +43,7 @@ module Validation
         version: Integer,
         uid: T.nilable(Integer),
         username: T.nilable(String),
+        osm_user: T.nilable(Osm::User),
         created: String,
         tags: T::Hash[String, String],
         changeset: T.nilable(Osm::Changeset),
@@ -48,7 +52,7 @@ module Validation
         cc_id: Integer,
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, uid:, username:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, uid:, username:, osm_user:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -66,6 +70,7 @@ module Validation
       @is_change = is_change
       @group_ids = group_ids
       @cc_id = cc_id
+      @osm_user = osm_user
     end
 
     sig {
@@ -85,6 +90,7 @@ module Validation
         version: hash['version'],
         uid: hash['uid'],
         username: hash['username'],
+        osm_user: (Osm::User.from_hash(hash['osm_user'].except('updated_at'), strict) if !hash['osm_user'].nil?),
         created: hash['created'],
         tags: hash['tags'],
         changeset: hash['changeset'].nil? ? nil : Osm::Changeset.from_hash(hash['changeset'].except('updated_at'), strict),
@@ -107,6 +113,7 @@ module Validation
         'version' => version,
         'uid' => uid,
         'username' => username,
+        'osm_user' => osm_user&.serialize,
         'created' => created,
         'tags' => tags,
         'changeset' => changeset,
@@ -132,6 +139,7 @@ module Validation
         version: kwargs.fetch(:version, version),
         uid: kwargs.fetch(:username, uid),
         username: kwargs.fetch(:username, username),
+        osm_user: kwargs.fetch(:osm_user, osm_user),
         created: kwargs.fetch(:created, created),
         tags: kwargs.fetch(:tags, tags),
         changeset: kwargs.fetch(:changeset, changeset),

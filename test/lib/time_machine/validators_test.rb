@@ -99,6 +99,7 @@ class TestUserList < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: 'today',
       tags: {
         'foo' => 'barbar',
@@ -181,6 +182,7 @@ class TestTagsChanges < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -253,6 +255,7 @@ class TestGeomNewObject < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -321,6 +324,7 @@ class TestGeomChanges < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -341,6 +345,7 @@ class TestGeomChanges < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -408,6 +413,7 @@ class TestDelayed < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
         'foo' => 'barbar',
@@ -471,6 +477,7 @@ class TestDelayed < Test::Unit::TestCase
       changeset: nil,
       uid: 1,
       username: 'bob',
+      osm_user: nil,
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
         'foo' => 'barbar',

@@ -4,6 +4,7 @@
 require 'sorbet-runtime'
 require 'test/unit'
 require './lib/time_machine/osm/types'
+require './lib/time_machine/osm/user'
 require './lib/time_machine/validation/types'
 require './lib/time_machine/validation/diff_actions'
 require './lib/time_machine/validation/changes_db'
@@ -45,6 +46,7 @@ class TestValidation < Test::Unit::TestCase
     changeset: @@fixture_changeset1,
     uid: 1,
     username: 'bob',
+    osm_user: nil,
     created: 'today',
     tags: T.let({
       'foo' => 'bar',
@@ -65,6 +67,7 @@ class TestValidation < Test::Unit::TestCase
     changeset: @@fixture_changeset1,
     uid: 1,
     username: 'bob',
+    osm_user: nil,
     created: 'today',
     tags: {
       'bar' => 'foo',

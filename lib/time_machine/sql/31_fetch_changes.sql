@@ -16,7 +16,14 @@ polygons AS (
         jsonb_array_elements(group_id_polys) AS t(row_json)
 ),
 objects AS (
-    SELECT *, true AS is_change FROM osm_changes_geom
+    SELECT
+        osm_changes_geom.*,
+        true AS is_change,
+        row_to_json(osm_users) AS osm_user
+    FROM
+        osm_changes_geom
+        LEFT JOIN osm_users ON
+            osm_users.id = osm_changes_geom.uid
     UNION ALL
     SELECT
         _changes.cc_id,
@@ -36,12 +43,15 @@ objects AS (
         base.geom,
         true AS cibled,
         _changes.locha_id,
-        false AS is_change
+        false AS is_change,
+        row_to_json(osm_users) AS osm_user
     FROM
         osm_base AS base
         JOIN osm_changes AS _changes ON
             _changes.objtype = base.objtype AND
             _changes.id = base.id
+        LEFT JOIN osm_users ON
+            osm_users.id = base.uid
 ),
 a AS (
     SELECT

@@ -38,6 +38,7 @@ class TestValidation < Test::Unit::TestCase
         changeset: nil,
         uid: 1,
         username: 'bob',
+        osm_user: nil,
         created: 'today',
         tags: tags,
         is_change: is_change,
