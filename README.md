@@ -220,6 +220,7 @@ Currently implemented validators:
 - network: flag objects that lost or gain connectivity to a network (like road, power grid...)
 - tags_changes: flag objects based on tags key and value
 - user_list: flag objects based on contributor name, white or black list
+- user_new: change made by an user with only few changesets, or user created only for few days ago
 - user_block: change made by an user currently blocked, or with too much previous blocks
 
 More advanced validators are planned.
