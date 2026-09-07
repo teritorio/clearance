@@ -118,6 +118,7 @@ Adjust the `config.yaml` and the `export*.osm_tags.json` files.
       "emergency": null
     },
     "validation": {
+      "geom_change_euclidian_distance": 2, // Default 2m. Min change distance to raise a request for review on gemetry.
       "geom_neighborhood_radius": 100 // Default 100m. The size of the surround neighborhood for spatial coherence validation. It is immediate coherence, not large distance, keep it small. In meters.
     },
     "sources": [

@@ -13,12 +13,12 @@ module Validators
       params(
         settings: ValidatorBase::Settings,
         actions: T::Hash[String, String],
-        dist: T.any(Float, Integer),
+        euclidian_distance: T.any(Float, Integer),
       ).void
     }
-    def initialize(settings:, actions:, dist:)
+    def initialize(settings:, actions:, euclidian_distance:)
       super(settings: settings, actions: actions)
-      @dist = dist
+      @euclidian_distance = euclidian_distance
     end
 
     sig {
@@ -30,14 +30,17 @@ module Validators
       ).void
     }
     def apply_link(_before, _after, diff, conflation_reason)
-      dist = T.cast(conflation_reason.geom&.dig(:max_distance), T.nilable(Float))
-      return if !dist || dist == 0
+      euclidian_distance = T.cast(conflation_reason.geom&.dig(:max_distance), T.nilable(Float))
+      return if !euclidian_distance || euclidian_distance == 0
+
+      max_geom_change_euclidian_distance = osm_tags_matches.matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.max
+      threshold_euclidian_distance = max_geom_change_euclidian_distance || @euclidian_distance
 
       attribs_geom = diff.attribs['geom'] ||= []
-      if dist < @dist
-        assign_action_accept(attribs_geom, options: { 'dist' => dist })
+      if euclidian_distance < threshold_euclidian_distance
+        assign_action_accept(attribs_geom, options: { 'euclidian_distance' => euclidian_distance })
       else
-        assign_action_reject(attribs_geom, options: { 'dist' => dist })
+        assign_action_reject(attribs_geom, options: { 'euclidian_distance' => euclidian_distance })
       end
     end
   end

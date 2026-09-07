@@ -16,11 +16,15 @@ module Osm
   OsmQuerySelector = T.type_alias { OsmKey }
 
   class Validation < T::InexactStruct
+    const :geom_change_euclidian_distance, Integer, default: 2
     const :geom_neighborhood_radius, Integer, default: 100
   end
 
   class TagsMatch
     extend T::Sig
+
+    sig { returns(T.nilable(Validation)) }
+    attr_accessor :validation
 
     sig { returns(T.nilable(T::Array[String])) }
     attr_accessor :sources

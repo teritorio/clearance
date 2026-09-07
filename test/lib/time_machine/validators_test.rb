@@ -302,7 +302,7 @@ class TestGeomChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomChanges.new(settings: build_settings(id, osm_tags_matches), dist: 100, actions: {
+    validator = Validators::GeomChanges.new(settings: build_settings(id, osm_tags_matches), euclidian_distance: 100, actions: {
       'reject' => 'geom_changes_significant',
       'accept' => 'geom_changes_insignificant',
     })
@@ -310,7 +310,7 @@ class TestGeomChanges < Test::Unit::TestCase
       validator_id: 'geom_changes_insignificant',
       description: nil,
       action: 'accept',
-      options: { 'dist' => 10.0 },
+      options: { 'euclidian_distance' => 10.0 },
     )]
 
     before = Validation::OSMChangeProperties.new(

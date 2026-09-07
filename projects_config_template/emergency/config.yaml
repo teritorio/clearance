@@ -69,7 +69,7 @@ validators:
   # Geometry changes threshold
   geom_changes_insignificant:
     instance: Validators::GeomChanges
-    dist: 2 # 2 meters
+    euclidian_distance: 2 # 2 meters
     actions:
       reject: geom_changes_significant
       accept: geom_changes_insignificant

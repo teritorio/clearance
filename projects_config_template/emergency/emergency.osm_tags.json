@@ -16,6 +16,7 @@
       "emergency": null
     },
     "validation": {
+      "geom_change_euclidian_distance": 100,
       "geom_neighborhood_radius": 200
     }
   },
