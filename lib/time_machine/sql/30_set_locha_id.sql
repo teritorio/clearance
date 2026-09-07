@@ -92,7 +92,7 @@ cc AS (
     SELECT
         cc_id,
         ST_Union(geom) AS geom,
-        ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :distance * 100) AS snap_geom
+        ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :default_distance * 100) AS snap_geom
     FROM
         ring_snap
     GROUP BY
@@ -131,7 +131,7 @@ locha AS (
             locha_id || array[
                 coalesce(
                     nullif(
-                        ST_ClusterKMeans(geom, ceil(locha_size.size::float / 99)::integer, :distance * 20)
+                        ST_ClusterKMeans(geom, ceil(locha_size.size::float / 99)::integer, :default_distance * 20)
                             OVER (PARTITION BY locha_id),
                         -1),
                     -1 * row_number() OVER (PARTITION BY locha_id)

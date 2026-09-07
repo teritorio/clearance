@@ -103,6 +103,30 @@ docker compose run --rm script ./bin/update-schema.sh [project]
 Create at least one project inside `projects_config` from the `projects_config_template` directory.
 Adjust the `config.yaml` and the `export*.osm_tags.json` files.
 
+```json
+[
+  {
+    "name": {
+      "en": "Hospital",
+      "fr": "Hôpital",
+    },
+    "select": [
+      "[amenity~'^(hospital|clinic)$']" // Overpass-like expression
+    ],
+    "interest": { // Other tags to review
+      "name": null,
+      "emergency": null
+    },
+    "validation": {
+      "geom_neighborhood_radius": 100 // Default 100m. The size of the surround neighborhood for spatial coherence validation. It is immediate coherence, not large distance, keep it small. In meters.
+    },
+    "sources": [
+      "Search and Rescue Agency" // Who require this kind of objects
+    ]
+  }
+]
+```
+
 ### Init
 Set up the initial OSM extract in the database. Use the project directory name from `projects_config`.
 ```

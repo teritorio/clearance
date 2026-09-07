@@ -577,8 +577,8 @@ CREATE INDEX changes_geom_proj_idx ON changes USING GIST (geom_proj) WHERE NOT c
 
 CREATE TEMP TABLE changes_cluster AS
 WITH
-a AS (SELECT cc_id, bool_or(cibled) AS cibled, ST_Buffer(ST_Collect(geom_proj), :distance) AS geom_proj FROM changes WHERE cibled GROUP BY cc_id),
-b AS (SELECT cc_id, cibled, split_by_grid(geom_proj, :distance * 100) AS split_geom_proj FROM a),
+a AS (SELECT cc_id, bool_or(cibled) AS cibled, ST_Buffer(ST_Collect(geom_proj), :distance) AS geom_proj FROM changes AS _ WHERE cibled GROUP BY cc_id),
+b AS (SELECT cc_id, cibled, split_by_grid(geom_proj, :distance * 100) AS split_geom_proj FROM a AS _),
 c AS (SELECT DISTINCT changes.cc_id FROM b JOIN changes ON NOT changes.cibled AND ST_Intersects(b.split_geom_proj, changes.geom_proj))
 SELECT cc_id FROM a
 UNION

@@ -15,6 +15,10 @@ module Osm
 
   OsmQuerySelector = T.type_alias { OsmKey }
 
+  class Validation < T::InexactStruct
+    const :geom_neighborhood_radius, Integer, default: 100
+  end
+
   class TagsMatch
     extend T::Sig
 
@@ -37,6 +41,7 @@ module Osm
       params(
         selectors: T::Array[T.any(String, OverpassParserRuby::Selectors)],
         selector_extra: T.nilable(T::Hash[String, T.nilable(String)]),
+        validation: T.nilable(Validation),
         sources: T.nilable(T::Array[String]),
         user_groups: T::Array[String],
         name: T.nilable(T::Hash[String, String]),
@@ -44,7 +49,7 @@ module Osm
         duplicate_distance: T.nilable(Integer),
       ).void
     }
-    def initialize(selectors, selector_extra: nil, sources: nil, user_groups: [], name: nil, icon: nil, duplicate_distance: nil)
+    def initialize(selectors, selector_extra: nil, validation: nil, sources: nil, user_groups: [], name: nil, icon: nil, duplicate_distance: nil)
       @selector_matches = T.let(selectors.collect{ |selector|
         if selector.is_a?(String)
           raise 'Tags selector format' if selector.size <= 2
@@ -60,6 +65,7 @@ module Osm
       }, T::Array[OverpassParserRuby::Selectors])
 
       @selector_extra = selector_extra
+      @validation = validation
       @name = name
       @icon = icon
       @duplicate_distance = duplicate_distance
@@ -116,6 +122,24 @@ module Osm
         "(#{p})"
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
+    end
+
+    sig {
+      params(
+        sql_dialect: String,
+        table: String,
+        escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
+      ).returns(T.nilable(String))
+    }
+    def to_sql_geom_neighborhood_radius(sql_dialect, table, escape_literal)
+      return if @validation&.geom_neighborhood_radius.nil?
+
+      pp = @selector_matches.collect{ |selectors|
+        p = selectors.to_sql(sql_dialect, table, 0, escape_literal)
+        "(#{p})"
+      }
+      p = pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
+      "CASE WHEN #{p} THEN #{@validation&.geom_neighborhood_radius}}"
     end
 
     sig {
@@ -191,6 +215,30 @@ module Osm
         'true'
       else
         @matches.collect{ |match| match.to_sql(sql_dialect, table, escape_literal) }.join(' OR ')
+      end
+    end
+
+    sig {
+      params(
+        sql_dialect: String,
+        table: String,
+        default: Integer,
+        escape_literal: T.nilable(T.proc.params(input: String).returns(String)),
+      ).returns(String)
+    }
+    def to_sql_geom_neighborhood_radius(sql_dialect, table, default, escape_literal)
+      if @matches.blank?
+        default.to_s
+      else
+        wheres = @matches.collect{ |match| match.to_sql_geom_neighborhood_radius(sql_dialect, table, escape_literal) }.compact.join("\n    ")
+        if wheres.empty?
+          default.to_s
+        else
+          "CASE
+    #{wheres}
+    ELSE #{default}
+END"
+        end
       end
     end
 

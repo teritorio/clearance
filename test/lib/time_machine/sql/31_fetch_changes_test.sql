@@ -6,6 +6,7 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \i lib/time_machine/sql/schema/schema-check-integrity.sql
 
 \set proj 4326
+\set default_distance 100
 \set distance 100
 \set group_id_polys '\'[["pop", { "type": "Polygon", "coordinates": [ [ [ -180 , -90 ], [ -180, 90 ], [ 180, 90 ], [ 180, -90 ], [ -180 , -90 ] ] ] }]]\''
 

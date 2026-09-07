@@ -169,6 +169,7 @@ module Validation
     params(
       conn: PG::Connection,
       local_srid: Integer,
+      osm_tags_matches: Osm::TagsMatches,
       locha_cluster_distance: Integer,
       user_groups: T::Hash[String, Configuration::UserGroupConfig],
       block: T.proc.params(
@@ -177,12 +178,15 @@ module Validation
       ).void
     ).void
   }
-  def self.fetch_changes(conn, local_srid, locha_cluster_distance, user_groups, &block)
+  def self.fetch_changes(conn, local_srid, osm_tags_matches, locha_cluster_distance, user_groups, &block)
+    escape_literal = proc { |s| conn.escape_literal(s) }
     geos_factory = OSMLogicalHistory.build_geos_factory(local_srid)
     user_groups_json = user_groups.collect{ |id, user_group| [id, user_group.polygon_geojson] }.to_json
+    sql_osm_distance = osm_tags_matches.to_sql_geom_neighborhood_radius('postgres', '_', locha_cluster_distance, escape_literal)
     conn.exec(File.read('/sql/30_set_locha_id.sql')
       .gsub(':proj', local_srid.to_s)
-      .gsub(':distance', locha_cluster_distance.to_s))
+      .gsub(':default_distance', sql_osm_distance)
+      .gsub(':distance', sql_osm_distance))
     conn.exec(File.read('/sql/31_fetch_changes.sql'))
     results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
     last_locha_id = T.let(nil, T.nilable(Integer))
@@ -229,12 +233,13 @@ module Validation
     escape_literal = proc { |s| conn.escape_literal(s) }
     sql_osm_filter_tags = osm_tags_matches.to_sql('postgres', '_', escape_literal)
     sql_osm_diff_tags = osm_tags_matches.to_sql_changes('postgres', 'base', 'changes', escape_literal)
+    sql_osm_distance = osm_tags_matches.to_sql_geom_neighborhood_radius('postgres', '_', distance, escape_literal)
     conn.exec(File.read('/sql/20_changes_uncibled.sql')
       .gsub(':osm_filter_tags', sql_osm_filter_tags)
       .gsub(':osm_diff_tags', sql_osm_diff_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json))
       .gsub(':proj', proj.to_s)
-      .gsub(':distance', distance.to_s))
+      .gsub(':distance', sql_osm_distance))
     conn.exec(File.read('/sql/90_changes_apply.sql').gsub(':changes_source', 'changes_update'))
   end
 

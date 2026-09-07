@@ -202,10 +202,11 @@ module Validation
       validator.pre_compute_sql(conn, config.local_srid) if validator.is_a?(Validators::ValidatorLochaSql)
     }
 
+    osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
     Enumerator.new { |yielder|
       index = 0
       objects = 0
-      fetch_changes(conn, config.local_srid, config.locha_cluster_distance, config.user_groups) { |locha_id, lo_cha|
+      fetch_changes(conn, config.local_srid, osm_tags_matches, config.locha_cluster_distance, config.user_groups) { |locha_id, lo_cha|
         index += 1
         objects += lo_cha.size
         if index % 100 == 0

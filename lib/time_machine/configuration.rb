@@ -90,7 +90,12 @@ module Configuration
       T.cast(j.collect{ |rule|
         rule['group_id'] = group_id
         rule
-      }, T::Array[{ 'select' => T::Array[String], 'interest' => T.nilable(T::Hash[String, T.untyped]), 'sources' => T::Array[String] }])
+      }, T::Array[{
+        'select' => T::Array[String],
+        'interest' => T.nilable(T::Hash[String, T.untyped]),
+        'validation' => T.nilable(Validation),
+        'sources' => T::Array[String],
+      }])
     }.flatten(1)
 
     Osm::TagsMatches.new(osm_tags.group_by{ |t| [t['select'], t['interest']] }.values.collect{ |group|

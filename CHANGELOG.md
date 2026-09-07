@@ -2,6 +2,7 @@
 
 * Add validator `user_block`: change made by an user currently blocked, or with too much previous blocks.
 * Add validator `user_new`: change made by an user with only few changesets, or user created only for few days ago.
+* Make LoCha cluster distance configurable from `tags_osm` files.
 
 ## v0.6.0 (2026-08-20)
 
