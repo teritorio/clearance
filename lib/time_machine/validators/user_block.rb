@@ -9,6 +9,13 @@ module Validators
   extend T::Sig
 
   class UserBlock < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Change made by an user currently blocked, or with too much previous blocks.'
+    end
+
     sig {
       params(
         settings: ValidatorBase::Settings,

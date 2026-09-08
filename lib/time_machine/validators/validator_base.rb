@@ -13,6 +13,11 @@ module Validators
   class ValidatorBase
     extend T::Sig
 
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      nil
+    end
+
     class Settings < T::Struct
       const :id, String
       const :global_osm_tags_matches, Osm::TagsMatches
@@ -37,7 +42,7 @@ module Validators
       params(settings: Settings).void
     }
     def initialize(settings:)
-      @settings = T.let(settings, Settings)
+      @settings = T.let(settings.with(description: settings.description || self.class.default_description), Settings)
     end
 
     sig {

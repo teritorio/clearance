@@ -13,6 +13,11 @@ module Validators
   class Network < ValidatorLochaSql
     extend T::Sig
 
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Changes that break network connectivity.'
+    end
+
     sig {
       params(
         conn: T.nilable(PG::Connection),

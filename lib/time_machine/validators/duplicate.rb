@@ -13,6 +13,11 @@ module Validators
   class Duplicate < ValidatorLochaSql
     extend T::Sig
 
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Changes that create duplicates.'
+    end
+
     sig {
       params(
         conn: PG::Connection,

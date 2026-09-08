@@ -11,6 +11,13 @@ module Validators
   extend T::Sig
 
   class ChangesetComment < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Changeset where other contributors add comments.'
+    end
+
     sig {
       override.params(
         _before: T.nilable(Validation::OSMChangeProperties),

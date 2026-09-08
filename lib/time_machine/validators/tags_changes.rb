@@ -9,6 +9,13 @@ module Validators
   extend T::Sig
 
   class TagsChanges < ValidatorLinkDual
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Hold changes on object selection tags or on tags of interest.'
+    end
+
     sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),

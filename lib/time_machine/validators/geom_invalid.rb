@@ -9,6 +9,13 @@ module Validators
   extend T::Sig
 
   class GeomInvalid < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Reject geometry that become invalid after change.'
+    end
+
     sig {
       override.params(
         before: T.nilable(Validation::OSMChangeProperties),

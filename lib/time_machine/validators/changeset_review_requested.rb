@@ -11,6 +11,13 @@ module Validators
   extend T::Sig
 
   class ChangesetReviewRequested < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Changeset with review requested when submited.'
+    end
+
     sig {
       override.params(
         _before: T.nilable(Validation::OSMChangeProperties),

@@ -9,6 +9,13 @@ module Validators
   extend T::Sig
 
   class GeomChanges < ValidatorLinkDual
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Reject geometry changed more that a threshold distance (in meter).'
+    end
+
     sig {
       params(
         settings: ValidatorBase::Settings,

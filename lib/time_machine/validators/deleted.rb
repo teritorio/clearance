@@ -11,6 +11,13 @@ module Validators
   extend T::Sig
 
   class Deleted < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Hold object deletion.'
+    end
+
     sig {
       override.params(
         _before: T.nilable(Validation::OSMChangeProperties),

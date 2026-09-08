@@ -12,6 +12,13 @@ module Validators
   # Accept auto after delay
 
   class Delayed < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Accept or reject changes after a delay.'
+    end
+
     sig {
       params(
         settings: ValidatorBase::Settings,

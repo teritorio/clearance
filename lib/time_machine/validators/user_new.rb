@@ -9,6 +9,13 @@ module Validators
   extend T::Sig
 
   class UserNew < ValidatorLink
+    extend T::Sig
+
+    sig { returns(T.nilable(String)) }
+    def self.default_description
+      'Change made by a new user.'
+    end
+
     sig {
       params(
         settings: ValidatorBase::Settings,
