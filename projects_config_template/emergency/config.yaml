@@ -67,14 +67,12 @@ validators:
     euclidian_distance: 2 # 2 meters
     actions:
       reject: geom_changes_significant
-      accept: geom_changes_insignificant
 
   # Core validator, does not change
   tags_changes_significant:
     instance: Validators::TagsChanges
     actions:
       reject: tags_changes_significant
-      accept: tags_changes_non_significant
 
   # Accept changes by white listed users
   # OSM username you trust, always consider changing safe.
