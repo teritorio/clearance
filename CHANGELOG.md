@@ -4,6 +4,7 @@
 * Add validator `user_new`: change made by an user with only few changesets, or user created only for few days ago.
 * Make LoCha cluster distance configurable from `tags_osm` files.
 * Make Geom Change validator threshold distance configurable from `tags_osm` files.
+* Remove useless GeomNewObject validator.
 
 ## v0.6.0 (2026-08-20)
 

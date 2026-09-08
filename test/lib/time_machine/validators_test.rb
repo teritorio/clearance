@@ -242,7 +242,7 @@ class TestGeomNewObject < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomNewObject.new(settings: build_settings(id, osm_tags_matches), action: 'accept')
+    validator = Validators::GeomInvalid.new(settings: build_settings(id, osm_tags_matches), action: 'accept')
 
     after = Validation::OSMChangeProperties.new(
       objtype: 'n',

@@ -57,11 +57,6 @@ user_groups:
 # Validators only apply on objects selected by user_groups.
 # Validators order matter, action_force clear all previous actions.
 validators:
-  # Accept geometry of new objects
-  geom_new:
-    instance: Validators::GeomNewObject
-    action: accept
-
   # Reject geometry becoming invalid
   geom_invalid:
     action: reject
