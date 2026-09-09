@@ -136,6 +136,9 @@ module Validators
     }
     def initialize(settings:, actions:)
       super(settings: settings)
+
+      raise 'Validator require at least on action' if !actions.key?('accept') && !actions.key?('force_accept') && !actions.key?('reject') && !actions.key?('force_reject')
+
       if actions.key?('accept') || actions.key?('force_accept')
         @action_accept = T.let(Validation::Action.new(
           validator_id: T.must(actions['accept']),
@@ -161,6 +164,8 @@ module Validators
       ).void
     }
     def assign_action_accept(actions, options: nil)
+      return if @action_accept.nil?
+
       # Side effect in actions
 
       action = @action_accept
@@ -179,6 +184,8 @@ module Validators
       ).void
     }
     def assign_action_reject(actions, options: nil)
+      return if @action_reject.nil?
+
       # Side effect in actions
 
       action = @action_reject
