@@ -74,7 +74,7 @@ module Validators
     }
     def as_json(json_options = T.unsafe(nil))
       {
-        settings: @settings.as_json(json_options),
+        settings: @settings.serialize.except('global_osm_tags_matches', 'specific_osm_tags_matches').as_json(json_options),
       }
     end
   end

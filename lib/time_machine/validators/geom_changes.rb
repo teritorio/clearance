@@ -13,6 +13,7 @@ module Validators
 
     class Settings < ValidatorBase::Settings
       const :description, String, override: true, default: 'Reject geometry changed more that a threshold distance (in meter).'
+      const :euclidian_distance, T.any(Float, Integer)
     end
 
     extend T::Generic
@@ -22,18 +23,6 @@ module Validators
     sig { returns(T.nilable(String)) }
     def self.default_description
       'Reject geometry changed more that a threshold distance (in meter).'
-    end
-
-    sig {
-      params(
-        settings: SettingsType,
-        actions: T::Hash[String, String],
-        euclidian_distance: T.any(Float, Integer),
-      ).void
-    }
-    def initialize(settings:, actions:, euclidian_distance:)
-      super(settings: settings, actions: actions)
-      @euclidian_distance = euclidian_distance
     end
 
     sig {
@@ -49,7 +38,7 @@ module Validators
       return if !euclidian_distance || euclidian_distance == 0
 
       max_geom_change_euclidian_distance = osm_tags_matches.matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.max
-      threshold_euclidian_distance = max_geom_change_euclidian_distance || @euclidian_distance
+      threshold_euclidian_distance = max_geom_change_euclidian_distance || @settings.euclidian_distance
 
       attribs_geom = diff.attribs['geom'] ||= []
       if euclidian_distance < threshold_euclidian_distance

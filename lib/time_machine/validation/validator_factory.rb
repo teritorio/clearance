@@ -44,15 +44,21 @@ module Validation
       specific_osm_tags = T.cast(config['specific_osm_tags'], T.nilable(String))
       specific_osm_tags_matches = specific_osm_tags.nil? ? nil : Configuration.load_osm_tags(path, { 'specific_osm_tags' => specific_osm_tags })
 
-      args = config.except('instance', 'specific_osm_tags', 'description').transform_keys(&:to_sym)
-      settings = Validators::ValidatorBase::Settings.new(
+      config = config.except('instance', 'specific_osm_tags').transform_keys(&:to_sym)
+
+      clazz = Object.const_get(class_name)
+      clazz_args = %i[action actions]
+      settings = clazz.const_get('Settings').new(
         id: id,
         global_osm_tags_matches: osm_tags_matches,
         specific_osm_tags_matches: specific_osm_tags_matches,
-        description: T.cast(config['description'], T.nilable(String)),
+        **config.except(*clazz_args)
       )
 
-      Object.const_get(class_name).new(settings: settings, **args)
+      clazz.new(
+        settings: settings,
+        **config.slice(*clazz_args)
+      )
     }
   end
 end

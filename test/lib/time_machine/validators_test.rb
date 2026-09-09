@@ -17,20 +17,11 @@ require './lib/time_machine/configuration'
 class TestValidator < Test::Unit::TestCase
   extend T::Sig
 
-  sig { params(id: String, osm_tags_matches: Osm::TagsMatches, description: T.nilable(String)).returns(Validators::ValidatorBase::Settings) }
-  def build_settings(id, osm_tags_matches, description: nil)
-    Validators::ValidatorBase::Settings.new(
-      id: id,
-      global_osm_tags_matches: osm_tags_matches,
-      description: description,
-    )
-  end
-
   sig { void }
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::All.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
+    validator = Validators::All.new(settings: Validators::ValidatorBase::ValidatorBaseSettings.new(id: id, global_osm_tags_matches: Osm::TagsMatches.new([])), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -45,7 +36,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'force_accept'
-    validator = Validators::All.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
+    validator = Validators::All.new(settings: Validators::ValidatorBase::ValidatorBaseSettings.new(id: id, global_osm_tags_matches: Osm::TagsMatches.new([])), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -65,15 +56,6 @@ class TestUserList < Test::Unit::TestCase
   @@srid = T.let(4326, Integer) # No projection
   @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
-  sig { params(id: String, osm_tags_matches: Osm::TagsMatches, description: T.nilable(String)).returns(Validators::ValidatorBase::Settings) }
-  def build_settings(id, osm_tags_matches, description: nil)
-    Validators::ValidatorBase::Settings.new(
-      id: id,
-      global_osm_tags_matches: osm_tags_matches,
-      description: description,
-    )
-  end
-
   sig { void }
   def test_simple
     id = 'foo'
@@ -81,10 +63,13 @@ class TestUserList < Test::Unit::TestCase
     osm_tags_matches = Osm::TagsMatches.new([
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
-    validator = Validators::UserList.new(settings: build_settings(id, osm_tags_matches), action: action, list: ['bob'])
+    validator = Validators::UserList.new(
+      settings: Validators::UserList::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches, list: ['bob']),
+      action: action,
+    )
     validation_action = [Validation::Action.new(
-      validator_id: id,
-      description: nil,
+      validator_id: validator.settings.id,
+      description: validator.settings.description,
       action: action,
     )]
 
@@ -138,15 +123,6 @@ class TestTagsChanges < Test::Unit::TestCase
   @@srid = T.let(4326, Integer) # No projection
   @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
-  sig { params(id: String, osm_tags_matches: Osm::TagsMatches, description: T.nilable(String)).returns(Validators::ValidatorBase::Settings) }
-  def build_settings(id, osm_tags_matches, description: nil)
-    Validators::ValidatorBase::Settings.new(
-      id: id,
-      global_osm_tags_matches: osm_tags_matches,
-      description: description,
-    )
-  end
-
   sig { void }
   def test_simple
     id = 'foo'
@@ -156,18 +132,18 @@ class TestTagsChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::TagsChanges.new(settings: build_settings(id, osm_tags_matches), actions: {
+    validator = Validators::TagsChanges.new(settings: Validators::TagsChanges::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches), actions: {
       'accept' => 'action_accept',
       'reject' => 'action_reject',
     })
     validation_action_accept = [Validation::Action.new(
       validator_id: 'action_accept',
-      description: nil,
+      description: validator.settings.description,
       action: 'accept',
     )]
     validation_action_reject = [Validation::Action.new(
       validator_id: 'action_reject',
-      description: nil,
+      description: validator.settings.description,
       action: 'reject',
     )]
 
@@ -224,15 +200,6 @@ class TestGeomNewObject < Test::Unit::TestCase
   @@srid = T.let(4326, Integer) # No projection
   @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
-  sig { params(id: String, osm_tags_matches: Osm::TagsMatches, description: T.nilable(String)).returns(Validators::ValidatorBase::Settings) }
-  def build_settings(id, osm_tags_matches, description: nil)
-    Validators::ValidatorBase::Settings.new(
-      id: id,
-      global_osm_tags_matches: osm_tags_matches,
-      description: description,
-    )
-  end
-
   sig { void }
   def test_simple
     id = 'foo'
@@ -242,7 +209,7 @@ class TestGeomNewObject < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomInvalid.new(settings: build_settings(id, osm_tags_matches), action: 'accept')
+    validator = Validators::GeomInvalid.new(settings: Validators::GeomInvalid::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches), action: 'accept')
 
     after = Validation::OSMChangeProperties.new(
       objtype: 'n',
@@ -284,15 +251,6 @@ class TestGeomChanges < Test::Unit::TestCase
   @@srid = T.let(4326, Integer) # No projection
   @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
-  sig { params(id: String, osm_tags_matches: Osm::TagsMatches, description: T.nilable(String)).returns(Validators::ValidatorBase::Settings) }
-  def build_settings(id, osm_tags_matches, description: nil)
-    Validators::ValidatorBase::Settings.new(
-      id: id,
-      global_osm_tags_matches: osm_tags_matches,
-      description: description,
-    )
-  end
-
   sig { void }
   def test_dist
     id = 'foo'
@@ -302,13 +260,16 @@ class TestGeomChanges < Test::Unit::TestCase
         selector_extra: { 'phone' => nil, 'fee' => nil },
       ),
     ])
-    validator = Validators::GeomChanges.new(settings: build_settings(id, osm_tags_matches), euclidian_distance: 100, actions: {
-      'reject' => 'geom_changes_significant',
-      'accept' => 'geom_changes_insignificant',
-    })
+    validator = Validators::GeomChanges.new(
+      settings: Validators::GeomChanges::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches, euclidian_distance: 100),
+      actions: {
+        'reject' => 'geom_changes_significant',
+        'accept' => 'geom_changes_insignificant',
+      },
+    )
     validation_action_accept = [Validation::Action.new(
       validator_id: 'geom_changes_insignificant',
-      description: nil,
+      description: validator.settings.description,
       action: 'accept',
       options: { 'euclidian_distance' => 10.0 },
     )]
@@ -378,15 +339,6 @@ class TestDelayed < Test::Unit::TestCase
   @@srid = T.let(4326, Integer) # No projection
   @@geos_factory = T.let(OSMLogicalHistory.build_geos_factory(@@srid), T.proc.params(geojson_geometry: String).returns(T.nilable(RGeo::Feature::Geometry)))
 
-  sig { params(id: String, osm_tags_matches: Osm::TagsMatches, description: T.nilable(String)).returns(Validators::ValidatorBase::Settings) }
-  def build_settings(id, osm_tags_matches, description: nil)
-    Validators::ValidatorBase::Settings.new(
-      id: id,
-      global_osm_tags_matches: osm_tags_matches,
-      description: description,
-    )
-  end
-
   sig { void }
   def test_before_delayed
     id = 'foo'
@@ -395,10 +347,14 @@ class TestDelayed < Test::Unit::TestCase
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
     now = '2000-01-01T00:00:30Z'
-    validator = Validators::Delayed.new(settings: build_settings(id, osm_tags_matches), before_delay: 10, action: action, now: now)
+    validator = Validators::Delayed.new(
+      settings: Validators::Delayed::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches, before_delay: 10),
+      action: action,
+      now: now,
+    )
     validation_action = [Validation::Action.new(
       validator_id: id,
-      description: nil,
+      description: validator.settings.description,
       action: action,
     )]
 
@@ -458,10 +414,14 @@ class TestDelayed < Test::Unit::TestCase
       Osm::TagsMatch.new(['[foo=bar]']),
     ])
     now = '2000-01-01T00:00:30Z'
-    validator = Validators::Delayed.new(settings: build_settings(id, osm_tags_matches), after_delay: 10, action: action, now: now)
+    validator = Validators::Delayed.new(
+      settings: Validators::Delayed::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches, after_delay: 10),
+      action: action,
+      now: now,
+    )
     validation_action = [Validation::Action.new(
       validator_id: id,
-      description: nil,
+      description: validator.settings.description,
       action: 'accept',
       force: true,
     )]

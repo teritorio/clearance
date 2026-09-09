@@ -13,25 +13,13 @@ module Validators
 
     class Settings < ValidatorBase::Settings
       const :description, String, override: true, default: 'Change made by an user currently blocked, or with too much previous blocks.'
+      const :max_blocks_received, Integer, default: 2
+      const :max_blocks_active, Integer, default: 1
     end
 
     extend T::Generic
 
     SettingsType = type_member{ { upper: Settings } }
-
-    sig {
-      params(
-        settings: SettingsType,
-        max_blocks_received: Integer,
-        max_blocks_active: Integer,
-        action: T.nilable(Validation::ActionType),
-      ).void
-    }
-    def initialize(settings:, max_blocks_received: 2, max_blocks_active: 1, action: nil)
-      super(settings: settings, action: action)
-      @max_blocks_received = max_blocks_received
-      @max_blocks_active = max_blocks_active
-    end
 
     sig {
       override.params(
@@ -44,8 +32,8 @@ module Validators
     def apply_link(_before, after, diff, _conflation_reason)
       return if after.nil?
 
-      return unless (!after.osm_user&.blocks_received_active.nil? && T.must(after.osm_user&.blocks_received_active) >= @max_blocks_active) ||
-                    (!after.osm_user&.blocks_received_count.nil? && T.must(after.osm_user&.blocks_received_count) >= @max_blocks_received)
+      return unless (!after.osm_user&.blocks_received_active.nil? && T.must(after.osm_user&.blocks_received_active) >= @settings.max_blocks_active) ||
+                    (!after.osm_user&.blocks_received_count.nil? && T.must(after.osm_user&.blocks_received_count) >= @settings.max_blocks_received)
 
       attribs_username = diff.attribs['username'] ||= []
       assign_action(attribs_username)

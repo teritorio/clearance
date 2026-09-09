@@ -13,23 +13,12 @@ module Validators
 
     class Settings < ValidatorBase::Settings
       const :description, String, override: true, default: 'Changes made by listed user.'
+      const :list, T::Array[String]
     end
 
     extend T::Generic
 
     SettingsType = type_member{ { upper: Settings } }
-
-    sig {
-      params(
-        settings: SettingsType,
-        list: T::Array[String],
-        action: T.nilable(Validation::ActionType),
-      ).void
-    }
-    def initialize(settings:, list:, action: nil)
-      super(settings: settings, action: action)
-      @list = list
-    end
 
     sig {
       override.params(
@@ -40,7 +29,7 @@ module Validators
       ).void
     }
     def apply_link(_before, after, diff, _conflation_reason)
-      return if after.nil? || @list.exclude?(after.username)
+      return if after.nil? || @settings.list.exclude?(after.username)
 
       (diff.attribs.values + diff.tags.values).each{ |action|
         assign_action(action)

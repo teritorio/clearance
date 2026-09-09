@@ -16,6 +16,8 @@ module Validators
 
     class Settings < ValidatorBase::Settings
       const :description, String, override: true, default: 'Accept or reject changes after a delay.'
+      const :before_delay, T.nilable(Integer)
+      const :after_delay, T.nilable(Integer)
     end
 
     extend T::Generic
@@ -25,19 +27,17 @@ module Validators
     sig {
       params(
         settings: SettingsType,
-        before_delay: T.nilable(Integer),
-        after_delay: T.nilable(Integer),
         action: T.nilable(Validation::ActionType),
         now: T.nilable(String),
       ).void
     }
-    def initialize(settings:, before_delay: nil, after_delay: nil, action: nil, now: nil)
-      raise "At least one of 'before_delay' or 'after_delay' should be declared in #{settings.id}" if before_delay.nil? && after_delay.nil?
-
+    def initialize(settings:, action: nil, now: nil)
       super(settings: settings, action: action)
+      raise "At least one of 'before_delay' or 'after_delay' should be declared in #{settings.id}" if @settings.before_delay.nil? && @settings.after_delay.nil?
+
       now_time = now.nil? ? Time.now.utc : Time.parse(now).utc
-      @before_thresold = T.let(before_delay.nil? ? nil : (now_time - before_delay).iso8601, T.nilable(String))
-      @after_thresold = T.let(after_delay.nil? ? nil : (now_time - after_delay).iso8601, T.nilable(String))
+      @before_thresold = T.let(@settings.before_delay.nil? ? nil : (now_time - @settings.before_delay).iso8601, T.nilable(String))
+      @after_thresold = T.let(@settings.after_delay.nil? ? nil : (now_time - @settings.after_delay).iso8601, T.nilable(String))
     end
 
     sig {
