@@ -35,7 +35,7 @@ module Validation
       path: String,
       validators_config: T::Hash[String, T::Hash[String, Object]],
       osm_tags_matches: Osm::TagsMatches,
-    ).returns(T::Array[Validators::ValidatorBase])
+    ).returns(T::Array[Validators::ValidatorBase[Validators::ValidatorBase::ValidatorBaseSettings]])
   }
   def self.validators_factory(path, validators_config, osm_tags_matches)
     validators_config.collect{ |id, config|

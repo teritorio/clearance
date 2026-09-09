@@ -11,10 +11,13 @@ module Validators
   class TagsChanges < ValidatorLinkDual
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Hold changes on object selection tags or on tags of interest.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Hold changes on object selection tags or on tags of interest.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       override.params(

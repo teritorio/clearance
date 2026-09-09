@@ -13,10 +13,13 @@ module Validators
   class Network < ValidatorLochaSql
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Changes that break network connectivity.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Changes that break network connectivity.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       params(

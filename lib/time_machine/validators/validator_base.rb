@@ -12,18 +12,22 @@ module Validators
 
   class ValidatorBase
     extend T::Sig
+    extend T::Helpers
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      nil
-    end
+    abstract!
 
-    class Settings < T::Struct
+    class ValidatorBaseSettings < T::InexactStruct
       const :id, String
       const :global_osm_tags_matches, Osm::TagsMatches
       const :specific_osm_tags_matches, T.nilable(Osm::TagsMatches)
       const :description, T.nilable(String)
     end
+
+    Settings = ValidatorBaseSettings
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: ValidatorBaseSettings } } # Generic param
 
     sig { returns(Settings) }
     attr_reader :settings
@@ -39,10 +43,10 @@ module Validators
     end
 
     sig {
-      params(settings: Settings).void
+      params(settings: SettingsType).void
     }
     def initialize(settings:)
-      @settings = T.let(settings.with(description: settings.description || self.class.default_description), Settings)
+      @settings = settings
     end
 
     sig {

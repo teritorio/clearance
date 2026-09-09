@@ -11,14 +11,17 @@ module Validators
   class UserBlock < ValidatorLink
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Change made by an user currently blocked, or with too much previous blocks.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Change made by an user currently blocked, or with too much previous blocks.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         max_blocks_received: Integer,
         max_blocks_active: Integer,
         action: T.nilable(Validation::ActionType),

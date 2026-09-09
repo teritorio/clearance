@@ -11,6 +11,14 @@ module Validators
   class GeomChanges < ValidatorLinkDual
     extend T::Sig
 
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Reject geometry changed more that a threshold distance (in meter).'
+    end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
+
     sig { returns(T.nilable(String)) }
     def self.default_description
       'Reject geometry changed more that a threshold distance (in meter).'
@@ -18,7 +26,7 @@ module Validators
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         actions: T::Hash[String, String],
         euclidian_distance: T.any(Float, Integer),
       ).void

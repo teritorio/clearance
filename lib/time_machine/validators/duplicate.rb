@@ -13,10 +13,13 @@ module Validators
   class Duplicate < ValidatorLochaSql
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Changes that create duplicates.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Changes that create duplicates.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       params(

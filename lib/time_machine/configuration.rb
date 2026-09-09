@@ -57,7 +57,7 @@ module Configuration
   class Config < T::Struct
     const :title, MultilingualString, default: {}
     const :description, MultilingualString, default: {}
-    const :validators, T::Array[Validators::ValidatorBase], default: []
+    const :validators, T::Array[Validators::ValidatorBase[Validators::ValidatorBase::Settings]], default: []
     const :osm_tags_matches, Osm::TagsMatches, default: Osm::TagsMatches.new([])
     const :main_contacts, T::Array[String], default: []
     const :user_groups, T::Hash[String, UserGroupConfig], default: {}

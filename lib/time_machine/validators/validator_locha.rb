@@ -12,5 +12,12 @@ module Validators
 
   class ValidatorLocha < ValidatorBase
     extend T::Sig
+    extend T::Helpers
+
+    abstract!
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Validators::ValidatorBase::ValidatorBaseSettings } } # Generic param
   end
 end

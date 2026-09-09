@@ -30,7 +30,7 @@ class TestValidator < Test::Unit::TestCase
   def test_simple
     id = 'foo'
     action = 'accept'
-    validator = Validators::ValidatorLink.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
+    validator = Validators::All.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)
@@ -45,7 +45,7 @@ class TestValidator < Test::Unit::TestCase
   def test_action_force
     id = 'foo'
     action = 'force_accept'
-    validator = Validators::ValidatorLink.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
+    validator = Validators::All.new(settings: build_settings(id, Osm::TagsMatches.new([])), action: action)
 
     actions = T.let([], T::Array[Validation::Action])
     validator.assign_action(actions)

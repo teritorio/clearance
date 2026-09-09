@@ -102,7 +102,7 @@ class TestValidation < Test::Unit::TestCase
 
   sig {
     params(
-      validators: T::Array[Validators::ValidatorBase],
+      validators: T::Array[Validators::ValidatorBase[Validators::ValidatorBase::Settings]],
       prevalidation_clusters: T::Array[[T::Array[Validation::Link], T::Array[Validation::Link]]],
     ).returns(Validation::ValidationResult)
   }

@@ -11,14 +11,17 @@ module Validators
   class UserList < ValidatorLink
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Changes made by listed user.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Changes made by listed user.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         list: T::Array[String],
         action: T.nilable(Validation::ActionType),
       ).void

@@ -11,14 +11,17 @@ module Validators
   class UserNew < ValidatorLink
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Change made by a new user.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Change made by a new user.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         min_changesets: Integer,
         min_days: Integer,
         action: T.nilable(Validation::ActionType),

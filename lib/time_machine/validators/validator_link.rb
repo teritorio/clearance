@@ -12,6 +12,13 @@ module Validators
 
   class ValidatorLinkBase < ValidatorBase
     extend T::Sig
+    extend T::Helpers
+
+    abstract!
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Validators::ValidatorBase::ValidatorBaseSettings } } # Generic param
 
     sig {
       params(
@@ -51,10 +58,17 @@ module Validators
 
   class ValidatorLink < ValidatorLinkBase
     extend T::Sig
+    extend T::Helpers
+
+    abstract!
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Validators::ValidatorBase::ValidatorBaseSettings } } # Generic param
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         action: T.nilable(Validation::ActionType),
       ).void
     }
@@ -106,10 +120,17 @@ module Validators
 
   class ValidatorLinkDual < ValidatorLinkBase
     extend T::Sig
+    extend T::Helpers
+
+    abstract!
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Validators::ValidatorBase::ValidatorBaseSettings } } # Generic param
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         actions: T::Hash[String, String],
       ).void
     }
@@ -187,10 +208,15 @@ module Validators
   # Dummy Validator
   class All < ValidatorLink
     extend T::Sig
+    extend T::Helpers
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Validators::ValidatorBase::ValidatorBaseSettings } } # Generic param
 
     sig {
       params(
-        settings: ValidatorBase::Settings,
+        settings: SettingsType,
         action: T.nilable(Validation::ActionType),
         block: T.nilable(T.proc.params(
           before: T.nilable(Validation::OSMChangeProperties),

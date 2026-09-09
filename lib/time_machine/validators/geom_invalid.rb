@@ -11,10 +11,13 @@ module Validators
   class GeomInvalid < ValidatorLink
     extend T::Sig
 
-    sig { returns(T.nilable(String)) }
-    def self.default_description
-      'Reject geometry that become invalid after change.'
+    class Settings < ValidatorBase::Settings
+      const :description, String, override: true, default: 'Reject geometry that become invalid after change.'
     end
+
+    extend T::Generic
+
+    SettingsType = type_member{ { upper: Settings } }
 
     sig {
       override.params(

@@ -60,7 +60,7 @@ module Validation
   sig {
     params(
       conn: T.nilable(PG::Connection),
-      validators: T::Array[Validators::ValidatorBase],
+      validators: T::Array[Validators::ValidatorBase[Validators::ValidatorBase::ValidatorBaseSettings]],
       locha_id: Integer,
       prevalidation_clusters: T::Array[[T::Array[Link], T::Array[Link]]],
     ).returns(T::Array[[T::Array[Link], T::Array[Link]]])
@@ -202,7 +202,7 @@ module Validation
       validator.pre_compute_sql(conn, config.local_srid) if validator.is_a?(Validators::ValidatorLochaSql)
     }
 
-    osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges).osm_tags_matches
+    osm_tags_matches = T.cast(T.must(config.validators.find{ |v| v.is_a?(Validators::TagsChanges) }), Validators::TagsChanges[Validators::TagsChanges::Settings]).osm_tags_matches
     Enumerator.new { |yielder|
       index = 0
       objects = 0
