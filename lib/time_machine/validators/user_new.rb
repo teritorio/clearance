@@ -12,7 +12,7 @@ module Validators
     extend T::Sig
 
     class Settings < ValidatorBase::Settings
-      const :description, String, override: true, default: 'Change made by a new user.'
+      const :description, String, override: true, default: 'First changes made by an user.'
     end
 
     extend T::Generic
@@ -44,11 +44,15 @@ module Validators
     def apply_link(_before, after, diff, _conflation_reason)
       return if after.nil?
 
-      return unless (!after.osm_user&.account_created.nil? && (after.created.to_datetime.utc - T.must(after.osm_user&.account_created).to_datetime.utc).days >= @min_days) ||
-                    (!after.osm_user&.changesets_count.nil? && T.must(after.osm_user&.changesets_count) >= @min_changesets)
+      days = after.osm_user&.account_created.nil? ? nil : after.created.to_datetime.to_date - T.must(after.osm_user&.account_created).to_datetime.to_date
+      changesets_count = after.osm_user&.changesets_count.nil? ? nil : T.must(after.osm_user&.changesets_count)
+      return if (days.nil? || days > @min_days) && (changesets_count.nil? || changesets_count > @min_changesets)
 
       attribs_username = diff.attribs['username'] ||= []
-      assign_action(attribs_username)
+      assign_action(attribs_username, options: {
+        'contribution_made_n_days_after_account_created' => days,
+        'current_changesets_count_since_account_created' => changesets_count,
+      })
     end
   end
 end
