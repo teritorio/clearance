@@ -72,6 +72,8 @@ module Validation
 
     prevalidation_clusters.collect{ |accepted_links, conflations_matches|
       conflations_matches.collect{ |link|
+        link.result.diff.attribs.compact_blank!
+        link.result.diff.tags.compact_blank!
         link.result.action = link.result.diff.fully_accepted? ? 'accept' : link.result.diff.partialy_rejected? ? 'reject' : nil
       }
 

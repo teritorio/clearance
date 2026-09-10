@@ -116,11 +116,11 @@ class TestValidation < Test::Unit::TestCase
     clusters = build_clusters(@@fixture_node_a, @@fixture_node_a, nil)
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
-      action: nil,
+      action: 'accept',
       created: @@fixture_node_a.created,
       diff: Validation::DiffActions.new(
-        attribs: { 'deleted' => [] },
-        tags: { 'foo' => [] },
+        attribs: {},
+        tags: {},
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
@@ -131,11 +131,11 @@ class TestValidation < Test::Unit::TestCase
     clusters = build_clusters(nil, nil, @@fixture_node_b)
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
-      action: nil,
+      action: 'accept',
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
-        attribs: { 'deleted' => [] },
-        tags: { 'bar' => [] },
+        attribs: {},
+        tags: {},
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
@@ -162,11 +162,11 @@ class TestValidation < Test::Unit::TestCase
     clusters = build_clusters(@@fixture_node_a, @@fixture_node_a, @@fixture_node_b)
     validation = validate([], clusters)
     validation_result = Validation::ValidationResult.new(
-      action: nil,
+      action: 'accept',
       created: @@fixture_node_b.created,
       diff: Validation::DiffActions.new(
         attribs: {},
-        tags: { 'foo' => [], 'bar' => [] },
+        tags: {},
       ),
     )
     assert_equal(validation_result.inspect, validation.inspect)
