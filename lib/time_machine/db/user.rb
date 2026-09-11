@@ -57,7 +57,7 @@ module Db
     WHERE
       osm_users.id IS NULL OR
       max_created >= updated_at OR
-      (extract(EPOCH FROM (now() - max_created))) >=
+      (extract(EPOCH FROM (now() - updated_at))) >=
         -- 6h, 12h, 1d, 2d, 4d...
         6 * power(2, floor(log(2, greatest(0, (extract(EPOCH FROM (updated_at - max_created)) / 3600.0 / 6)) + 1))) * 3600
     )"
