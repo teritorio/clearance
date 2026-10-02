@@ -30,9 +30,9 @@ function read_config {
     local PROJECT=$1
 
     local CONFIG=${PROJECTS_CONFIG_PATH}/${PROJECT}/config.yaml
-    EXTRACT_URLS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'extracts')&.join(' ')"`
-    CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'check_ref_integrity') == true || ''"`
-    CHUNK_UPDATE_SIZE=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.load(STDIN).dig('import', 'chunk_update_size') || '3'"`
+    EXTRACT_URLS=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.unsafe_load(STDIN).dig('import', 'extracts')&.join(' ')"`
+    CHECK_REF_INTEGRITY=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.unsafe_load(STDIN).dig('import', 'check_ref_integrity') == true || ''"`
+    CHUNK_UPDATE_SIZE=`cat ${CONFIG} | ruby -ryaml -e "puts YAML.unsafe_load(STDIN).dig('import', 'chunk_update_size') || '3'"`
 
     # Fills variables EXTRACT_URLS, CHECK_REF_INTEGRITY and CHUNK_UPDATE_SIZE
 }
