@@ -57,10 +57,6 @@ user_groups:
 # Validators only apply on objects selected by user_groups.
 # Validators order matter, action_force clear all previous actions.
 validators:
-  # Reject geometry becoming invalid
-  geom_invalid:
-    action: reject
-
   # Geometry changes threshold
   geom_changes_insignificant:
     instance: Validators::GeomChanges
@@ -97,10 +93,6 @@ validators:
     instance: Validators::UserNew
     action: reject
 
-  user_block:
-    instance: Validators::UserBlock
-    action: reject
-
   # Reject from changeset with comment
   changeset_comment:
     instance: Validators::ChangesetComment
@@ -115,6 +107,14 @@ validators:
   # Always consider deletion as unsafe.
   deleted:
     action: force_reject
+
+  user_block:
+    instance: Validators::UserBlock
+    action: reject
+
+  # Reject geometry becoming invalid
+  geom_invalid:
+    action: reject
 
   # Reject changes that break network connectivity
   network:
