@@ -255,6 +255,8 @@ GEM
     ostruct (0.6.3)
     pairing_heap (3.1.1)
     parallel (2.1.0)
+    parquet (0.9.0-x86_64-linux)
+      bigdecimal
     parser (3.3.12.0)
       ast (~> 2.4.1)
       racc
@@ -489,6 +491,7 @@ DEPENDENCIES
   osmium-ruby!
   ostruct (~> 0.6.3)
   overpass_parser_ruby!
+  parquet
   pg (~> 1.1)
   psych
   puma (~> 6.6)
@@ -606,6 +609,7 @@ CHECKSUMS
   overpass_parser_ruby (0.1.0)
   pairing_heap (3.1.1) sha256=c71a74ecdf9d6accc7545b38075b2f4e8d98b550aabe0f0758a587ee12e93588
   parallel (2.1.0) sha256=b35258865c2e31134c5ecb708beaaf6772adf9d5efae28e93e99260877b09356
+  parquet (0.9.0-x86_64-linux) sha256=6f9b5698455cee49cfe823b0cfe6ab78cb7de54ce6ed190dd8826060bd655fd0
   parser (3.3.12.0) sha256=21a6d7f755d5a24dfbdc6e6b772e4e879a52e7631a88bc5a3a134606052c9828
   pg (1.6.3-x86_64-linux) sha256=5d9e188c8f7a0295d162b7b88a768d8452a899977d44f3274d1946d67920ae8d
   power_assert (3.1.0) sha256=fefe98ed5d3140628138f3f9f9194d6ece01f1320e69700d3c928adca7518251

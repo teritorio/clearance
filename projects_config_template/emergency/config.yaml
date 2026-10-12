@@ -93,6 +93,14 @@ validators:
     instance: Validators::UserNew
     action: reject
 
+  # Alternative to UserList (black and white) and UserNew.
+  # Use a KarmaMap user ranking to reject or accept users changes automatically.
+  user_karma:
+    instance: Validators::UserKarmaMap
+    actions:
+      reject: user_bag_karma
+      force_accept: user_good_karma
+
   # Reject from changeset with comment
   changeset_comment:
     instance: Validators::ChangesetComment

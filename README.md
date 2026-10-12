@@ -246,6 +246,7 @@ Currently implemented validators:
 - user_list: flag objects based on contributor name, white or black list
 - user_new: change made by an user with only few changesets, or user created only for few days ago
 - user_block: change made by an user currently blocked, or with too much previous blocks
+- user_karmap_map: flag changes made by users, based on users reputation from KarmaMap
 
 More advanced validators are planned.
 
@@ -303,8 +304,6 @@ Validators implementation
   * Validate changes using external rule sets, like MapCSS from JOSM or Osmose-QA validation
 
 Validation evaluation scoring
-  * Fetch user blocks and use them in score
-  * Contributors' reputation: based on external tools / APIs
   * Support equivalent tagging schemas to avoid false positives
   * Improve Delayed validator: function of parameters (user score, etc.)
   * Improve Network validator: subclass it

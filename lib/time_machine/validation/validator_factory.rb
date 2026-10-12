@@ -13,8 +13,9 @@ require './lib/time_machine/validators/geom_invalid'
 require './lib/time_machine/validators/network'
 require './lib/time_machine/validators/tags_changes'
 require './lib/time_machine/validators/user_block'
-require './lib/time_machine/validators/user_new'
+require './lib/time_machine/validators/user_karma_map'
 require './lib/time_machine/validators/user_list'
+require './lib/time_machine/validators/user_new'
 require './lib/time_machine/validators/validator_link'
 
 module Validation
