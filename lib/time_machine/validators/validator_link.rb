@@ -141,7 +141,7 @@ module Validators
 
       if actions.key?('accept') || actions.key?('force_accept')
         @action_accept = T.let(Validation::Action.new(
-          validator_id: T.must(actions['accept']),
+          validator_id: T.must(actions['accept'] || actions['force_accept']),
           description: settings.description,
           action: 'accept',
           force: actions.key?('force_accept'),
@@ -150,7 +150,7 @@ module Validators
       return unless actions.key?('reject') || actions.key?('force_reject')
 
       @action_reject = T.let(Validation::Action.new(
-        validator_id: T.must(actions['reject']),
+        validator_id: T.must(actions['reject'] || actions['force_reject']),
         description: settings.description,
         action: 'reject',
         force: actions.key?('force_reject'),
