@@ -225,7 +225,7 @@ module Validation
         # Merge cluster_cc_ids while they have common cc_ids
         changed = T.let(true, T::Boolean)
         while changed
-          changed = false # rubocop:disable Lint/UselessAssignment
+          changed = false
 
           cluster_cc_ids_stash = cluster_cc_ids.dup
           cluster_cc_ids_next = []
