@@ -1,4 +1,4 @@
-FROM ruby:3.4-bookworm
+FROM ruby:4.0-trixie
 
 RUN apt update -y && apt install -y \
     build-essential \
@@ -29,7 +29,7 @@ WORKDIR /srv/
 
 RUN git clone https://github.com/osmcode/osm-postgresql-experiments.git && \
     cd osm-postgresql-experiments && \
-    git checkout 3ddc1ca && \
+    git checkout ff77b89 && \
     mkdir build && \
     cd build && \
     cmake .. && \
