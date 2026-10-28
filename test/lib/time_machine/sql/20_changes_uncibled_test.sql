@@ -10,7 +10,8 @@ DROP SCHEMA IF EXISTS test CASCADE;
 \set osm_diff_tags true
 \set locha_cluster_distance 0
 \set proj 4326
-\set distance 1
+\set distance_default 1
+\set distance 'CASE WHEN _.tags is NOT NULL THEN 1 ELSE 1 END'
 
 
 -- No changes

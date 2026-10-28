@@ -37,7 +37,7 @@ module Validators
       euclidian_distance = T.cast(conflation_reason.geom&.dig(:max_distance), T.nilable(Float))
       return if !euclidian_distance || euclidian_distance == 0
 
-      max_geom_change_euclidian_distance = osm_tags_matches.matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.max
+      max_geom_change_euclidian_distance = osm_tags_matches.matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.compact.max
       threshold_euclidian_distance = max_geom_change_euclidian_distance || @settings.euclidian_distance
 
       attribs_geom = diff.attribs['geom'] ||= []

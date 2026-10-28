@@ -21,6 +21,7 @@ objects AS (
         version,
         deleted,
         nodes,
+        tags,
         geom,
         true AS is_change
     FROM osm_changes_geom
@@ -32,6 +33,7 @@ objects AS (
         base.version,
         false AS deleted,
         base.nodes,
+        base.tags,
         base.geom,
         false AS is_change
     FROM
@@ -49,6 +51,7 @@ rings AS (
         deleted,
         is_change,
         nodes,
+        :distance AS distance,
         ST_Transform(
             CASE
                 WHEN ST_dimension(geom) = 2 THEN
@@ -59,7 +62,7 @@ rings AS (
             :proj
         ) AS geom
     FROM
-        objects
+        objects AS _
 ),
 ring_snap AS (
     SELECT
@@ -69,6 +72,7 @@ ring_snap AS (
         max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
         array_unique(array_concat(DISTINCT nodes)) AS nodes,
+        ST_Buffer(ST_Union(geom), max(distance)) AS geom_buffer,
         ST_Union(geom) AS geom
     FROM
         rings
@@ -92,6 +96,7 @@ cc AS (
     SELECT
         cc_id,
         ST_Union(geom) AS geom,
+        ST_Union(geom_buffer) AS geom_buffer,
         ST_SnapToGrid(ST_PointOnSurface(ST_Union(geom)), :default_distance * 100) AS snap_geom
     FROM
         ring_snap
@@ -109,7 +114,7 @@ locha AS (
             snap_geom,
             array[coalesce(
                 -- Equivalent to ST_ClusterWithinWin
-                ST_ClusterDBSCAN(geom, :distance, 0) OVER (PARTITION BY snap_geom),
+                ST_ClusterDBSCAN(geom_buffer, 0, 0) OVER (PARTITION BY snap_geom),
                 -- Negative value to avoid colision with cluster id
                 -1 * row_number() OVER ()
             )] AS locha_id

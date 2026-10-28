@@ -143,7 +143,7 @@ module Osm
         "(#{p})"
       }
       p = pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
-      "CASE WHEN #{p} THEN #{@validation&.geom_neighborhood_radius}}"
+      "WHEN #{p} THEN #{@validation&.geom_neighborhood_radius}"
     end
 
     sig {

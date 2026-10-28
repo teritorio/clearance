@@ -108,6 +108,7 @@ module Configuration
         name: group0['name'],
         icon: group0['icon'],
         duplicate_distance: group0['duplicate_distance'],
+        validation: (Osm::Validation.from_hash(group0['validation'], true) if !group0['validation'].nil?)
       )
     })
   end
