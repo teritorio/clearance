@@ -16,8 +16,8 @@ module Osm
   OsmQuerySelector = T.type_alias { OsmKey }
 
   class Validation < T::InexactStruct
-    const :geom_change_euclidian_distance, Integer, default: 2
-    const :geom_neighborhood_radius, Integer, default: 100
+    const :geom_change_euclidian_distance, T.nilable(Integer), default: nil
+    const :geom_neighborhood_radius, T.nilable(Integer), default: nil
   end
 
   class TagsMatch
@@ -143,7 +143,7 @@ module Osm
         "(#{p})"
       }
       p = pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
-      "CASE WHEN #{p} THEN #{@validation&.geom_neighborhood_radius}}"
+      "WHEN #{p} THEN #{@validation&.geom_neighborhood_radius}"
     end
 
     sig {

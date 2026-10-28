@@ -331,6 +331,100 @@ class TestGeomChanges < Test::Unit::TestCase
       diff.inspect
     )
   end
+
+  sig {
+    params(
+      tags: T::Hash[String, String],
+      geojson_geometry: String,
+      is_change: T::Boolean,
+    ).returns(Validation::OSMChangeProperties)
+  }
+  def build_object(tags:, geojson_geometry:, is_change:)
+    Validation::OSMChangeProperties.new(
+      objtype: 'n',
+      id: 1,
+      geojson_geometry: geojson_geometry,
+      geos_factory: @@geos_factory,
+      deleted: false,
+      members: nil,
+      version: 1,
+      changeset: nil,
+      uid: 1,
+      username: 'bob',
+      osm_user: nil,
+      created: 'today',
+      tags: tags,
+      is_change: is_change,
+      group_ids: nil,
+      cc_id: 1,
+    )
+  end
+
+  sig { void }
+  def test_dist_per_tags
+    id = 'foo'
+    osm_tags_matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(['[amenity=hospital]'], validation: Osm::Validation.new(geom_change_euclidian_distance: 100)),
+      Osm::TagsMatch.new(['[shop=florist]'], validation: Osm::Validation.new(geom_neighborhood_radius: 0)),
+    ])
+    validator = Validators::GeomChanges.new(
+      settings: Validators::GeomChanges::Settings.new(id: id, global_osm_tags_matches: osm_tags_matches, euclidian_distance: 10),
+      actions: {
+        'reject' => 'geom_changes_significant',
+        'accept' => 'geom_changes_insignificant',
+      },
+    )
+
+    florist_before = build_object(
+      tags: { 'shop' => 'florist' },
+      geojson_geometry: '{"type":"Point","coordinates":[10,10]}',
+      is_change: false,
+    )
+    florist_after = build_object(
+      tags: { 'shop' => 'florist' },
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
+      is_change: true,
+    )
+    florist_close_diff = Validation.diff_osm_object(florist_before, florist_after)
+    florist_close_diff.attribs['geom'] = []
+    validator.apply_link(
+      florist_before,
+      florist_after,
+      florist_close_diff,
+      OSMLogicalHistory::Conflation::ConflationReason.new(geom: { max_distance: 5.0 }, conflate: ''),
+    )
+    assert_true(florist_close_diff.fully_accepted?)
+
+    florist_far_diff = Validation.diff_osm_object(florist_before, florist_after)
+    florist_far_diff.attribs['geom'] = []
+    validator.apply_link(
+      florist_before,
+      florist_after,
+      florist_far_diff,
+      OSMLogicalHistory::Conflation::ConflationReason.new(geom: { max_distance: 50.0 }, conflate: ''),
+    )
+    assert_true(florist_far_diff.partialy_rejected?)
+
+    hospital_before = build_object(
+      tags: { 'amenity' => 'hospital' },
+      geojson_geometry: '{"type":"Point","coordinates":[10,10]}',
+      is_change: false,
+    )
+    hospital_after = build_object(
+      tags: { 'amenity' => 'hospital' },
+      geojson_geometry: '{"type":"Point","coordinates":[0,0]}',
+      is_change: true,
+    )
+    hospital_diff = Validation.diff_osm_object(hospital_before, hospital_after)
+    hospital_diff.attribs['geom'] = []
+    validator.apply_link(
+      hospital_before,
+      hospital_after,
+      hospital_diff,
+      OSMLogicalHistory::Conflation::ConflationReason.new(geom: { max_distance: 50.0 }, conflate: ''),
+    )
+    assert_true(hospital_diff.fully_accepted?)
+  end
 end
 
 class TestDelayed < Test::Unit::TestCase

@@ -185,7 +185,7 @@ module Validation
     sql_osm_distance = osm_tags_matches.to_sql_geom_neighborhood_radius('postgres', '_', locha_cluster_distance, escape_literal)
     conn.exec(File.read('/sql/30_set_locha_id.sql')
       .gsub(':proj', local_srid.to_s)
-      .gsub(':default_distance', sql_osm_distance)
+      .gsub(':default_distance', locha_cluster_distance.to_s)
       .gsub(':distance', sql_osm_distance))
     conn.exec(File.read('/sql/31_fetch_changes.sql'))
     results = T.let([], T::Array[[T.nilable(OSMChangeProperties), OSMChangeProperties]])
@@ -239,6 +239,7 @@ module Validation
       .gsub(':osm_diff_tags', sql_osm_diff_tags)
       .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json))
       .gsub(':proj', proj.to_s)
+      .gsub(':distance_default', distance.to_s)
       .gsub(':distance', sql_osm_distance))
     conn.exec(File.read('/sql/90_changes_apply.sql').gsub(':changes_source', 'changes_update'))
   end

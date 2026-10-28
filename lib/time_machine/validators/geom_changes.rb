@@ -27,17 +27,21 @@ module Validators
 
     sig {
       override.params(
-        _before: T.nilable(Validation::OSMChangeProperties),
-        _after: T.nilable(Validation::OSMChangeProperties),
+        before: T.nilable(Validation::OSMChangeProperties),
+        after: T.nilable(Validation::OSMChangeProperties),
         diff: Validation::DiffActions,
         conflation_reason: OSMLogicalHistory::Conflation::ConflationReason,
       ).void
     }
-    def apply_link(_before, _after, diff, conflation_reason)
+    def apply_link(before, after, diff, conflation_reason)
       euclidian_distance = T.cast(conflation_reason.geom&.dig(:max_distance), T.nilable(Float))
       return if !euclidian_distance || euclidian_distance == 0
 
-      max_geom_change_euclidian_distance = osm_tags_matches.matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.max
+      matches = (
+        (before ? osm_tags_matches.match_with_extra(before.tags) : []) +
+        (after ? osm_tags_matches.match_with_extra(after.tags) : [])
+      ).collect{ |_selector, match| match }.uniq
+      max_geom_change_euclidian_distance = matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.compact.max
       threshold_euclidian_distance = max_geom_change_euclidian_distance || @settings.euclidian_distance
 
       attribs_geom = diff.attribs['geom'] ||= []

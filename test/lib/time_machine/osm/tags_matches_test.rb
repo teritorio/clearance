@@ -71,4 +71,31 @@ class TestTagsMatchs < Test::Unit::TestCase
     sql = matches.to_sql('postgres', '_', nil)
     assert_equal("(NOT _.tags?'amenity')", sql)
   end
+
+  sig { void }
+  def test_validation_defaults
+    validation = Osm::Validation.from_hash({ 'geom_neighborhood_radius' => 0 }, true)
+    assert_nil(validation.geom_change_euclidian_distance)
+    assert_equal(0, validation.geom_neighborhood_radius)
+
+    validation = Osm::Validation.from_hash({ 'geom_change_euclidian_distance' => 10 }, true)
+    assert_equal(10, validation.geom_change_euclidian_distance)
+    assert_nil(validation.geom_neighborhood_radius)
+  end
+
+  sig { void }
+  def test_matches_to_sql_geom_neighborhood_radius
+    matches = Osm::TagsMatches.new([
+      Osm::TagsMatch.new(['[amenity=hospital]'], validation: Osm::Validation.new(geom_neighborhood_radius: 200)),
+      Osm::TagsMatch.new(['[highway=motorway]'], validation: Osm::Validation.new(geom_neighborhood_radius: 0)),
+      Osm::TagsMatch.new(['[shop=florist]'], validation: Osm::Validation.new(geom_change_euclidian_distance: 10)),
+    ])
+
+    sql = matches.to_sql_geom_neighborhood_radius('postgres', '_', 100, nil)
+    assert_equal(2, sql.scan('WHEN').size)
+    assert_true(sql.include?('THEN 200'))
+    assert_true(sql.include?('THEN 0'))
+    assert_false(sql.include?('THEN 100'))
+    assert_true(sql.include?('ELSE 100'))
+  end
 end
