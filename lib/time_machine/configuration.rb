@@ -93,7 +93,7 @@ module Configuration
       }, T::Array[{
         'select' => T::Array[String],
         'interest' => T.nilable(T::Hash[String, T.untyped]),
-        'validation' => T.nilable(Validation),
+        'validation' => T.nilable(T::Hash[String, T.untyped]),
         'sources' => T::Array[String],
       }])
     }.flatten(1)
