@@ -1,5 +1,23 @@
 # Clearance Changelog
 
+## v0.7.4 (2026-10-29)
+
+* Fix geom_neighborhood_radius
+
+## v0.7.3 (2026-10-26)
+
+* Frontend update
+* Dependencies update
+
+## v0.7.2 (2026-10-15)
+
+* Frontend update
+* Add KarmapMap validator
+
+## v0.7.1 (2026-09-25)
+
+* Frontend update
+
 ## v0.7.0 (2026-09-18)
 
 * Add validator `user_block`: change made by an user currently blocked, or with too much previous blocks.
