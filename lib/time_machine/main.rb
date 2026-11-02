@@ -85,8 +85,10 @@ class MainMain
       end
 
       if options[:changes_prune]
+        config ||= Configuration.load("#{Project.projects_config_path}/#{options[:project]}/config.yaml")
+        polygons = T.let(config.user_groups.values.collect(&:polygon_geojson).compact, T::Array[T::Hash[String, T.untyped]])
         Db::DbConnWrite.conn(project) { |conn|
-          Validation.changes_prune(conn)
+          Validation.changes_prune(conn, polygons)
         }
       end
 
