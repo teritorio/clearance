@@ -213,11 +213,16 @@ module Validation
   sig {
     params(
       conn: PG::Connection,
+      geojson_polygons: T.nilable(T::Array[T::Hash[String, T.untyped]]),
     ).void
   }
-  def self.changes_prune(conn)
+  def self.changes_prune(conn, geojson_polygons = nil)
     r = conn.exec(File.read('/sql/10_changes_prune.sql'))
     puts "  10_changes_prune #{r.inspect}"
+
+    conn.exec(File.read('/sql/11_changes_prune_by_clip.sql')
+      .gsub(':polygon', conn.escape_literal(geojson_polygons.to_json)))
+    conn.exec(File.read('/sql/90_changes_apply.sql').gsub(':changes_source', 'changes_update'))
   end
 
   sig {
