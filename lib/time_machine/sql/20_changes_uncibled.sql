@@ -39,7 +39,6 @@ CREATE TEMP TABLE changes_ AS
         osm_changes_geom AS _
 ;
 ANALYZE changes_;
-CREATE INDEX changes__idx_objtype_id ON changes_ (objtype, id);
 
 DO $$ BEGIN
     assert (SELECT COUNT(*) FROM changes_) = (SELECT COUNT(*) FROM osm_changes), 'changes_ should have the same number of rows as osm_changes';
@@ -124,7 +123,7 @@ FROM
     combined AS _
 ;
 ALTER TABLE changes ADD PRIMARY KEY (objtype, id);
-CREATE INDEX changes_idx_nodes ON changes USING GIN (nodes);
+CREATE INDEX changes_idx_nodes ON changes USING GIN (nodes) WHERE objtype = 'w';
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - changes: % (%)', (SELECT COUNT(*) FROM changes), pg_size_pretty(pg_total_relation_size('changes'));
