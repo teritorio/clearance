@@ -110,7 +110,7 @@ module Db
       timestamp: object.created.iso8601(0).gsub('+00:00', 'Z'),
       uid: object.uid,
       user: object.username,
-    }
+    }.compact
   end
 
   sig {
