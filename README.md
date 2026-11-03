@@ -288,7 +288,6 @@ Computation
 
 Database
   * Optimize the database schema by storing either `lon/lat` or `geom`, but not both.
-  * Optimize the database schema by storing user names in a separate table.
   * Optimize the database schema by storing `NULL` in place of empty jsonb `{}` tags.
 
 Configuration

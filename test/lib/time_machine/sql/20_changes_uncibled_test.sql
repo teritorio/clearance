@@ -16,8 +16,8 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 -- No changes
 BEGIN;
-INSERT INTO osm_base_n VALUES
-  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1)
+INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+  (1, 1, 1, NULL, NULL, NULL, 1, 1)
 ;
 COMMIT;
 
@@ -31,8 +31,8 @@ END; $$ LANGUAGE plpgsql;
 
 -- Change node location
 BEGIN;
-INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
@@ -49,12 +49,12 @@ BEGIN;
 TRUNCATE osm_base_n;
 TRUNCATE osm_changes;
 
-INSERT INTO osm_base_n VALUES
-  (1, 1, 1, NULL, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1)
+INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+  (1, 1, 1, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1)
 ;
 
-INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 1, 1, NULL, NULL, true, NULL, 1)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 1, 2, false, 1, NULL, NULL, '{"b": "b"}'::jsonb, 1, 1, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
@@ -103,22 +103,22 @@ END; $$ LANGUAGE plpgsql;
 
 TRUNCATE osm_base_n;
 TRUNCATE osm_changes;
-INSERT INTO osm_base_n VALUES
-  (1, 1, 1, NULL, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1),
-  (2, 1, 1, NULL, NULL, NULL, '{"b": "b"}'::jsonb, 2, 2),
-  (9, 1, 1, NULL, NULL, NULL, '{"z": "z"}'::jsonb, 9, 9)
+INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+  (1, 1, 1, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1),
+  (2, 1, 1, NULL, NULL, '{"b": "b"}'::jsonb, 2, 2),
+  (9, 1, 1, NULL, NULL, '{"z": "z"}'::jsonb, 9, 9)
 ;
-INSERT INTO osm_base_w VALUES
-  (100, 1, 1, NULL, NULL, NULL, '{"w": "w"}'::jsonb, ARRAY[1, 2])
+INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VALUES
+  (100, 1, 1, NULL, NULL, '{"w": "w"}'::jsonb, ARRAY[1, 2])
 ;
 
 
 -- From node change, we should get the way change
-INSERT INTO osm_changes VALUES
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
   -- cibled
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true),
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true),
   -- not cibled
-  ('n', 9, 2, false, 1, NULL, NULL, NULL, NULL, 9, 9, NULL, NULL, true)
+  ('n', 9, 2, false, 1, NULL, NULL, NULL, 9, 9, NULL, NULL, true)
 ;
 \set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
@@ -131,13 +131,13 @@ TRUNCATE osm_changes;
 
 
 -- From ways change, we should get the nodes change
-INSERT INTO osm_changes VALUES
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
   -- cibled
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1),
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1),
   -- included by transity
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true, NULL, 2),
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true, NULL, 2),
   -- not cibled
-  ('n', 9, 2, false, 1, NULL, NULL, NULL, NULL, 9, 9, NULL, NULL, true, NULL, 3)
+  ('n', 9, 2, false, 1, NULL, NULL, NULL, 9, 9, NULL, NULL, true, NULL, 3)
 ;
 \set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
@@ -150,10 +150,10 @@ TRUNCATE osm_changes;
 
 
 -- Remove node from way, and delete node
-INSERT INTO osm_changes VALUES
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
   -- cibled
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[1, 9], NULL, true, NULL, 100),
-  ('n', 2, 1, true, 1, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, true, NULL, 2)
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, 1, 1, ARRAY[1, 9], NULL, true, NULL, 100),
+  ('n', 2, 1, true, 1, NULL, NULL, NULL, 2, 2, NULL, NULL, true, NULL, 2)
 ;
 \set osm_filter_tags '_.tags?\'w\''
 \i lib/time_machine/sql/20_changes_uncibled.sql

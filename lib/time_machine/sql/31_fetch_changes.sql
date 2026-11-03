@@ -34,7 +34,6 @@ objects AS (
         base.changeset_id,
         base.created,
         base.uid,
-        base.username,
         base.tags,
         base.lon,
         base.lat,

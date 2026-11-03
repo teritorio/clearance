@@ -8,12 +8,12 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 -- Test create way
 BEGIN;
-INSERT INTO osm_base_n VALUES
-  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
-  (2, 1, 1, NULL, NULL, NULL, NULL, 2, 2)
+INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+  (1, 1, 1, NULL, NULL, NULL, 1, 1),
+  (2, 1, 1, NULL, NULL, NULL, 2, 2)
 ;
-INSERT INTO osm_base_w VALUES
-  (3, 1, 1, NULL, NULL, NULL, NULL, ARRAY[1, 2])
+INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VALUES
+  (3, 1, 1, NULL, NULL, NULL, ARRAY[1, 2])
 ;
 COMMIT;
 

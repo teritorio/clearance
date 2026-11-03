@@ -45,7 +45,6 @@ class TestValidation < Test::Unit::TestCase
     version: 1,
     changeset: @@fixture_changeset1,
     uid: 1,
-    username: 'bob',
     osm_user: nil,
     created: 'today',
     tags: T.let({
@@ -66,7 +65,6 @@ class TestValidation < Test::Unit::TestCase
     version: 2,
     changeset: @@fixture_changeset1,
     uid: 1,
-    username: 'bob',
     osm_user: nil,
     created: 'today',
     tags: {

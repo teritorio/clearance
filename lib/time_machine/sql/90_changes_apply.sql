@@ -4,7 +4,7 @@ CREATE TEMP VIEW __changes_source AS SELECT * FROM :changes_source;
 INSERT INTO
     osm_base_n
 SELECT DISTINCT ON (id)
-    id, version, changeset_id, created, uid, username, tags, lon, lat
+    id, version, changeset_id, created, uid, tags, lon, lat
 FROM
     __changes_source AS changes
 WHERE
@@ -21,7 +21,6 @@ SET
     changeset_id = EXCLUDED.changeset_id,
     created = EXCLUDED.created,
     uid = EXCLUDED.uid,
-    username = EXCLUDED.username,
     tags = EXCLUDED.tags,
     lon = EXCLUDED.lon,
     lat = EXCLUDED.lat
@@ -35,7 +34,7 @@ END; $$ LANGUAGE plpgsql;
 INSERT INTO
     osm_base_w
 SELECT DISTINCT ON (id)
-    id, version, changeset_id, created, uid, username, tags, nodes
+    id, version, changeset_id, created, uid, tags, nodes
 FROM
     __changes_source AS changes
 WHERE
@@ -52,7 +51,6 @@ SET
     changeset_id = EXCLUDED.changeset_id,
     created = EXCLUDED.created,
     uid = EXCLUDED.uid,
-    username = EXCLUDED.username,
     tags = EXCLUDED.tags,
     nodes = EXCLUDED.nodes
 ;
@@ -65,7 +63,7 @@ END; $$ LANGUAGE plpgsql;
 INSERT INTO
     osm_base_r
 SELECT DISTINCT ON (id)
-    id, version, changeset_id, created, uid, username, tags, members
+    id, version, changeset_id, created, uid, tags, members
 FROM
     __changes_source AS changes
 WHERE
@@ -82,7 +80,6 @@ SET
     changeset_id = EXCLUDED.changeset_id,
     created = EXCLUDED.created,
     uid = EXCLUDED.uid,
-    username = EXCLUDED.username,
     tags = EXCLUDED.tags,
     members = EXCLUDED.members
 ;
@@ -102,7 +99,6 @@ SELECT DISTINCT ON (id, objtype, version, deleted)
     changes.changeset_id,
     changes.created,
     changes.uid,
-    changes.username,
     changes.tags,
     changes.lon,
     changes.lat,

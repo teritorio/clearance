@@ -42,7 +42,6 @@ module Validation
         members: T.nilable(T::Array[Integer]),
         version: Integer,
         uid: T.nilable(Integer),
-        username: T.nilable(String),
         osm_user: T.nilable(Osm::User),
         created: String,
         tags: T::Hash[String, String],
@@ -52,7 +51,7 @@ module Validation
         cc_id: Integer,
       ).void
     }
-    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, uid:, username:, osm_user:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
+    def initialize(objtype:, id:, geojson_geometry:, geos_factory:, deleted:, members:, version:, uid:, osm_user:, created:, tags:, changeset:, is_change:, group_ids:, cc_id:) # rubocop:disable Metrics/ParameterLists
       super(
         objtype: objtype,
         id: id,
@@ -62,7 +61,7 @@ module Validation
         members: members,
         version: version,
         uid: uid,
-        username: username,
+        username: osm_user&.display_name,
         created: created,
         tags: tags,
       )
@@ -89,7 +88,6 @@ module Validation
         members: hash['members'],
         version: hash['version'],
         uid: hash['uid'],
-        username: hash['username'],
         osm_user: (Osm::User.from_hash(hash['osm_user'].except('updated_at'), strict) if !hash['osm_user'].nil?),
         created: hash['created'],
         tags: hash['tags'],
@@ -112,7 +110,6 @@ module Validation
         'members' => members,
         'version' => version,
         'uid' => uid,
-        'username' => username,
         'osm_user' => osm_user&.serialize,
         'created' => created,
         'tags' => tags,
@@ -137,8 +134,7 @@ module Validation
         deleted: kwargs.fetch(:deleted, deleted),
         members: kwargs.fetch(:members, members),
         version: kwargs.fetch(:version, version),
-        uid: kwargs.fetch(:username, uid),
-        username: kwargs.fetch(:username, username),
+        uid: kwargs.fetch(:uid, uid),
         osm_user: kwargs.fetch(:osm_user, osm_user),
         created: kwargs.fetch(:created, created),
         tags: kwargs.fetch(:tags, tags),
