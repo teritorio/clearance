@@ -29,7 +29,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 'changeset_id', osm_base.changeset_id,
                 'created', osm_base.created,
                 'uid', osm_base.uid,
-                'username', osm_base.username,
+                'username', osm_users.display_name,
                 'tags', osm_base.tags,
                 'deleted', false,
                 'members', osm_base.members
@@ -40,6 +40,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
             JOIN osm_base ON
                 osm_base.objtype = validations_log.before_object->>'objtype' AND
                 osm_base.id = (validations_log.before_object->>'id')::bigint
+            LEFT JOIN osm_users ON
+                osm_users.id = osm_base.uid
         ORDER BY
             osm_base.objtype,
             osm_base.id
@@ -58,7 +60,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 'changeset_id', osm_changes.changeset_id,
                 'created', osm_changes.created,
                 'uid', osm_changes.uid,
-                'username', osm_changes.username,
+                'username', osm_users.display_name,
                 'tags', osm_changes.tags,
                 'deleted', osm_changes.deleted,
                 'members', osm_changes.members
@@ -72,6 +74,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 osm_changes.id = (validations_log.after_object->>'id')::bigint AND
                 osm_changes.version = (validations_log.after_object->>'version')::integer AND
                 osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
+            LEFT JOIN osm_users ON
+                osm_users.id = osm_changes.uid
         ORDER BY
             osm_changes.objtype,
             osm_changes.id
@@ -90,7 +94,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 'changeset_id', osm_changes.changeset_id,
                 'created', osm_changes.created,
                 'uid', osm_changes.uid,
-                'username', osm_changes.username,
+                'username', osm_users.display_name,
                 'tags', osm_changes.tags,
                 'deleted', osm_changes.deleted,
                 'members', osm_changes.members
@@ -104,6 +108,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 osm_changes.id = (validations_log.after_object->>'id')::bigint AND
                 osm_changes.version = (validations_log.after_object->>'version')::integer AND
                 osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
+            LEFT JOIN osm_users ON
+                osm_users.id = osm_changes.uid
         ORDER BY
             osm_changes.objtype,
             osm_changes.id
@@ -122,7 +128,7 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 'changeset_id', osm_changes.changeset_id,
                 'created', osm_changes.created,
                 'uid', osm_changes.uid,
-                'username', osm_changes.username,
+                'username', osm_users.display_name,
                 'tags', osm_changes.tags,
                 'deleted', osm_changes.deleted,
                 'members', osm_changes.members
@@ -136,6 +142,8 @@ CREATE OR REPLACE FUNCTION changes_logs() RETURNS TABLE(
                 osm_changes.id = (validations_log.after_object->>'id')::bigint AND
                 osm_changes.version = (validations_log.after_object->>'version')::integer AND
                 osm_changes.deleted = (validations_log.after_object->>'deleted')::boolean
+            LEFT JOIN osm_users ON
+                osm_users.id = osm_changes.uid
         ORDER BY
             osm_changes.objtype,
             osm_changes.id

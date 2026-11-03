@@ -12,8 +12,8 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 -- Test 1 point
 -- A single change node should get a locha_id assigned
-INSERT INTO osm_changes VALUES
-  ('n', 1, 1, false, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, NULL, true, NULL, 1)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 1, 1, false, 1, NULL, NULL, NULL, 1, 1, NULL, NULL, true, NULL, 1)
 ;
 
 \i lib/time_machine/sql/30_set_locha_id.sql
@@ -27,9 +27,9 @@ TRUNCATE osm_changes;
 
 -- Test 2 points close
 -- Two nearby change nodes should be clustered together (same locha_id)
-INSERT INTO osm_changes VALUES
-  ('n', 2, 1, false, 1, NULL, NULL, NULL, NULL, 0, 0, NULL, NULL, true, NULL, 2),
-  ('n', 3, 1, false, 1, NULL, NULL, NULL, NULL, 0.5, 0, NULL, NULL, true, NULL, 3)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 2, 1, false, 1, NULL, NULL, NULL, 0, 0, NULL, NULL, true, NULL, 2),
+  ('n', 3, 1, false, 1, NULL, NULL, NULL, 0.5, 0, NULL, NULL, true, NULL, 3)
 ;
 
 \i lib/time_machine/sql/30_set_locha_id.sql
@@ -45,9 +45,9 @@ TRUNCATE osm_changes;
 
 -- Test 2 points faraway
 -- Two distant change nodes should be in separate clusters (different locha_id)
-INSERT INTO osm_changes VALUES
-  ('n', 4, 1, false, 1, NULL, NULL, NULL, NULL, 0, 0, NULL, NULL, true, NULL, 4),
-  ('n', 5, 1, false, 1, NULL, NULL, NULL, NULL, 1000000, 0, NULL, NULL, true, NULL, 5)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 4, 1, false, 1, NULL, NULL, NULL, 0, 0, NULL, NULL, true, NULL, 4),
+  ('n', 5, 1, false, 1, NULL, NULL, NULL, 1000000, 0, NULL, NULL, true, NULL, 5)
 ;
 
 \i lib/time_machine/sql/30_set_locha_id.sql
@@ -63,10 +63,10 @@ TRUNCATE osm_changes;
 
 -- Test 1 point and 2 null geom
 -- All three should get a locha_id assigned, each in its own cluster
-INSERT INTO osm_changes VALUES
-  ('n', 6, 1, false, 1, NULL, NULL, NULL, NULL,    5,    5, NULL, NULL, true, NULL, 6),
-  ('n', 7, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 7),
-  ('n', 8, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 8)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 6, 1, false, 1, NULL, NULL, NULL,    5,    5, NULL, NULL, true, NULL, 6),
+  ('n', 7, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 7),
+  ('n', 8, 1, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true, NULL, 8)
 ;
 
 \i lib/time_machine/sql/30_set_locha_id.sql

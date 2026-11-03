@@ -8,7 +8,6 @@ CREATE TABLE osm_base_n (
     changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
     created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_base:created%
     uid INTEGER, -- %COL:osm_base:uid%
-    username TEXT, -- %COL:osm_base:username%
     tags JSONB, -- %COL:osm_base:tags%
     lon REAL, -- %COL:osm_base:lon%
     lat REAL -- %COL:osm_base:lat%
@@ -23,7 +22,6 @@ CREATE TABLE osm_base_w (
     changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
     created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_base:created%
     uid INTEGER, -- %COL:osm_base:uid%
-    username TEXT, -- %COL:osm_base:username%
     tags JSONB, -- %COL:osm_base:tags%
     nodes BIGINT[] -- %COL:osm_base:nodes%
 );
@@ -37,7 +35,6 @@ CREATE TABLE osm_base_r (
     changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
     created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_base:created%
     uid INTEGER, -- %COL:osm_base:uid%
-    username TEXT, -- %COL:osm_base:username%
     tags JSONB, -- %COL:osm_base:tags%
     members JSONB -- %COL:osm_base:members%
 );
@@ -72,7 +69,6 @@ CREATE TABLE osm_changes (
     changeset_id INTEGER NOT NULL, -- %COL:osm_changes:changeset_id%
     created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_changes:created%
     uid INTEGER, -- %COL:osm_changes:uid%
-    username TEXT, -- %COL:osm_changes:username%
     tags JSONB, -- %COL:osm_changes:tags%
     lon REAL, -- %COL:osm_changes:lon%
     lat REAL, -- %COL:osm_changes:lat%
@@ -115,14 +111,14 @@ DROP TABLE IF EXISTS osm_users CASCADE;
 CREATE TABLE osm_users (
     id BIGINT NOT NULL,
     display_name TEXT NOT NULL,
-    account_created TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL,
+    account_created TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL DEFAULT to_timestamp(0),
     description TEXT,
     company TEXT,
     img_href TEXT,
-    changesets_count INTEGER NOT NULL,
-    traces_count INTEGER NOT NULL,
+    changesets_count INTEGER,
+    traces_count INTEGER,
     blocks_received_count INTEGER,
     blocks_received_active INTEGER,
-    updated_at TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL
+    updated_at TIMESTAMP (0) WITHOUT TIME ZONE NOT NULL DEFAULT to_timestamp(0)
 );
 ALTER TABLE osm_users ADD PRIMARY KEY(id);

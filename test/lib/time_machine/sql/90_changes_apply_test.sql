@@ -18,8 +18,8 @@ CREATE TEMP TABLE changes_update (
 -- Create object
 BEGIN;
 TRUNCATE changes_update;
-INSERT INTO osm_changes VALUES
-  ('n', 1, 1, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members) VALUES
+  ('n', 1, 1, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL)
 ;
 INSERT INTO changes_update VALUES
   ('n', 1, 1, false)
@@ -44,8 +44,8 @@ END; $$ LANGUAGE plpgsql;
 -- Update object
 BEGIN;
 TRUNCATE changes_update;
-INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 INSERT INTO changes_update VALUES
   ('n', 1, 2, false)
@@ -65,8 +65,8 @@ END; $$ LANGUAGE plpgsql;
 -- Delete object
 BEGIN;
 TRUNCATE changes_update;
-INSERT INTO osm_changes VALUES
-  ('n', 1, 2, true, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
+  ('n', 1, 2, true, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 INSERT INTO changes_update VALUES
   ('n', 1, 2, true)

@@ -83,8 +83,7 @@ class TestUserList < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: 'today',
       tags: {
         'foo' => 'barbar',
@@ -157,8 +156,7 @@ class TestTagsChanges < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -221,8 +219,7 @@ class TestGeomNewObject < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -284,8 +281,7 @@ class TestGeomChanges < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -305,8 +301,7 @@ class TestGeomChanges < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: 'today',
       tags: {
         'shop' => 'florist',
@@ -350,8 +345,7 @@ class TestGeomChanges < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: 'today',
       tags: tags,
       is_change: is_change,
@@ -462,8 +456,7 @@ class TestDelayed < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
         'foo' => 'barbar',
@@ -530,8 +523,7 @@ class TestDelayed < Test::Unit::TestCase
       version: 1,
       changeset: nil,
       uid: 1,
-      username: 'bob',
-      osm_user: nil,
+      osm_user: Osm::User.new(id: 1, display_name: 'bob', account_created: 'today'),
       created: '2000-01-01T00:00:29Z', # 1s ago
       tags: {
         'foo' => 'barbar',

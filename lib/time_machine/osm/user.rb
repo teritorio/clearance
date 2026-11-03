@@ -21,8 +21,8 @@ module Osm
     # const :contributor-terms, T::Boolean
     const :img_href, T.nilable(String)
     # <roles><moderator/></roles>
-    const :changesets_count, Integer
-    const :traces_count, Integer
+    const :changesets_count, T.nilable(Integer)
+    const :traces_count, T.nilable(Integer)
     const :blocks_received_count, T.nilable(Integer)
     const :blocks_received_active, T.nilable(Integer)
     # const :blocks_issued_count, T.nilable(Integer)

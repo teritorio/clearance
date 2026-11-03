@@ -17,13 +17,13 @@ SELECT * FROM fetch_locha_changes(:group_id_polys::jsonb);
 
 -- No changes
 BEGIN;
-INSERT INTO osm_base_n VALUES
-  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
-  (101, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
-  (102, 1, 1, NULL, NULL, NULL, NULL, 1, 1)
+INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+  (1, 1, 1, NULL, NULL, NULL, 1, 1),
+  (101, 1, 1, NULL, NULL, NULL, 1, 1),
+  (102, 1, 1, NULL, NULL, NULL, 1, 1)
 ;
-INSERT INTO osm_base_w VALUES
-  (100, 1, 1, NULL, NULL, NULL, NULL, ARRAY[101])
+INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VALUES
+  (100, 1, 1, NULL, NULL, NULL, ARRAY[101])
 ;
 COMMIT;
 
@@ -37,8 +37,8 @@ END; $$ LANGUAGE plpgsql;
 
 -- Change node location
 BEGIN;
-INSERT INTO osm_changes VALUES
-  ('n', 1, 3, true, 4, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('n', 1, 3, true, 4, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1)
 ;
 COMMIT;
 
@@ -85,8 +85,8 @@ END; $$ LANGUAGE plpgsql;
 -- Change way nodes
 BEGIN;
 TRUNCATE osm_changes;
-INSERT INTO osm_changes VALUES
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL, true, NULL, 100)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  ('w', 100, 2, false, 2, NULL, NULL, NULL, 1, 1, ARRAY[101, 102], NULL, true, NULL, 100)
 ;
 COMMIT;
 

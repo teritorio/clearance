@@ -8,20 +8,20 @@ DROP SCHEMA IF EXISTS test CASCADE;
 -- Test osm_base_w update
 
 BEGIN;
-INSERT INTO osm_base_n VALUES
-  (1, 1, 1, NULL, NULL, NULL, NULL, 1, 1),
-  (2, 1, 1, NULL, NULL, NULL, NULL, 2, 2)
+INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+  (1, 1, 1, NULL, NULL, NULL, 1, 1),
+  (2, 1, 1, NULL, NULL, NULL, 2, 2)
 ;
-INSERT INTO osm_base_w VALUES
-  (3, 1, 1, NULL, NULL, NULL, NULL, ARRAY[1, 2])
+INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VALUES
+  (3, 1, 1, NULL, NULL, NULL, ARRAY[1, 2])
 ;
 COMMIT;
 
 
 -- Test change node location
 BEGIN;
-INSERT INTO osm_changes VALUES
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true)
 ;
 COMMIT;
 
@@ -33,8 +33,8 @@ TRUNCATE osm_changes;
 
 -- Test change way nodes
 BEGIN;
-INSERT INTO osm_changes VALUES
-  ('w', 3, 2, false, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
+  ('w', 3, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
 ;
 COMMIT;
 
@@ -46,8 +46,8 @@ TRUNCATE osm_changes;
 
 -- Test delete way
 BEGIN;
-INSERT INTO osm_changes VALUES
-  ('w', 3, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
+  ('w', 3, 2, true, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
 ;
 COMMIT;
 

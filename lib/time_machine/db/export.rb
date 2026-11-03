@@ -49,19 +49,19 @@ module Db
 
     conn.transaction {
       each_export_cursor_rows(conn, "
-        SELECT id, version, changeset_id, created, uid, username, tags, lon, lat FROM osm_base_n ORDER BY id
+        SELECT _.id, version, changeset_id, created, uid, osm_users.display_name AS username, tags, lon, lat FROM osm_base_n AS _ LEFT JOIN osm_users ON osm_users.id = _.uid ORDER BY _.id
       ", 'Nodes', 1_000_000, 'M') { |result|
         writer.add_node(result['id'], attribs(result), result['lat'], result['lon'], result['tags'])
       }
 
       each_export_cursor_rows(conn, "
-        SELECT id, version, changeset_id, created, uid, username, tags, nodes FROM osm_base_w ORDER BY id
+        SELECT _.id, version, changeset_id, created, uid, osm_users.display_name AS username, tags, nodes FROM osm_base_w AS _ LEFT JOIN osm_users ON osm_users.id = _.uid ORDER BY _.id
       ", 'Ways', 1_000_000, 'M') { |result|
         writer.add_way(result['id'], attribs(result), result['nodes'], result['tags'])
       }
 
       each_export_cursor_rows(conn, "
-        SELECT id, version, changeset_id, created, uid, username, tags, members FROM osm_base_r ORDER BY id
+        SELECT _.id, version, changeset_id, created, uid, osm_users.display_name AS username, tags, members FROM osm_base_r AS _ LEFT JOIN osm_users ON osm_users.id = _.uid ORDER BY _.id
       ", 'Relations', 10_000, 'k') { |result|
         writer.add_relation(result['id'], attribs(result), result['members'], result['tags'])
       }
@@ -180,13 +180,16 @@ module Db
 
       sql = "
         SELECT
-          *
+          _.*,
+          osm_users.display_name AS username
         FROM
-          #{table}
+          #{table} AS _
+          LEFT JOIN osm_users ON
+            osm_users.id = _.uid
         ORDER BY
-          objtype,
-          id,
-          version
+          _.objtype,
+          _.id,
+          _.version
       "
       conn.exec(sql) { |result|
         action = ''

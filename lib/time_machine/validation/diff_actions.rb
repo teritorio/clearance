@@ -46,7 +46,6 @@ module Validation
     # - version
     # - changeset
     # - uid
-    # - username
     # - nodes
     # - lat
     # - lon
