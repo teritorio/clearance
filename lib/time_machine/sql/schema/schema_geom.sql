@@ -12,10 +12,10 @@ $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
 -- Triggers to update geom
 DROP TRIGGER IF EXISTS osm_base_changes_ids_trigger ON osm_base_changes_flag;
-DROP TRIGGER IF EXISTS osm_base_n_trigger_insert ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_n_trigger_insert ON osm_base_n_lat_lon;
 DROP TRIGGER IF EXISTS osm_base_w_trigger_insert ON osm_base_w;
 DROP TRIGGER IF EXISTS osm_base_r_trigger_insert ON osm_base_r;
-DROP TRIGGER IF EXISTS osm_base_n_trigger_update ON osm_base_n;
+DROP TRIGGER IF EXISTS osm_base_n_trigger_update ON osm_base_n_lat_lon;
 DROP TRIGGER IF EXISTS osm_base_w_trigger_update ON osm_base_w;
 DROP TRIGGER IF EXISTS osm_base_r_trigger_update ON osm_base_r;
 
@@ -24,9 +24,16 @@ DO $$ BEGIN
     RAISE NOTICE 'schema_geom - osm_base_n';
 END; $$ LANGUAGE plpgsql;
 
-ALTER TABLE osm_base_n ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326) NOT NULL GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) STORED; -- Pass to VIRTUAL with Postgres 18
-VACUUM FULL ANALYZE osm_base_n;
-CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n USING gist(geom);
+VACUUM FULL ANALYZE osm_base_n_lat_lon;
+CREATE INDEX IF NOT EXISTS osm_base_n_idx_geom ON osm_base_n_lat_lon USING gist(ST_SetSRID(ST_MakePoint(lon, lat), 4326));
+DROP VIEW IF EXISTS osm_base_n CASCADE;
+CREATE VIEW osm_base_n AS
+SELECT
+    *,
+    ST_SetSRID(ST_MakePoint(lon, lat), 4326) AS geom
+FROM
+    osm_base_n_lat_lon
+;
 
 
 -- Init geom, row by row to avoid peak disk usage
@@ -154,7 +161,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE TRIGGER osm_base_n_trigger_insert
   AFTER INSERT
-  ON osm_base_n
+  ON osm_base_n_lat_lon
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_n_log_update();
 
@@ -172,7 +179,7 @@ EXECUTE PROCEDURE osm_base_r_log_update();
 
 CREATE OR REPLACE TRIGGER osm_base_n_trigger_update
   AFTER UPDATE OF lon, lat
-  ON osm_base_n
+  ON osm_base_n_lat_lon
   FOR EACH ROW
 EXECUTE PROCEDURE osm_base_n_log_update();
 

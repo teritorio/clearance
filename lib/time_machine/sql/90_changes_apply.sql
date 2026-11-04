@@ -2,7 +2,7 @@ DROP VIEW IF EXISTS __changes_source;
 CREATE TEMP VIEW __changes_source AS SELECT * FROM :changes_source;
 
 INSERT INTO
-    osm_base_n
+    osm_base_n_lat_lon
 SELECT DISTINCT ON (id)
     id, version, changeset_id, created, uid, tags, lon, lat
 FROM
@@ -142,7 +142,7 @@ WHERE
 ;
 
 DELETE FROM
-    osm_base_n AS osm_base
+    osm_base_n_lat_lon AS osm_base
 USING
     __changes_source AS changes
 WHERE

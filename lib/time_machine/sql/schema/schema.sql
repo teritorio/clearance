@@ -1,19 +1,19 @@
 CREATE SCHEMA IF NOT EXISTS :"schema";
 SET search_path TO :"schema", public;
 
-DROP TABLE IF EXISTS osm_base_n CASCADE;
-CREATE TABLE osm_base_n (
+DROP TABLE IF EXISTS osm_base_n_lat_lon CASCADE;
+CREATE TABLE osm_base_n_lat_lon (
     id BIGINT NOT NULL, -- %COL:osm_base:id%
     version INTEGER NOT NULL, -- %COL:osm_base:version%
     changeset_id INTEGER NOT NULL, -- %COL:osm_base:changeset_id%
     created TIMESTAMP (0) WITHOUT TIME ZONE, -- %COL:osm_base:created%
     uid INTEGER, -- %COL:osm_base:uid%
     tags JSONB, -- %COL:osm_base:tags%
-    lon REAL, -- %COL:osm_base:lon%
-    lat REAL -- %COL:osm_base:lat%
+    lon REAL NOT NULL, -- %COL:osm_base:lon%
+    lat REAL NOT NULL -- %COL:osm_base:lat%
 );
-ALTER TABLE osm_base_n ADD PRIMARY KEY(id);
-CREATE INDEX osm_base_n_idx_tags ON osm_base_n USING gin(tags);
+ALTER TABLE osm_base_n_lat_lon ADD PRIMARY KEY(id);
+CREATE INDEX osm_base_n_lat_lon_idx_tags ON osm_base_n_lat_lon USING gin(tags);
 
 DROP TABLE IF EXISTS osm_base_w CASCADE;
 CREATE TABLE osm_base_w (

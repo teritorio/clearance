@@ -287,7 +287,6 @@ Computation
   * Optimize matrix computation, only compute matrix cells under distance threshold
 
 Database
-  * Optimize the database schema by storing either `lon/lat` or `geom`, but not both.
   * Optimize the database schema by storing `NULL` in place of empty jsonb `{}` tags.
 
 Configuration
