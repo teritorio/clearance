@@ -34,7 +34,7 @@ psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "SELECT PG_RELOAD_CONF();"
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -c "DROP SCHEMA IF EXISTS \"${PROJECT}\" CASCADE"
 psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema.sql
 
-zcat ${PROJECTS_DATA_PATH}/${PROJECT}/import/*-n.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -v osm_base=\"${PROJECT}\".osm_base_n -f lib/time_machine/sql/00_import_base_n.sql || exit 1 &&
+zcat ${PROJECTS_DATA_PATH}/${PROJECT}/import/*-n.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -v osm_base=\"${PROJECT}\".osm_base_n_lat_lon -f lib/time_machine/sql/00_import_base_n.sql || exit 1 &&
 zcat ${PROJECTS_DATA_PATH}/${PROJECT}/import/*-w.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -v osm_base=\"${PROJECT}\".osm_base_w -f lib/time_machine/sql/00_import_base_w.sql || exit 1 &&
 zcat ${PROJECTS_DATA_PATH}/${PROJECT}/import/*-r.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -v osm_base=\"${PROJECT}\".osm_base_r -f lib/time_machine/sql/00_import_base_r.sql || exit 1 &&
 rm -f ${PROJECTS_DATA_PATH}/${PROJECT}/import/*.pgcopy.gz

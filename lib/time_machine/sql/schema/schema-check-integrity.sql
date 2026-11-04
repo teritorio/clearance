@@ -10,7 +10,7 @@ BEGIN
     FROM
         new_rows
         JOIN LATERAL unnest(new_rows.nodes) AS t(nodes_id) ON true
-        LEFT JOIN osm_base_n ON
+        LEFT JOIN osm_base_n_lat_lon AS osm_base_n ON
             osm_base_n.id = nodes_id
     WHERE
         osm_base_n.id IS NULL
@@ -84,7 +84,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE TRIGGER osm_base_n
   AFTER DELETE
-  ON osm_base_n
+  ON osm_base_n_lat_lon
   REFERENCING OLD TABLE AS old_rows
   FOR EACH STATEMENT
 EXECUTE PROCEDURE osm_base_n_check_fk();
@@ -99,7 +99,7 @@ EXECUTE PROCEDURE osm_base_n_check_fk();
 --         relations_members.ref
 --     FROM
 --         jsonb_to_recordset(NEW.members) AS relations_members(ref bigint, role text, type text)
---         LEFT JOIN osm_base_n ON
+--         LEFT JOIN osm_base_n_lat_lon AS osm_base_n ON
 --             relations_members.type = 'n' AND
 --             osm_base_n.id = relations_members.ref
 --         LEFT JOIN osm_base_w ON

@@ -16,7 +16,7 @@ DROP SCHEMA IF EXISTS test CASCADE;
 
 -- No changes
 BEGIN;
-INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+INSERT INTO osm_base_n_lat_lon (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
   (1, 1, 1, NULL, NULL, NULL, 1, 1)
 ;
 COMMIT;
@@ -46,10 +46,10 @@ END; $$ LANGUAGE plpgsql;
 
 -- Test include or exclude
 BEGIN;
-TRUNCATE osm_base_n;
+TRUNCATE osm_base_n_lat_lon;
 TRUNCATE osm_changes;
 
-INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+INSERT INTO osm_base_n_lat_lon (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
   (1, 1, 1, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1)
 ;
 
@@ -101,9 +101,9 @@ END; $$ LANGUAGE plpgsql;
 -- Test transitive changes
 
 
-TRUNCATE osm_base_n;
+TRUNCATE osm_base_n_lat_lon;
 TRUNCATE osm_changes;
-INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
+INSERT INTO osm_base_n_lat_lon (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
   (1, 1, 1, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1),
   (2, 1, 1, NULL, NULL, '{"b": "b"}'::jsonb, 2, 2),
   (9, 1, 1, NULL, NULL, '{"z": "z"}'::jsonb, 9, 9)
