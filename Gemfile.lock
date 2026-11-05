@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/teritorio/openstreetmap-logical-history.git
-  revision: f403a484b5668209186ff64e35028c49d6dbbd7f
+  revision: 9241db87b5f272571a70fae13d2e6495decebf3b
   specs:
     openstreetmap_logical_history (0.1.0)
       activesupport (~> 8.1.0)
@@ -21,7 +21,7 @@ GIT
 
 GIT
   remote: https://github.com/teritorio/overpass_parser_ruby.git
-  revision: 68bed6c26d4a961a68bd26d3358e8bc6a11dcd04
+  revision: 808cbb13ed37815d9be05ea61370c7865de13b50
   specs:
     overpass_parser_ruby (0.1.0)
       rb_sys (~> 0.9.91)

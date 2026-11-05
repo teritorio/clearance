@@ -28,7 +28,7 @@ module Osm
     const :created, Time
     const :uid, Integer
     const :username, T.nilable(String)
-    const :tags, OsmTags
+    const :tags, T.nilable(OsmTags)
     const :lon, T.nilable(Float)
     const :lat, T.nilable(Float)
     const :nodes, T.nilable(T::Array[Integer])

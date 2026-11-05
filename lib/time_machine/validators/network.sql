@@ -10,6 +10,7 @@ osm_base_w AS (
   FROM
     osm_base_w AS _
   WHERE
+    tags IS NOT NULL AND
     (:osm_filter_tags)
 ),
 osm_changes AS (
@@ -23,6 +24,7 @@ osm_changes AS (
     osm_changes AS _
   WHERE
     objtype = 'w' AND
+    tags IS NOT NULL AND
     (:osm_filter_tags)
 ),
 base_neighbors AS (
@@ -68,9 +70,9 @@ osm_last_n AS (
 osm_last_w AS (
   SELECT
     id,
-    coalesce(osm_changes.nodes, osm_base_w.nodes) AS nodes,
-    coalesce(osm_changes.deleted, false) AS deleted,
-    coalesce(osm_changes.tags, osm_base_w.tags) AS tags
+    CASE WHEN osm_changes.id IS NOT NULL THEN osm_changes.nodes ELSE osm_base_w.nodes END AS nodes,
+    CASE WHEN osm_changes.id IS NOT NULL THEN osm_changes.deleted ELSE false END AS deleted,
+    CASE WHEN osm_changes.id IS NOT NULL THEN osm_changes.tags ELSE osm_base_w.tags END AS tags
   FROM
     osm_base_w
     FULL JOIN osm_changes_geom AS osm_changes USING (id)
@@ -92,6 +94,7 @@ changes_neighbors AS (
       _.nodes && way.nodes AND
       _.id != way.id AND
       _.deleted = false AND
+      _.tags IS NOT NULL AND
       (:osm_filter_tags)
     LEFT JOIN osm_changes AS other_changes ON
       other_changes.locha_id = way.locha_id AND
