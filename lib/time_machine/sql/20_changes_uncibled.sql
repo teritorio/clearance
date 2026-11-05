@@ -96,9 +96,9 @@ combined AS (
         ) AS cibled_geom_changed,
         changes.deleted AS cc_propa,
         base.id IS NULL AS new,
-        CASE WHEN base.nodes IS NOT NULL THEN base.nodes || changes.nodes ELSE changes.nodes END AS nodes,
-        CASE WHEN base.members IS NOT NULL THEN base.members || changes.members ELSE changes.members  END AS members,
-        CASE WHEN base.tags IS NOT NULL THEN base.tags || changes.tags ELSE changes.tags END AS tags,
+        CASE WHEN base.id IS NOT NULL THEN base.nodes || changes.nodes ELSE changes.nodes END AS nodes,
+        CASE WHEN base.id IS NOT NULL THEN base.members || changes.members ELSE changes.members END AS members,
+        nullif(CASE WHEN base.id IS NOT NULL THEN coalesce(base.tags, '{}'::jsonb) || coalesce(changes.tags, '{}'::jsonb) ELSE changes.tags END, '{}'::jsonb) AS tags,
         nullif(ST_Union(
             coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
             coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))

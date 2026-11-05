@@ -104,10 +104,12 @@ module Osm
 
     sig {
       params(
-        tags: T::Hash[String, String],
+        tags: T.nilable(T::Hash[String, String]),
       ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match_with_extra(tags)
+      return [] if tags.nil?
+
       main_keys = match(tags)
       main_keys += (@selector_extra&.keys&.intersection(tags.keys) || []).collect{ |key| [key, self] } if !main_keys.empty?
       main_keys
@@ -122,7 +124,7 @@ module Osm
     }
     def to_sql(sql_dialect, table, escape_literal)
       pp = @selector_matches.collect{ |selectors|
-        p = selectors.to_sql(sql_dialect, table, 0, escape_literal)
+        p = selectors.to_sql(sql_dialect, table, 0, escape_literal, true)
         "(#{p})"
       }
       pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
@@ -139,7 +141,7 @@ module Osm
       return if @validation&.geom_neighborhood_radius.nil?
 
       pp = @selector_matches.collect{ |selectors|
-        p = selectors.to_sql(sql_dialect, table, 0, escape_literal)
+        p = selectors.to_sql(sql_dialect, table, 0, escape_literal, true)
         "(#{p})"
       }
       p = pp.size == 1 ? T.must(pp[0]) : "(#{pp.join(' OR ')})"
@@ -159,8 +161,8 @@ module Osm
 
       escape = escape_literal || proc { |input| input }
       pp = @selector_matches.collect{ |selectors|
-        p1 = selectors.to_sql(sql_dialect, table1, 0, escape_literal)
-        p2 = selectors.to_sql(sql_dialect, table2, 0, escape_literal)
+        p1 = selectors.to_sql(sql_dialect, table1, 0, escape_literal, true)
+        p2 = selectors.to_sql(sql_dialect, table2, 0, escape_literal, true)
 
         extra = @selector_extra.keys.collect{ |key| "#{table1}.tags->>#{escape.call(key)} IS DISTINCT FROM #{table2}.tags->>#{escape.call(key)}" }
 
@@ -187,10 +189,12 @@ module Osm
 
     sig {
       params(
-        tags: T::Hash[String, String],
+        tags: T.nilable(T::Hash[String, String]),
       ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match(tags)
+      return [] if tags.nil?
+
       @matches.collect{ |watch|
         watch.match(tags)
       }.flatten(1)
@@ -198,10 +202,12 @@ module Osm
 
     sig {
       params(
-        tags: T::Hash[String, String],
+        tags: T.nilable(T::Hash[String, String]),
       ).returns(T::Array[[OsmQuerySelector, TagsMatch]])
     }
     def match_with_extra(tags)
+      return [] if tags.nil?
+
       @matches.collect{ |watch|
         watch.match_with_extra(tags)
       }.flatten(1)

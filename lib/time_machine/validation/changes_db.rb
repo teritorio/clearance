@@ -44,7 +44,7 @@ module Validation
         uid: T.nilable(Integer),
         osm_user: T.nilable(Osm::User),
         created: String,
-        tags: T::Hash[String, String],
+        tags: T.nilable(T::Hash[String, String]),
         changeset: T.nilable(Osm::Changeset),
         is_change: T::Boolean,
         group_ids: T.nilable(T::Array[String]),

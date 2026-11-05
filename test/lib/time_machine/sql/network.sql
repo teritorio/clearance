@@ -26,17 +26,17 @@ $$ LANGUAGE sql STABLE;
 
 BEGIN;
 INSERT INTO osm_base_n (id, version, changeset_id, created, uid, tags, lon, lat) VALUES
-  (1, 1, 1, NULL, NULL, NULL, 1, 1),
-  (2, 1, 1, NULL, NULL, NULL, 2, 2),
-  (3, 1, 1, NULL, NULL, NULL, 3, 3),
-  (4, 1, 1, NULL, NULL, NULL, 4, 4),
-  (5, 1, 1, NULL, NULL, NULL, 5, 5)
+  (1, 1, 1, NULL, NULL, '{}'::jsonb, 1, 1),
+  (2, 1, 1, NULL, NULL, '{}'::jsonb, 2, 2),
+  (3, 1, 1, NULL, NULL, '{}'::jsonb, 3, 3),
+  (4, 1, 1, NULL, NULL, '{}'::jsonb, 4, 4),
+  (5, 1, 1, NULL, NULL, '{}'::jsonb, 5, 5)
 ;
 INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VALUES
-  (10, 1, 1, NULL, NULL, NULL, ARRAY[1, 2]),
-  (11, 1, 1, NULL, NULL, NULL, ARRAY[2, 3]),
-  (12, 1, 1, NULL, NULL, NULL, ARRAY[3, 4]),
-  (13, 1, 1, NULL, NULL, NULL, ARRAY[4, 5])
+  (10, 1, 1, NULL, NULL, '{}'::jsonb, ARRAY[1, 2]),
+  (11, 1, 1, NULL, NULL, '{}'::jsonb, ARRAY[2, 3]),
+  (12, 1, 1, NULL, NULL, '{}'::jsonb, ARRAY[3, 4]),
+  (13, 1, 1, NULL, NULL, '{}'::jsonb, ARRAY[4, 5])
 ;
 COMMIT;
 
@@ -44,7 +44,7 @@ COMMIT;
 -- Test no connect change
 BEGIN;
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
-  ('w', 10, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 2], NULL, true)
+  ('w', 10, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[1, 2], NULL, true)
 ;
 COMMIT;
 
@@ -60,7 +60,7 @@ TRUNCATE osm_changes;
 -- Test external disconnect way
 BEGIN;
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
-  ('w', 10, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 1], NULL, true)
+  ('w', 10, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[1, 1], NULL, true)
 ;
 COMMIT;
 
@@ -76,7 +76,7 @@ TRUNCATE osm_changes;
 -- Test external new connected way
 BEGIN;
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
-  ('w', 10, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[1, 2, 3], NULL, true)
+  ('w', 10, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[1, 2, 3], NULL, true)
 ;
 COMMIT;
 
@@ -93,8 +93,8 @@ TRUNCATE osm_changes;
 -- -- Test internal disconnect way
 -- BEGIN;
 -- INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
---   ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 2], NULL, true),
---   ('w', 12, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 4], NULL, true)
+--   ('w', 11, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[2, 2], NULL, true),
+--   ('w', 12, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[4, 4], NULL, true)
 -- ;
 -- COMMIT;
 
@@ -110,9 +110,9 @@ TRUNCATE osm_changes;
 -- -- Test internal deleted way
 -- BEGIN;
 -- INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
---   ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true),
---   ('w', 12, 2, true, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, true),
---   ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 3], NULL, true)
+--   ('w', 11, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[2, 3], NULL, true),
+--   ('w', 12, 2, true, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, NULL, NULL, true),
+--   ('w', 13, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[2, 3], NULL, true)
 -- ;
 -- COMMIT;
 
@@ -128,8 +128,8 @@ TRUNCATE osm_changes;
 -- Test connection to new way
 BEGIN;
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
-  ('w', 13, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[4, 5], NULL, true),
-  ('w', 20, 1, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[5, 1], NULL, true)
+  ('w', 13, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[4, 5], NULL, true),
+  ('w', 20, 1, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[5, 1], NULL, true)
 ;
 COMMIT;
 
@@ -145,9 +145,9 @@ TRUNCATE osm_changes;
 -- Test split connected way
 BEGIN;
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
-  ('w', 11, 2, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[2, 20], NULL, true),
-  ('w', 20, 1, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[20, 21], NULL, true),
-  ('w', 21, 1, false, 1, NULL, NULL, NULL, NULL, NULL, ARRAY[22, 3], NULL, true)
+  ('w', 11, 2, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[2, 20], NULL, true),
+  ('w', 20, 1, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[20, 21], NULL, true),
+  ('w', 21, 1, false, 1, NULL, NULL, '{}'::jsonb, NULL, NULL, ARRAY[22, 3], NULL, true)
 ;
 COMMIT;
 

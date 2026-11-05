@@ -17,7 +17,7 @@ SELECT
     changeset_id,
     created,
     uid,
-    tags,
+    nullif(tags, '{}'::jsonb) AS tags,
     members
 FROM
     osm_import
