@@ -15,6 +15,7 @@ SELECT
 FROM
   osm_changes_geom AS _
 WHERE
+  tags IS NOT NULL AND
   (:osm_filter_tags)
 GROUP BY
   locha_id,
@@ -49,6 +50,7 @@ FROM
     buffer.index = :map_select_index AND
     buffer.level IS NOT DISTINCT FROM (tags->>'level')
 WHERE
+  tags IS NOT NULL AND
   (:osm_filter_tags)
 ;
 CREATE INDEX ON base USING GIST (point);
@@ -106,6 +108,7 @@ FROM
   osm_changes_geom AS _
 WHERE
   _.deleted = false AND
+  tags IS NOT NULL AND
   (:osm_filter_tags)
 ORDER BY
   type, id, index

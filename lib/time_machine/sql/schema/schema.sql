@@ -13,7 +13,7 @@ CREATE TABLE osm_base_n_lat_lon (
     lat REAL NOT NULL -- %COL:osm_base:lat%
 );
 ALTER TABLE osm_base_n_lat_lon ADD PRIMARY KEY(id);
-CREATE INDEX osm_base_n_lat_lon_idx_tags ON osm_base_n_lat_lon USING gin(tags);
+CREATE INDEX osm_base_n_lat_lon_idx_tags ON osm_base_n_lat_lon USING gin(tags) WHERE tags IS NOT NULL;
 
 DROP TABLE IF EXISTS osm_base_w CASCADE;
 CREATE TABLE osm_base_w (
@@ -26,7 +26,7 @@ CREATE TABLE osm_base_w (
     nodes BIGINT[] -- %COL:osm_base:nodes%
 );
 ALTER TABLE osm_base_w ADD PRIMARY KEY(id);
-CREATE INDEX osm_base_w_idx_tags ON osm_base_w USING gin(tags);
+CREATE INDEX osm_base_w_idx_tags ON osm_base_w USING gin(tags) WHERE tags IS NOT NULL;
 
 DROP TABLE IF EXISTS osm_base_r CASCADE;
 CREATE TABLE osm_base_r (
@@ -39,7 +39,7 @@ CREATE TABLE osm_base_r (
     members JSONB -- %COL:osm_base:members%
 );
 ALTER TABLE osm_base_r ADD PRIMARY KEY(id);
-CREATE INDEX osm_base_r_idx_tags ON osm_base_r USING gin(tags);
+CREATE INDEX osm_base_r_idx_tags ON osm_base_r USING gin(tags) WHERE tags IS NOT NULL;
 
 DROP TABLE IF EXISTS osm_changesets CASCADE;
 CREATE TABLE osm_changesets (
@@ -79,6 +79,7 @@ CREATE TABLE osm_changes (
     cc_id BIGINT
 );
 ALTER TABLE osm_changes ADD PRIMARY KEY(id, objtype); -- %PK:osm_changes%
+CREATE INDEX osm_changes_idx_tags ON osm_changes USING gin(tags) WHERE tags IS NOT NULL;
 
 DROP TABLE IF EXISTS validations_log CASCADE;
 CREATE TABLE validations_log (

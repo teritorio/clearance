@@ -286,9 +286,6 @@ Computation
   * Optimize, only recompute LoCha on updated changes objects.
   * Optimize matrix computation, only compute matrix cells under distance threshold
 
-Database
-  * Optimize the database schema by storing `NULL` in place of empty jsonb `{}` tags.
-
 Configuration
   * By feature type
     * LoCha / clustering distance

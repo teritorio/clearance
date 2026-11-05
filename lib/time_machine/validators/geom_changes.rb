@@ -38,8 +38,8 @@ module Validators
       return if !euclidian_distance || euclidian_distance == 0
 
       matches = (
-        (before ? osm_tags_matches.match_with_extra(before.tags) : []) +
-        (after ? osm_tags_matches.match_with_extra(after.tags) : [])
+        osm_tags_matches.match_with_extra(before&.tags) +
+        osm_tags_matches.match_with_extra(after&.tags)
       ).collect{ |_selector, match| match }.uniq
       max_geom_change_euclidian_distance = matches.collect{ |match| match.validation&.geom_change_euclidian_distance }.compact.max
       threshold_euclidian_distance = max_geom_change_euclidian_distance || @settings.euclidian_distance
