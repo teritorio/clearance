@@ -43,6 +43,7 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 ALTER TABLE osm_base_w ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+CREATE TRIGGER z_osm_base_w_no_opp BEFORE UPDATE ON osm_base_w FOR EACH ROW EXECUTE PROCEDURE suppress_redundant_updates_trigger();
 UPDATE
   osm_base_w
 SET
@@ -69,6 +70,7 @@ SET
       ) AS nodes
   )
 ;
+DROP TRIGGER z_osm_base_w_no_opp ON osm_base_w;
 VACUUM FULL ANALYZE osm_base_w;
 CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes_gin ON osm_base_w USING gin(nodes);
 CREATE INDEX IF NOT EXISTS osm_base_w_idx_nodes_gist ON osm_base_w USING gist(int8range(array_min(nodes), array_max(nodes), '[]'));
@@ -80,6 +82,7 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 ALTER TABLE osm_base_r ADD COLUMN IF NOT EXISTS geom geometry(Geometry, 4326);
+CREATE TRIGGER z_osm_base_r_no_opp BEFORE UPDATE ON osm_base_r FOR EACH ROW EXECUTE PROCEDURE suppress_redundant_updates_trigger();
 UPDATE
   osm_base_r
 SET
@@ -96,6 +99,7 @@ SET
         ways.id = relations_members.ref
   )
 ;
+DROP TRIGGER z_osm_base_r_no_opp ON osm_base_r;
 VACUUM FULL ANALYZE osm_base_r;
 CREATE INDEX IF NOT EXISTS osm_base_r_idx_geom ON osm_base_r USING gist(geom);
 
