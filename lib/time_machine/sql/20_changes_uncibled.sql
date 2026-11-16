@@ -74,7 +74,7 @@ combined AS (
             (base.cibled_tags OR changes.cibled_tags) AND
             (base.cibled_geom OR changes.cibled_geom) AND
             (
-                :osm_diff_tags
+                coalesce(:osm_diff_tags, false)
                 OR
                 NOT ST_Equals(
                     coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
