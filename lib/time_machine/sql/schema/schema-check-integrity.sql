@@ -1,5 +1,9 @@
 SET search_path TO :"schema", public;
 
+
+-- Ways
+
+
 CREATE OR REPLACE FUNCTION osm_base_w_check_fk() RETURNS trigger AS $$
 DECLARE
     r record;
@@ -38,6 +42,34 @@ CREATE OR REPLACE TRIGGER osm_base_w_update
   FOR EACH STATEMENT
 EXECUTE PROCEDURE osm_base_w_check_fk();
 
+
+-- Nodes
+
+
+CREATE TABLE IF NOT EXISTS osm_base_n_deleted_ids(
+  id BIGINT PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS osm_base_n_deleted_flag(
+  flag BOOLEAN PRIMARY KEY
+);
+
+CREATE OR REPLACE FUNCTION osm_base_n_log_delete() RETURNS trigger AS $$
+BEGIN
+    INSERT INTO osm_base_n_deleted_ids (id)
+    SELECT
+        id
+    FROM
+        old_rows
+    WHERE true
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO osm_base_n_deleted_flag VALUES (true) ON CONFLICT (flag) DO NOTHING;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION osm_base_n_check_fk() RETURNS trigger AS $$
 DECLARE
     r record;
@@ -49,7 +81,7 @@ BEGIN
             id,
             row_number() OVER (ORDER BY id) / 100000 AS batch_num
         FROM
-            old_rows
+            osm_base_n_deleted_ids
     )
     SELECT
         array_agg(id) AS ids
@@ -78,6 +110,9 @@ BEGIN
 
     DROP TABLE IF EXISTS node_groups;
 
+    DELETE FROM osm_base_n_deleted_ids;
+    DELETE FROM osm_base_n_deleted_flag;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
@@ -87,8 +122,22 @@ CREATE OR REPLACE TRIGGER osm_base_n
   ON osm_base_n_lat_lon
   REFERENCING OLD TABLE AS old_rows
   FOR EACH STATEMENT
+EXECUTE PROCEDURE osm_base_n_log_delete();
+
+DROP TRIGGER IF EXISTS osm_base_n_deleted_flag_trigger ON osm_base_n_deleted_flag;
+CREATE CONSTRAINT TRIGGER osm_base_n_deleted_flag_trigger
+  AFTER INSERT
+  ON osm_base_n_deleted_flag
+  INITIALLY DEFERRED
+  FOR EACH ROW
 EXECUTE PROCEDURE osm_base_n_check_fk();
 
+
+--
+--
+-- -- Relations
+--
+--
 -- CREATE OR REPLACE FUNCTION osm_base_r_check_fk() RETURNS trigger AS $$
 -- DECLARE
 --     r record;
