@@ -1,4 +1,4 @@
-FROM ruby:4.0-trixie
+FROM ruby:4.0.10-trixie
 
 RUN apt update -y && apt install -y \
     build-essential \
