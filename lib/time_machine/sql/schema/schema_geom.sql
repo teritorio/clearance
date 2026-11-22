@@ -203,26 +203,46 @@ EXECUTE PROCEDURE osm_base_r_log_update();
 
 
 CREATE OR REPLACE FUNCTION osm_base_update_geom() RETURNS trigger AS $$
+DECLARE
+    n integer;
 BEGIN
   RAISE NOTICE 'schema_geom - osm_base_update_geom';
 
   DROP TABLE IF EXISTS node_groups;
   CREATE TEMP TABLE IF NOT EXISTS node_groups AS
-  WITH numbered AS (
+  WITH
+  flagged AS (
     SELECT
       id,
-      row_number() OVER (ORDER BY id) / 100000 AS batch_num
+      (id - LAG(id, 1, id) OVER (ORDER BY id) > 10000)::int AS is_break
     FROM
       osm_base_changes_ids
     WHERE
       objtype = 'n'
+  ),
+  batch AS (
+    SELECT
+      id,
+      sum(is_break) OVER (ORDER BY id) AS batch_num
+    FROM
+      flagged
+  ),
+  numbered AS (
+    SELECT
+      id,
+      batch_num,
+      (row_number() OVER (PARTITION BY batch_num ORDER BY id) - 1) / 10000 AS chunk_num
+    FROM
+      batch
   )
   SELECT
-    array_agg(id) AS ids
+    array_agg(id ORDER BY id) AS ids
   FROM
     numbered
   GROUP BY
-    batch_num
+    batch_num, chunk_num
+  ORDER BY
+    batch_num, chunk_num
   ;
 
   DROP TABLE IF EXISTS way_groups;
@@ -247,22 +267,23 @@ BEGIN
 
   ANALYZE node_groups;
   ANALYZE way_groups;
-  ANALYZE osm_base_w;
   RAISE NOTICE 'schema_geom - ANALYZE';
 
-  -- Add transitive changes, from nodes to ways
-  INSERT INTO osm_base_changes_ids
-  SELECT DISTINCT ON (ways.id)
-    'w' AS objtype,
-    ways.id
-  FROM
-    node_groups
-    JOIN osm_base_w AS ways ON
-      node_groups.ids && ways.nodes
-  ORDER BY
-    ways.id
-  ON CONFLICT (objtype, id) DO NOTHING
-  ;
+  FOR n IN 1..(SELECT count(*) AS count FROM node_groups) LOOP
+    -- Add transitive changes, from nodes to ways
+    INSERT INTO osm_base_changes_ids
+    SELECT DISTINCT ON (ways.id)
+      'w' AS objtype,
+      ways.id
+    FROM
+      (SELECT * FROM node_groups ORDER BY ids LIMIT 1 OFFSET n - 1) AS node_groups
+      JOIN osm_base_w AS ways ON
+        node_groups.ids && ways.nodes
+    ORDER BY
+      ways.id
+    ON CONFLICT (objtype, id) DO NOTHING
+    ;
+  END LOOP;
   RAISE NOTICE 'schema_geom - transitive changes nodes to ways';
 
   -- Add transitive changes, to relations

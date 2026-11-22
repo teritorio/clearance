@@ -72,43 +72,91 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION osm_base_n_check_fk() RETURNS trigger AS $$
 DECLARE
+    n integer;
     r record;
+    missing_reference boolean := false;
 BEGIN
     DROP TABLE IF EXISTS node_groups;
     CREATE TEMP TABLE IF NOT EXISTS node_groups AS
-    WITH numbered AS (
+    WITH
+    flagged AS (
         SELECT
             id,
-            row_number() OVER (ORDER BY id) / 100000 AS batch_num
+            (id - LAG(id, 1, id) OVER (ORDER BY id) > 10000)::int AS is_break
         FROM
             osm_base_n_deleted_ids
+    ),
+    batch AS (
+        SELECT
+            id,
+            sum(is_break) OVER (ORDER BY id) AS batch_num
+        FROM
+            flagged
+    ),
+    numbered AS (
+        SELECT
+            id,
+            batch_num,
+            (row_number() OVER (PARTITION BY batch_num ORDER BY id) - 1) / 10000 AS chunk_num
+        FROM
+            batch
     )
     SELECT
-        array_agg(id) AS ids
+        array_agg(id ORDER BY id) AS ids
     FROM
         numbered
     GROUP BY
-        batch_num
+        batch_num, chunk_num
+    ORDER BY
+        batch_num, chunk_num
     ;
 
     ANALYZE node_groups;
-    ANALYZE osm_base_w;
+    RAISE NOTICE 'Checking foreign key constraints for deleted nodes... %', (SELECT count(*) AS count FROM node_groups);
 
-    FOR r IN (
+    DROP TABLE IF EXISTS iter;
+    CREATE TEMP TABLE iter AS
     SELECT
-        (SELECT id FROM (SELECT id FROM unnest(osm_base_w.nodes) INTERSECT SELECT unnest(node_groups.ids)) AS t LIMIT 1) id,
+        osm_base_w.nodes AS osm_base_w_nodes,
+        node_groups.ids AS node_groups_ids,
         osm_base_w.id AS way_id
     FROM
         node_groups
         JOIN osm_base_w ON
             osm_base_w.nodes && node_groups.ids
-    -- LIMIT 1 -- No limit to use index
-    ) LOOP
-        DROP TABLE IF EXISTS node_groups;
-        RAISE 'Node % is still referenced by way %', r.id, r.way_id;
+    WITH NO DATA
+    ;
+
+    FOR n IN 1..(SELECT count(*) AS count FROM node_groups) LOOP
+        TRUNCATE TABLE iter;
+        INSERT INTO iter
+        SELECT
+            osm_base_w.nodes AS osm_base_w_nodes,
+            node_groups.ids AS node_groups_ids,
+            osm_base_w.id AS way_id
+        FROM
+            (SELECT * FROM node_groups ORDER BY ids LIMIT 1 OFFSET n - 1) AS node_groups
+            JOIN osm_base_w ON
+                osm_base_w.nodes && node_groups.ids
+        ;
+
+        FOR r IN (
+            SELECT
+                (SELECT id FROM (SELECT * FROM unnest(osm_base_w_nodes) INTERSECT SELECT unnest(node_groups_ids)) AS t(id) LIMIT 1) id,
+                way_id
+            FROM
+                iter
+        ) LOOP
+            missing_reference := true;
+            RAISE NOTICE 'Node % is still referenced by way %', r.id, r.way_id;
+        END LOOP;
     END LOOP;
+    RAISE NOTICE 'Checking foreign key constraints for deleted nodes... done.';
 
     DROP TABLE IF EXISTS node_groups;
+    IF missing_reference THEN
+        RAISE 'Foreign key constraint violation: some deleted nodes are still referenced by ways.';
+    END IF;
 
     DELETE FROM osm_base_n_deleted_ids;
     DELETE FROM osm_base_n_deleted_flag;
