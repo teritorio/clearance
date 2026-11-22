@@ -72,7 +72,7 @@ ring_snap AS (
         max(version) FILTER (WHERE is_change) AS version, -- there is only one version for non change
         bool_and(deleted) FILTER (WHERE is_change) AS deleted,
         array_unique(array_concat(DISTINCT nodes)) AS nodes,
-        ST_Buffer(ST_Union(geom), max(distance)) AS geom_buffer,
+        ST_Union(ST_Buffer(geom, distance)) AS geom_buffer,
         ST_Union(geom) AS geom
     FROM
         rings
