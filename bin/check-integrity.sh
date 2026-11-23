@@ -17,7 +17,7 @@ for EXTRACT_URL in $EXTRACT_URLS; do
     download_pbf $EXTRACT_URL  # Fills variables PBF and EXTRACT_NAME (also WGET_OPS and PYOSMIUM_OPS)
 
     echo "Updating OSM extract: $EXTRACT_URL"
-    pyosmium-up-to-date ${PYOSMIUM_OPS} -v "$PBF" || (echo "Extract $EXTRACT fails to update, abort" && exit 1)
+    pyosmium-up-to-date ${PYOSMIUM_OPS} -v "$PBF" || (echo "Extract $EXTRACT_NAME fails to update, abort" && exit 1)
 
     PBFS="$PBFS $PBF"
 done
