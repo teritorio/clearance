@@ -76,6 +76,7 @@ function geofabrik_cookie {
 
 function download_pbf {
     local EXTRACT_URL=$1
+    local FORCE_DOWNLOAD=${2:-}
 
     EXTRACT_NAME=$(basename "$EXTRACT_URL")
     EXTRACT_NAME=${EXTRACT_NAME/-internal/}
@@ -83,13 +84,24 @@ function download_pbf {
 
     PBF=${IMPORT}/import.osm.pbf
 
+    if [ -n "${FORCE_DOWNLOAD}" ]; then
+        rm -f ${PBF}
+    fi
+
     mkdir -p ${IMPORT}
     geofabrik_cookie ${EXTRACT_URL} # Fills variables WGET_OPS and PYOSMIUM_OPS
     if [ ! -e "${PBF}" ]; then
         wget ${WGET_OPS} ${EXTRACT_URL} --no-clobber -O ${PBF} || (echo "Fails download $EXTRACT_URL, abort" && exit 1)
     fi
 
-    rm -fr ${IMPORT}/replication
+    # Fills variables PBF and EXTRACT_NAME (also WGET_OPS and PYOSMIUM_OPS)
+}
+
+function download_pbf_and_replication {
+    local EXTRACT_URL=$1
+    download_pbf ${EXTRACT_URL} # Fills variables PBF and EXTRACT_NAME (also WGET_OPS and PYOSMIUM_OPS)
+
+    rm -fr ${IMPORT}/replicatio
     mkdir -p ${IMPORT}/replication
     python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_base_url'))" > ${IMPORT}/replication/sequence.url
     local SEQUENCE_NUMBER=$(python -c "import osmium; print(osmium.io.Reader('${PBF}', osmium.osm.osm_entity_bits.NOTHING).header().get('osmosis_replication_sequence_number'))")

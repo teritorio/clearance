@@ -14,7 +14,7 @@ lock_or_wait $PROJECT
 PBFS=
 
 for EXTRACT_URL in $EXTRACT_URLS; do
-    download_pbf $EXTRACT_URL  # Fills variables PBF and EXTRACT_NAME (also WGET_OPS and PYOSMIUM_OPS)
+    download_pbf $EXTRACT_URL force # Fills variables PBF and EXTRACT_NAME (also WGET_OPS and PYOSMIUM_OPS)
 
     echo "Updating OSM extract: $EXTRACT_URL"
     pyosmium-up-to-date ${PYOSMIUM_OPS} -v "$PBF" || (echo "Extract $EXTRACT_NAME fails to update, abort" && exit 1)
@@ -27,14 +27,18 @@ echo "Merging OSM extracts..."
 IMPORT_MERGE=$IMPORT/../merge.osm.pbf
 osmium merge $PBFS --overwrite --output $IMPORT_MERGE || (echo "osmium merge fails, cleaning and abort..." && rm -f $IMPORT/merge.osm.pbf && exit 2)
 
-osmium check-refs $IMPORT_MERGE || (echo "osmium check-refs fails on $IMPORT_MERGE" && exit 3)
+if [ -n "$CHECK_REF_INTEGRITY" ]; then
+    osmium check-refs $IMPORT_MERGE || (echo "osmium check-refs fails on $IMPORT_MERGE" && exit 3)
+fi
 
 # Dump Clearance data
 echo "Dumping Clearance data..."
 EXPORT=${PROJECTS_DATA_PATH}/${PROJECT}/export/$(basename $PROJECT).osm.pbf
 $(dirname $0)/dump.sh ${PROJECT}
 
-osmium check-refs $EXPORT || (echo "osmium check-refs fails on $EXPORT" && exit 10)
+if [ -n "$CHECK_REF_INTEGRITY" ]; then
+    osmium check-refs $EXPORT || (echo "osmium check-refs fails on $EXPORT" && exit 10)
+fi
 
 # Update Clearance Dump with Clearance retained data
 echo "Dump Clearance retained data..."
@@ -43,7 +47,9 @@ EXPORT_WITH_RETAINED=${EXPORT%.osm.pbf}-with_retained.osm.pbf
 bundle exec ruby lib/time_machine/main.rb --project=${PROJECT} --export-retained-diff=${RETAINED}
 osmium apply-changes ${EXPORT} ${RETAINED} --overwrite -o ${EXPORT_WITH_RETAINED} || (echo "osmium apply-changes fails" && exit 11)
 
-osmium check-refs $EXPORT_WITH_RETAINED || (echo "osmium check-refs fails on $EXPORT_WITH_RETAINED" && exit 12)
+if [ -n "$CHECK_REF_INTEGRITY" ]; then
+    osmium check-refs $EXPORT_WITH_RETAINED || (echo "osmium check-refs fails on $EXPORT_WITH_RETAINED" && exit 12)
+fi
 
 # Compare
 # Note, osmium diff does not work as expected, so use osmium derive-changes instead

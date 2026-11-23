@@ -17,7 +17,7 @@ rm -fr ${PROJECTS_DATA_PATH}/${PROJECT}/export/update
 rm -fr ${PROJECTS_DATA_PATH}/${PROJECT}/export/state.txt
 
 for EXTRACT_URL in $EXTRACT_URLS; do
-    download_pbf $EXTRACT_URL # Fills variables PBF and EXTRACT_NAME
+    download_pbf_and_replication $EXTRACT_URL # Fills variables PBF and EXTRACT_NAME
 
     ope /${PBF} =n | gzip > ${PROJECTS_DATA_PATH}/${PROJECT}/import/${EXTRACT_NAME}-n.pgcopy.gz
     ope /${PBF} =w | gzip > ${PROJECTS_DATA_PATH}/${PROJECT}/import/${EXTRACT_NAME}-w.pgcopy.gz
@@ -39,7 +39,6 @@ zcat ${PROJECTS_DATA_PATH}/${PROJECT}/import/*-w.pgcopy.gz | sort -k 1,1n -k 2,2
 zcat ${PROJECTS_DATA_PATH}/${PROJECT}/import/*-r.pgcopy.gz | sort -k 1,1n -k 2,2nr --unique | psql $DATABASE_URL -v ON_ERROR_STOP=ON -v osm_base=\"${PROJECT}\".osm_base_r -f lib/time_machine/sql/00_import_base_r.sql || exit 1 &&
 rm -f ${PROJECTS_DATA_PATH}/${PROJECT}/import/*.pgcopy.gz
 
-# if CHECK_REF_INTEGRITY not empty
 if [ -n "$CHECK_REF_INTEGRITY" ]; then
     psql $DATABASE_URL -v ON_ERROR_STOP=ON -v schema=${PROJECT} -f lib/time_machine/sql/schema/schema-check-integrity.sql
 fi
