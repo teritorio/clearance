@@ -64,7 +64,8 @@ function project() {
             if [[ -f ${IMPORT}/osm_changes.pgcopy ]]; then
                 echo "osm_changes.pgcopy already exist, skip merge"
             else
-                osmium merge-changes --simplify -o ${IMPORT}/diff.osc.xml.gz $(find ${IMPORT}/diff-*.osc.xml.bz2) || (echo "osmium merge-changes fails, clening and abort..." && rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
+                # Merge in sequence number order, to deal correctly with deleted flag.
+                osmium merge-changes --simplify -o ${IMPORT}/diff.osc.xml.gz $(find ${IMPORT}/diff-*.osc.xml.bz2 | sort) || (echo "osmium merge-changes fails, clening and abort..." && rm -f ${IMPORT}/diff.osc.xml.gz && return 3)
                 rm -f ${IMPORT}/diff-*.osc.xml.bz2
             fi
         fi
