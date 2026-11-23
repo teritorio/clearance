@@ -41,9 +41,18 @@ module Db
 
     writer = T.unsafe(Osmium::Writer).new(output_path_temp)
 
-    state_file = T.must(Osm::StateFile.from_file("#{projects_data_path}/#{project}/export/update/state.txt"))
-    writer.set_header('osmosis_replication_timestamp', state_file.timestamp)
-    writer.set_header('osmosis_replication_sequence_number', state_file.sequence_number.to_s)
+    timestamp = nil
+    sequence_number = 0
+    state_file = Osm::StateFile.from_file("#{projects_data_path}/#{project}/export/update/state.txt")
+    if state_file.nil?
+      sf = T.must(Osm::StateFile.from_file("#{projects_data_path}/#{project}/import/state.txt"))
+      timestamp = sf.timestamp
+    else
+      timestamp = state_file.timestamp
+      sequence_number = state_file.sequence_number
+    end
+    writer.set_header('osmosis_replication_timestamp', timestamp)
+    writer.set_header('osmosis_replication_sequence_number', sequence_number.to_s)
     public_url = ENV.fetch('PUBLIC_URL', nil)
     writer.set_header('osmosis_replication_base_url', "#{public_url}/api/0.1/#{project}/export/update/")
 
