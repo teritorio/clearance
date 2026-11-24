@@ -12,6 +12,31 @@ class ChangesLogsController < ApplicationController
 
   before_action :authenticate_user!, except: [:index]
 
+  LogsFeatureType = T.type_alias {
+    {
+      objtype: String,
+      id: String,
+      version: Integer,
+      changeset_id: Integer,
+      created: String,
+      uid: Integer,
+      username: String,
+      tags: T::Hash[String, String],
+      deleted: T::Boolean,
+      members: Integer,
+      links: Integer,
+    }
+  }
+
+  LogsRowType = T.type_alias {
+    {
+      type: String,
+      bbox: [Float, Float, Float, Float],
+      features: T::Array[LogsFeatureType],
+      metadata: T::Hash[String, T.untyped],
+    }
+  }
+
   def index
     project = params['project'].to_s
 
@@ -92,6 +117,14 @@ class ChangesLogsController < ApplicationController
     object[locale.to_s] || object['en'] || object.first&.last
   end
 
+  sig {
+    params(
+      project: String,
+      project_object: T.untyped,
+      lochas: T::Array[LogsRowType],
+      public_url: T.nilable(String),
+    ).returns(String)
+  }
   def atom(project, project_object, lochas, public_url)
     xml = T.let(Builder::XmlMarkup.new, T.untyped) # Avoid typing error on builder
     xml.instruct!(:xml, version: '1.0')
@@ -123,6 +156,16 @@ class ChangesLogsController < ApplicationController
     xml.target!
   end
 
+  sig {
+    params(
+      xml: T.untyped,
+      locha_id: Integer,
+      objects: T::Array[LogsFeatureType],
+      matches: T::Array[T::Hash[String, T.untyped]],
+      point: String,
+      href: String,
+    ).void
+  }
   def atom_entry(xml, locha_id, objects, matches, point, href)
     xml.entry {
       xml.id("urn:lex:zz:#{locha_id}")
