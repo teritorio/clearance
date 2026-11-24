@@ -61,7 +61,7 @@ paths:
     get:
       tags: [changes_logs]
       summary: List LoCha changes
-      description: Returns JSON by default. Atom feed is returned for atom format requests.
+      description: Returns JSON by default. Also return Atom feed and flat Geojson for inspection.
       responses:
         '200':
           description: Changes log in JSON or Atom.
@@ -69,6 +69,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Logs'
+            application/geo+json:
+              schema:
+                type: object
+                required: [type, features]
+                properties:
+                  type:
+                    type: string
+                  features:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LochaFeature'
             application/atom+xml:
               schema:
                 type: string
@@ -312,6 +323,49 @@ components:
             additionalProperties:
               type: string
 
+    LoChaFeature:
+      type: object
+      required: [id, type, geometry, properties]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        geometry:
+          type: object
+          required: [type, coordinates]
+          properties:
+            type:
+              type: string
+            coordinates:
+              type: array
+        properties:
+          type: object
+          required: [objtype, id, version, deleted, tags, changeset_id, links]
+          properties:
+            objtype:
+              type: string
+            id:
+              type: number
+            version:
+              type: number
+            deleted:
+              type: boolean
+            uid:
+              type: number
+            tags:
+              type: object
+              additionalProperties:
+                type: string
+            created:
+              type: string
+            username:
+              type: string
+            changeset_id:
+              type: number
+            links:
+              type: number
+
     LoCha:
       type: object
       required: [bbox, type, features, metadata]
@@ -325,47 +379,8 @@ components:
         features:
           type: array
           items:
-            type: object
-            required: [id, type, geometry, properties]
-            properties:
-              id:
-                type: string
-              type:
-                type: string
-              geometry:
-                type: object
-                required: [type, coordinates]
-                properties:
-                  type:
-                    type: string
-                  coordinates:
-                    type: array
-              properties:
-                type: object
-                required: [objtype, id, version, deleted, tags, changeset_id, links]
-                properties:
-                  objtype:
-                    type: string
-                  id:
-                    type: number
-                  version:
-                    type: number
-                  deleted:
-                    type: boolean
-                  uid:
-                    type: number
-                  tags:
-                    type: object
-                    additionalProperties:
-                      type: string
-                  created:
-                    type: string
-                  username:
-                    type: string
-                  changeset_id:
-                    type: number
-                  links:
-                    type: number
+            $ref: '#/components/schemas/LoChaFeature'
+
         metadata:
           type: object
           required: [links, locha_id, changesets]

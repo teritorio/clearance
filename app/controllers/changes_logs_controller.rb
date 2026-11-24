@@ -40,16 +40,33 @@ class ChangesLogsController < ApplicationController
   def index
     project = params['project'].to_s
 
-    sql = 'SELECT * FROM changes_logs()'
     Db::DbConnRead.conn(project) { |conn|
       begin
-        lochas = conn.exec(sql).collect{ |c| c['objects'] }
         respond_to { |format|
           format.json {
+            sql = 'SELECT * FROM changes_logs()'
+            lochas = T.let(conn.exec(sql).collect{ |c| c['objects'] }, T::Array[LogsRowType])
             render(json: lochas)
+          }
+          format.custom(Mime[:geojson]) {
+            sql = "SELECT
+              jsonb_build_object(
+                'type', 'FeatureCollection',
+                'features', jsonb_agg(jsonb_build_object(
+                  'type', 'Feature',
+                  'id', id,
+                  'properties', jsonb_strip_nulls(row_to_json(_)::jsonb - 'geom'),
+                  'geometry', ST_AsGeoJSON(geom)::jsonb
+                ))
+              ) AS objects
+              FROM osm_changes_geom AS _"
+            lochas = conn.exec(sql).collect{ |c| c['objects'] }
+            render(json: lochas.first)
           }
           format.atom {
             public_url = ENV.fetch('PUBLIC_URL', nil)
+            sql = 'SELECT * FROM changes_logs()'
+            lochas = T.let(conn.exec(sql).collect{ |c| c['objects'] }, T::Array[LogsRowType])
             render plain: atom(project, Project.find(params.expect('project')), lochas, public_url)
           }
         }
@@ -189,9 +206,9 @@ class ChangesLogsController < ApplicationController
       }
 
       ids = dd.collect(&:first).compact_blank.collect{ |id| id[1..] }.uniq
-      ids = (ids.size <= 2 ? ids : ids[0..2] + ['etc']).join(', ')
+      ids = (T.must(ids[0..2]) + (ids.size > 2 ? ['etc'] : [])).join(', ')
       names = dd.collect(&:last).compact_blank.uniq
-      names = (names.size <= 2 ? names : names[0..2] + ['etc']).join(', ')
+      names = (T.must(names[0..2]) + (names.size > 2 ? ['etc'] : [])).join(', ')
 
       title = matches.collect{ |m| m['name'] }.compact.collect{ |n| atom_i18n(n, I18n.locale) }.uniq.join('/')
       xml.title([title, names, ids].compact_blank.join(' '))
