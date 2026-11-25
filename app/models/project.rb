@@ -29,7 +29,7 @@ class Project < ActiveFile::Base
     end
 
     def load_file
-      Dir.glob('*/', base: "#{projects_config_path}/").collect{ |project|
+      Dir.glob('*/', base: "#{projects_config_path}/").collect do |project|
         project = project[..-2]
         count_validation = count(project) # Check database first to avoid loading configuration for projects that are not yet initialized
         if count_validation.nil?
@@ -53,7 +53,19 @@ class Project < ActiveFile::Base
           user_groups: c.user_groups,
           project_tags: c.project_tags,
         }
-      }.compact
+      rescue StandardError => e
+        {
+          id: project,
+          initialized: true,
+          title: { en: project },
+          description: { en: e.to_s },
+          date_last_update: date_last_update&.timestamp,
+          to_be_validated: count_validation,
+          main_contacts: c&.main_contacts || [],
+          user_groups: c&.user_groups || {},
+          project_tags: c&.project_tags || [],
+        }
+      end.compact
     end
 
     def count(project)
