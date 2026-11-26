@@ -81,19 +81,7 @@ combined AS (
                     coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
                 )
             )
-        ) AS cibled,
-        (
-            base.id IS NULL AND
-            changes.cibled_geom
-        ) OR (
-            base.id IS NOT NULL AND
-            (base.cibled_tags OR changes.cibled_tags) AND
-            (base.cibled_geom OR changes.cibled_geom) AND
-            NOT ST_Equals(
-                coalesce(base.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326)),
-                coalesce(changes.geom, ST_SetSRID('GEOMETRYCOLLECTION EMPTY'::geometry, 4326))
-            )
-        ) AS cibled_geom_changed,
+        ) AS cibled_core,
         changes.deleted AS cc_propa,
         base.id IS NULL AS new,
         CASE WHEN base.id IS NOT NULL THEN base.nodes || changes.nodes ELSE changes.nodes END AS nodes,
@@ -108,17 +96,10 @@ combined AS (
         LEFT JOIN base USING (objtype, id)
 )
 SELECT
+    *,
     row_number() OVER () AS cc_id,
-    objtype,
-    id,
-    cibled,
-    nodes,
-    members,
-    cibled_geom_changed,
-    cc_propa,
-    new,
-    :distance AS distance,
-    geom
+    cibled_core AS cibled,
+    CASE WHEN cibled_core THEN ST_Transform(ST_Buffer(ST_Transform(ST_MakeValid(geom), :proj), :distance), 4326) END AS cibled_core_geom_buffer
 FROM
     combined AS _
 ;
@@ -138,6 +119,7 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 
+-- Index for fast lookup of relation members
 CREATE TEMP TABLE osm_changes_members AS
 SELECT
     relations.id AS relation_id,
@@ -159,6 +141,46 @@ CREATE INDEX osm_changes_members_relation_idx_w ON osm_changes_members (relation
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - index relation members: % (%)', (SELECT COUNT(*) FROM osm_changes_members), pg_size_pretty(pg_total_relation_size('osm_changes_members'));
 END; $$ LANGUAGE plpgsql;
+
+
+-- Extend cibled objects
+UPDATE
+    changes
+SET
+    cibled = true
+FROM
+    changes AS changes_core
+WHERE
+    -- From cibled objects
+    changes_core.cibled_core AND
+    -- To objects not cibled yet
+    NOT changes.cibled AND
+    (
+        (
+            -- Extend cibled objecto to node referenced by a way
+            changes_core.objtype = 'w' AND
+            changes.objtype = 'n' AND
+            changes.id = ANY(changes_core.nodes)
+        ) OR (
+            -- Extend cibled objects to referenced from a relation
+            changes_core.objtype = 'r' AND
+            changes.objtype IN ('n', 'w') AND
+            EXISTS (
+                SELECT 1
+                FROM osm_changes_members AS m
+                WHERE
+                    m.relation_id = changes_core.id AND
+                    m.type = changes.objtype AND
+                    m.ref = changes.id
+            )
+        ) OR (
+            -- Extend cibled objects to nearby nodes using buffer
+            -- Other objects will be catched by the transitive propagation
+            changes.objtype = 'n' AND
+            ST_Intersects(changes.geom, changes_core.cibled_core_geom_buffer)
+        )
+    )
+;
 
 
 -- Flag referenced new objets as cc_propa
@@ -260,18 +282,11 @@ DO $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 
--- initial_cc_id is used as a "pointer" for path compression.
--- cc_id decreases monotonically; for any X with cc_id=C, the object Z that
--- originally had cc_id=C (Z.initial_cc_id=C) may have since been merged to
--- a lower value, letting X skip ahead in O(log D) steps instead of O(D).
-UPDATE changes SET cc_id = cc_id * CASE WHEN cibled OR cc_propa THEN 1 ELSE -1 END;
-ALTER TABLE changes ADD COLUMN initial_cc_id bigint;
-UPDATE changes SET initial_cc_id = cc_id;
-CREATE INDEX changes_idx_initial_cc_id ON changes (initial_cc_id);
-CREATE INDEX changes_idx_cc_id ON changes (cc_id);
+UPDATE changes SET cc_id = cc_id * CASE WHEN cibled THEN 1 ELSE -1 END;
+CREATE INDEX changes_idx_cc_id ON changes(cc_id) WHERE cc_id >= 0;
 ANALYZE changes;
 
--- Propagate cc_id to all connex components by topology
+-- Propagate cc_id to all connex components by topology when flagged as cibled or cc_propa.
 DO $$
 DECLARE cnt int := (SELECT COUNT(*) FROM changes WHERE cc_id >= 0);
 BEGIN
@@ -290,15 +305,15 @@ BEGIN
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
                 nodes.id = node_id AND
-                (nodes.cibled OR nodes.cc_propa OR nodes.cibled_geom_changed)
+                nodes.cc_id >= 0
         WHERE
             ways.objtype = 'w' AND
-            ways.cc_id >= 0
+            (ways.cibled OR ways.cc_propa)
         GROUP BY
             ways.objtype,
             ways.id
         HAVING
-            min(abs(nodes.cc_id)) < ways.cc_id
+            ways.cc_id < 0 OR min(abs(nodes.cc_id)) < abs(ways.cc_id)
 
         UNION ALL
 
@@ -313,33 +328,38 @@ BEGIN
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
                 nodes.id = node_id AND
-                nodes.cc_id >= 0
+                (ways.cibled OR nodes.cc_propa)
         WHERE
             ways.objtype = 'w' AND
-            (ways.cibled OR ways.cc_propa OR ways.cibled_geom_changed)
+            ways.cc_id >= 0
         GROUP BY
             nodes.objtype,
             nodes.id
         HAVING
-            min(abs(ways.cc_id)) < nodes.cc_id
+            nodes.cc_id < 0 OR min(abs(ways.cc_id)) < abs(nodes.cc_id)
 
         UNION ALL
 
         -- ways_to_ways: update ways based on shared nodes
-        -- When there is no changes on common nodes
+        -- while node is not in osm_changes
         SELECT
             min(abs(ways2.cc_id)) AS min_cc_id,
             ways.objtype,
             ways.id
         FROM
             changes AS ways
+            JOIN frontier_current ON
+                frontier_current.objtype = 'w' AND
+                frontier_current.id = ways.id
             JOIN changes AS ways2 ON
                 ways2.objtype = 'w' AND
                 ways2.nodes && ways.nodes AND
-                (ways2.cibled OR ways2.cc_propa OR ways2.cibled_geom_changed)
+                (ways2.cibled OR ways2.cc_propa)
+                -- TODO: check the common nodes should be in the buffer zone?
         WHERE
             ways.objtype = 'w' AND
-            ways.cc_id >= 0
+            ways.cc_id >= 0 AND
+            (ways.cibled OR ways.cc_propa)
         GROUP BY
             ways.objtype,
             ways.id
@@ -361,15 +381,15 @@ BEGIN
             JOIN changes AS nodes_or_ways ON
                 nodes_or_ways.objtype IN ('n', 'w') AND
                 nodes_or_ways.id = m.ref AND
-                nodes_or_ways.cc_id >= 0
+                (relations.cibled OR nodes_or_ways.cc_propa)
         WHERE
             relations.objtype = 'r' AND
-            (relations.cibled OR relations.cc_propa OR relations.cibled_geom_changed)
+            relations.cc_id >= 0
         GROUP BY
             nodes_or_ways.objtype,
             nodes_or_ways.id
         HAVING
-            min(abs(relations.cc_id)) < nodes_or_ways.cc_id
+            nodes_or_ways.cc_id < 0 OR min(abs(relations.cc_id)) < abs(nodes_or_ways.cc_id)
 
         UNION ALL
 
@@ -387,18 +407,18 @@ BEGIN
             JOIN changes AS relations ON
                 relations.objtype = 'r' AND
                 relations.id = m.relation_id AND
-                relations.cc_id >= 0 AND
-                relations.cibled_geom_changed
+                (relations.cibled OR relations.cc_propa)
         WHERE
             nodes_or_ways.objtype IN ('n', 'w') AND
-            (nodes_or_ways.cibled OR nodes_or_ways.cc_propa OR nodes_or_ways.cibled_geom_changed)
+            nodes_or_ways.cc_id >= 0
         GROUP BY
             relations.objtype,
             relations.id
         HAVING
-            min(abs(nodes_or_ways.cc_id)) < relations.cc_id
+            relations.cc_id < 0 OR min(abs(nodes_or_ways.cc_id)) < relations.cc_id
 
         -- TODO relations to relations
+        -- while member is not in osm_changes
     ),
     best AS (
         SELECT objtype, id, MIN(min_cc_id) AS min_cc_id FROM updates GROUP BY objtype, id
@@ -409,113 +429,14 @@ BEGIN
     WHERE
         changes.objtype = best.objtype AND
         changes.id = best.id AND
-        best.min_cc_id < changes.cc_id
+        changes.cc_id IS DISTINCT FROM best.min_cc_id
     ;
 
     GET DIAGNOSTICS cnt = ROW_COUNT;
 
-    WITH
-    cc_ids_pos AS (SELECT DISTINCT cc_id FROM changes WHERE cc_id >= 0)
-    UPDATE changes
-    SET cc_id = -changes.cc_id
-    FROM cc_ids_pos
-    WHERE
-        -changes.cc_id = cc_ids_pos.cc_id
-    ;
-
-    -- Full path compression: for each cc_id value C that objects point to,
-    -- follow the chain initial_cc_id=C → cc_id → ... recursively until the
-    -- minimum is reached, then update all pointers in one shot.
-    -- Termination is guaranteed because cc_id strictly decreases and is
-    -- bounded below by 1.
-    WITH RECURSIVE
-    chase AS (
-        SELECT DISTINCT
-            cc_id AS target,
-            cc_id AS root
-        FROM
-            changes
-        WHERE
-            cc_id >= 0 AND
-            initial_cc_id != cc_id
-        UNION
-        SELECT
-            c.target,
-            z.cc_id
-        FROM
-            chase AS c
-            JOIN changes AS z ON
-                z.initial_cc_id = c.root AND
-                z.cc_id < c.root AND
-                z.cc_id >= 0
-    ),
-    compressed AS (
-        SELECT target, MIN(root) AS root FROM chase GROUP BY target
-    )
-    UPDATE changes AS x
-    SET cc_id = compressed.root
-    FROM compressed
-    WHERE
-        x.cc_id = compressed.target AND
-        x.cc_id >= 0 AND
-        compressed.root < x.cc_id
-    ;
-
-    -- Keep initial_cc_id in sync so the next iteration's chase starts from
-    -- up-to-date pointers, not stale intermediate chain nodes.
-    UPDATE changes SET initial_cc_id = cc_id WHERE initial_cc_id != cc_id AND cc_id >= 0;
-
     RAISE NOTICE '20_changes_uncibled - connex components propagation iteration, updated % rows', cnt;
   END LOOP;
 END $$ LANGUAGE plpgsql;
-
-ALTER TABLE changes DROP COLUMN initial_cc_id;
-
-DO $$ BEGIN
-    -- Assert that nodes has the same cc_id as their ways
-    CREATE TEMP TABLE mismatch_cc_id_ways AS
-    SELECT
-        'w' || ways.id || '-n' || nodes.id || ' (' || ways.cc_id || ' vs ' || nodes.cc_id || ')' AS mismatch
-    FROM
-        changes AS ways
-        JOIN changes AS nodes ON
-            nodes.objtype = 'n' AND
-            (nodes.cibled OR nodes.cc_propa) AND
-            nodes.id = ANY(ways.nodes) AND
-            nodes.cc_id IS DISTINCT FROM ways.cc_id
-    WHERE
-        ways.objtype = 'w' AND
-        ways.cc_id > 0
-    LIMIT
-        20
-    ;
-    assert (SELECT count(*) FROM mismatch_cc_id_ways) = 0, 'All nodes should have the same cc_id as their ways. Mismatches: ' || (SELECT string_agg(mismatch, ', ') FROM mismatch_cc_id_ways);
-    DROP TABLE mismatch_cc_id_ways;
-
-    -- Assert that relations have the same cc_id as their members
-    CREATE TEMP TABLE mismatch_cc_id_relations AS
-    SELECT
-        'r' || relations.id || '-' || m.type || m.ref || ' (' || relations.cc_id || ' vs ' || members.cc_id || ')' AS mismatch
-    FROM
-        changes AS relations
-        JOIN osm_changes_members AS m ON
-            m.relation_id = relations.id AND
-            m.type = 'w'
-        JOIN changes AS members ON
-            members.objtype = m.type AND
-            (members.cibled OR members.cc_propa) AND
-            members.id = m.ref AND
-            members.cc_id IS DISTINCT FROM relations.cc_id
-    WHERE
-        relations.objtype = 'r' AND
-        relations.cibled_geom_changed AND
-        relations.cc_id > 0
-    LIMIT
-        20
-    ;
-    assert (SELECT count(*) FROM mismatch_cc_id_relations) = 0, 'All relations should have the same cc_id as their members. Mismatches: ' || (SELECT string_agg(mismatch, ', ') FROM mismatch_cc_id_relations);
-    DROP TABLE mismatch_cc_id_relations;
-END; $$ LANGUAGE plpgsql;
 
 DROP TABLE osm_changes_members CASCADE;
 
@@ -528,7 +449,7 @@ UPDATE osm_changes SET cc_id = NULL;
 UPDATE
     osm_changes
 SET
-    cibled = changes.cibled,
+    cibled = changes.cibled_core,
     cc_id = changes.cc_id
 FROM
     changes
@@ -538,7 +459,7 @@ WHERE
 ;
 
 DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - cibled changes: % / %', (SELECT COUNT(*) FROM changes WHERE cibled), (SELECT COUNT(*) FROM changes);
+    RAISE NOTICE '20_changes_uncibled - cibled changes / buffer / total: % / % / %', (SELECT COUNT(*) FROM changes WHERE cibled_core), (SELECT COUNT(*) FROM changes WHERE cibled), (SELECT COUNT(*) FROM changes);
     assert (SELECT COUNT(*) FROM osm_changes WHERE cc_id IS NULL) = 0, 'cc_id should not be null';
     assert (SELECT COUNT(*) FROM changes) = (SELECT COUNT(*) FROM osm_changes), 'changes should have the same number of rows as osm_changes';
     RAISE NOTICE '20_changes_uncibled - largest connex components size: %', (SELECT array_agg(n) FROM (SELECT count(*) FROM osm_changes GROUP BY cc_id ORDER BY count(*) DESC LIMIT 10) AS t(n));
@@ -573,27 +494,6 @@ WHERE
 ;
 $$ LANGUAGE SQL PARALLEL SAFE IMMUTABLE;
 
-ALTER TABLE changes
-    ADD COLUMN geom_proj geometry(Geometry, :proj) GENERATED ALWAYS AS (CASE WHEN NOT cibled THEN ST_Transform(ST_MakeValid(geom), :proj) END) STORED,
-    ADD COLUMN geom_buffer_proj geometry(Geometry, :proj) GENERATED ALWAYS AS (CASE WHEN cibled THEN ST_Buffer(ST_Transform(ST_MakeValid(geom), :proj), distance) END) STORED;
-CREATE INDEX changes_geom_proj_idx ON changes USING GIST (geom_proj) WHERE NOT cibled;
-
-CREATE TEMP TABLE changes_cluster AS
-WITH
-a AS (SELECT cc_id, bool_or(cibled) AS cibled, ST_Union(geom_buffer_proj) AS geom_proj FROM changes WHERE cibled GROUP BY cc_id),
-b AS (SELECT cc_id, cibled, split_by_grid(geom_proj, :distance_default * 100) AS split_geom_proj FROM a),
-c AS (SELECT DISTINCT changes.cc_id FROM b JOIN changes ON NOT changes.cibled AND ST_Intersects(b.split_geom_proj, changes.geom_proj))
-SELECT cc_id FROM a
-UNION
-SELECT cc_id FROM c
-;
-CREATE INDEX changes_cluster_idx_cc_id ON changes_cluster (cc_id);
-
-DO $$ BEGIN
-    RAISE NOTICE '20_changes_uncibled - cluster changes: % (%)', (SELECT COUNT(*) FROM changes_cluster), pg_size_pretty(pg_total_relation_size('changes_cluster'));
-END; $$ LANGUAGE plpgsql;
-
-
 -- Select only changes not related to objects and area of interest, and not transitively related to them
 DROP TABLE IF EXISTS changes_update;
 CREATE TEMP TABLE changes_update AS
@@ -601,15 +501,11 @@ SELECT
     osm_changes.*
 FROM
     osm_changes
-    JOIN changes USING (objtype, id)
-    LEFT JOIN changes_cluster ON
-        changes_cluster.cc_id = changes.cc_id
 WHERE
-    changes_cluster.cc_id IS NULL
+    cc_id < 0
 ;
 
 DROP TABLE changes;
-DROP TABLE changes_cluster CASCADE;
 
 DO $$ BEGIN
     RAISE NOTICE '20_changes_uncibled - changes_update: % (%)', (SELECT COUNT(*) FROM changes_update), pg_size_pretty(pg_total_relation_size('changes_update'));

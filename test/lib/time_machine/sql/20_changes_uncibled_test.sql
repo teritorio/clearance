@@ -116,9 +116,9 @@ INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VA
 -- Test non propagation
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
   -- cibled
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true),
+  ('n', 1, 2, false, 1, NULL, NULL, '{"a": "a"}'::jsonb, 3, 3, NULL, NULL, true),
   -- not cibled
-  ('n', 9, 2, false, 1, NULL, NULL, NULL, 9, 9, NULL, NULL, true)
+  ('n', 9, 2, false, 1, NULL, NULL, NULL, 9, 9, NULL, NULL, false)
 ;
 \set osm_filter_tags '_.tags?\'a\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
@@ -133,9 +133,9 @@ TRUNCATE osm_changes;
 -- From ways change, we should get the nodes change
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
   -- cibled
-  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true, NULL, 1),
+  ('w', 100, 2, false, 2, NULL, NULL, '{"a": "a"}'::jsonb, 1, 1, ARRAY[1, 2], NULL, true, NULL, 2),
   -- included by transity
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, 1, 1, ARRAY[1, 2], NULL, true, NULL, 2),
+  ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, false, NULL, 1),
   -- not cibled
   ('n', 9, 2, false, 1, NULL, NULL, NULL, 9, 9, NULL, NULL, true, NULL, 3)
 ;
@@ -152,13 +152,50 @@ TRUNCATE osm_changes;
 -- Remove node from way, and delete node
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
   -- cibled
-  ('w', 100, 2, false, 2, NULL, NULL, NULL, 1, 1, ARRAY[1, 9], NULL, true, NULL, 100),
-  ('n', 2, 1, true, 1, NULL, NULL, NULL, 2, 2, NULL, NULL, true, NULL, 2)
+  ('w', 100, 2, false, 2, NULL, NULL, '{"w": "w"}'::jsonb, 1, 1, ARRAY[1, 9], NULL, true, NULL, 100),
+  -- not cibled
+  ('n', 2, 1, true, 1, NULL, NULL, NULL, 2, 2, NULL, NULL, false, NULL, 2)
 ;
 \set osm_filter_tags '_.tags?\'w\''
 \i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
   ASSERT (SELECT array_agg(id) FROM changes_update) IS NULL;
+END; $$ LANGUAGE plpgsql;
+TRUNCATE osm_changes;
+
+
+-- Tow cibled cibled ways, connection by one node, should have the same cc_id
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  -- cibled
+  ('w', 100, 2, false, 2, NULL, NULL, '{"w": "w"}'::jsonb, NULL, NULL, ARRAY[1, 2], NULL, true, NULL, NULL),
+  ('w', 101, 2, false, 2, NULL, NULL, '{"w": "w"}'::jsonb, NULL, NULL, ARRAY[2, 3], NULL, true, NULL, NULL),
+  -- not cibled
+  ('n', 1, 1, false, 1, NULL, NULL, NULL, 1, 1, NULL, NULL, false, NULL, NULL),
+  ('n', 2, 1, false, 1, NULL, NULL, NULL, 2, 2, NULL, NULL, false, NULL, NULL),
+  ('n', 3, 1, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, false, NULL, NULL)
+;
+\set osm_filter_tags '_.tags?\'w\''
+\i lib/time_machine/sql/20_changes_uncibled.sql
+
+do $$ BEGIN
+  ASSERT array[1, 1]::bigint[] = (SELECT array_agg(cc_id) FROM osm_changes WHERE objtype = 'w' GROUP BY cc_id),
+    (SELECT array_agg(DISTINCT cc_id) FROM osm_changes WHERE objtype = 'w' GROUP BY cc_id);
+END; $$ LANGUAGE plpgsql;
+TRUNCATE osm_changes;
+
+
+-- Tow cibled ways, connection by one node not in changes, should have the same cc_id
+INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled, locha_id, cc_id) VALUES
+  -- cibled
+  ('w', 100, 2, false, 2, NULL, NULL, '{"w": "w"}'::jsonb, NULL, NULL, ARRAY[1], NULL, true, NULL, NULL),
+  ('w', 101, 2, false, 2, NULL, NULL, '{"w": "w"}'::jsonb, NULL, NULL, ARRAY[1], NULL, true, NULL, NULL)
+;
+\set osm_filter_tags '_.tags?\'w\''
+\i lib/time_machine/sql/20_changes_uncibled.sql
+
+do $$ BEGIN
+  ASSERT array[1, 1]::bigint[] = (SELECT array_agg(cc_id) FROM osm_changes WHERE objtype = 'w' GROUP BY cc_id),
+    (SELECT array_agg(DISTINCT cc_id) FROM osm_changes WHERE objtype = 'w' GROUP BY cc_id);
 END; $$ LANGUAGE plpgsql;
 TRUNCATE osm_changes;
