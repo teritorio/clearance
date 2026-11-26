@@ -286,11 +286,30 @@ UPDATE changes SET cc_id = cc_id * CASE WHEN cibled THEN 1 ELSE -1 END;
 CREATE INDEX changes_idx_cc_id ON changes(cc_id) WHERE cc_id >= 0;
 ANALYZE changes;
 
+DROP TABLE IF EXISTS frontier_current;
+CREATE TEMP TABLE frontier_current AS
+SELECT
+    objtype,
+    id
+FROM
+    changes
+WHERE
+    cc_id >= 0
+;
+ANALYZE frontier_current;
+ALTER TABLE frontier_current ADD PRIMARY KEY (objtype, id);
+
+DROP TABLE IF EXISTS frontier_next;
+CREATE TEMP TABLE frontier_next AS SELECT * FROM frontier_current LIMIT 0;
+
+
 -- Propagate cc_id to all connex components by topology when flagged as cibled or cc_propa.
 DO $$
-DECLARE cnt int := (SELECT COUNT(*) FROM changes WHERE cc_id >= 0);
+DECLARE cnt int := (SELECT COUNT(*) FROM frontier_current);
 BEGIN
   WHILE cnt > 0 LOOP
+    TRUNCATE frontier_next;
+
     -- One hop: propagate the minimum cc_id through all connection types
     WITH
     updates AS (
@@ -306,6 +325,9 @@ BEGIN
                 nodes.objtype = 'n' AND
                 nodes.id = node_id AND
                 nodes.cc_id >= 0
+            JOIN frontier_current ON
+                frontier_current.objtype = 'n' AND
+                frontier_current.id = nodes.id
         WHERE
             ways.objtype = 'w' AND
             (ways.cibled OR ways.cc_propa)
@@ -324,6 +346,9 @@ BEGIN
             nodes.id
         FROM
             changes AS ways
+            JOIN frontier_current ON
+                frontier_current.objtype = 'w' AND
+                frontier_current.id = ways.id
             JOIN LATERAL unnest_unique(ways.nodes) AS node_id ON true
             JOIN changes AS nodes ON
                 nodes.objtype = 'n' AND
@@ -375,6 +400,9 @@ BEGIN
             nodes_or_ways.id
         FROM
             changes relations
+            JOIN frontier_current ON
+                frontier_current.objtype = 'r' AND
+                frontier_current.id = relations.id
             JOIN osm_changes_members m ON
                 m.relation_id = relations.id AND
                 m.type IN ('n', 'w')
@@ -400,6 +428,9 @@ BEGIN
             relations.id
         FROM
             changes AS nodes_or_ways
+            JOIN frontier_current ON
+                frontier_current.objtype = nodes_or_ways.objtype AND
+                frontier_current.id = nodes_or_ways.id
             JOIN osm_changes_members AS m ON
                 m.type IN ('n', 'w') AND
                 m.type = nodes_or_ways.objtype AND
@@ -422,17 +453,31 @@ BEGIN
     ),
     best AS (
         SELECT objtype, id, MIN(min_cc_id) AS min_cc_id FROM updates GROUP BY objtype, id
+    ),
+    updated AS (
+        UPDATE changes
+        SET cc_id = best.min_cc_id
+        FROM best
+        WHERE
+            changes.objtype = best.objtype AND
+            changes.id = best.id AND
+            changes.cc_id IS DISTINCT FROM best.min_cc_id
+        RETURNING
+            changes.objtype,
+            changes.id
     )
-    UPDATE changes
-    SET cc_id = best.min_cc_id
-    FROM best
-    WHERE
-        changes.objtype = best.objtype AND
-        changes.id = best.id AND
-        changes.cc_id IS DISTINCT FROM best.min_cc_id
+    INSERT INTO frontier_next
+    SELECT
+        updated.objtype,
+        updated.id
+    FROM
+        updated
     ;
 
-    GET DIAGNOSTICS cnt = ROW_COUNT;
+    SELECT COUNT(*) INTO cnt FROM frontier_next;
+
+    TRUNCATE frontier_current;
+    INSERT INTO frontier_current SELECT objtype, id FROM frontier_next;
 
     RAISE NOTICE '20_changes_uncibled - connex components propagation iteration, updated % rows', cnt;
   END LOOP;
