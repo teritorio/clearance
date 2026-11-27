@@ -60,8 +60,8 @@ COMMIT;
 
 -- Base in tags, but changes not
 \set osm_filter_tags '_.tags?\'a\''
-\i lib/time_machine/sql/20_changes_uncibled.sql
 \set osm_diff_tags '(((base.tags?\'a\') OR (changes.tags?\'a\')) AND (base.tags->>\'a\' IS DISTINCT FROM changes.tags->>\'a\'))'
+\i lib/time_machine/sql/20_changes_uncibled.sql
 
 do $$ BEGIN
   ASSERT 0 = (SELECT count(*) FROM changes_update),
@@ -113,7 +113,7 @@ INSERT INTO osm_base_w (id, version, changeset_id, created, uid, tags, nodes) VA
 ;
 
 
--- From node change, we should get the way change
+-- Test non propagation
 INSERT INTO osm_changes (objtype, id, version, deleted, changeset_id, created, uid, tags, lon, lat, nodes, members, cibled) VALUES
   -- cibled
   ('n', 1, 2, false, 1, NULL, NULL, NULL, 3, 3, NULL, NULL, true),
